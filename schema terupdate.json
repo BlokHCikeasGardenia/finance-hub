@@ -1,0 +1,2502 @@
+[
+  {
+    "section": "TABLES",
+    "table_name": "transaction_counters",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "hunian",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "meteran_air_billing",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "lorong",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "penghuni",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "kategori_saldo",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "subkategori",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "pemasukan",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "periode",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "rekening",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "pengeluaran",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "pemindahbukuan",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "dana_titipan",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "tarif_air",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "tarif_ipl",
+    "detail": ""
+  },
+  {
+    "section": "TABLES",
+    "table_name": "tagihan_ipl",
+    "detail": ""
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "updated_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "tagihan_ipl_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "pemasukan_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "nominal_dialokasikan numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "tanggal_alokasi date default(CURRENT_DATE)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "created_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "penghuni_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "hunian_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "nominal numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "kategori_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "periode_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "rekening_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "converted_to_pemasukan boolean default(false)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "created_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_air",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_air",
+    "detail": "harga_per_kubik numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_air",
+    "detail": "tanggal_mulai_berlaku date default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_air",
+    "detail": "aktif boolean default(true)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_air",
+    "detail": "created_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_air",
+    "detail": "updated_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_ipl",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_ipl",
+    "detail": "nominal numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_ipl",
+    "detail": "tanggal_mulai_berlaku date default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_ipl",
+    "detail": "aktif boolean default(true)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_ipl",
+    "detail": "created_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_ipl",
+    "detail": "updated_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "periode_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "hunian_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "penghuni_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "tarif_per_bulan numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "nominal_tagihan numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "total_pembayaran numeric default(0)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "sisa_tagihan numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "tanggal_tagihan date default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "tanggal_jatuh_tempo date default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "created_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "transaction_counters",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "transaction_counters",
+    "detail": "year integer default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "transaction_counters",
+    "detail": "current_number integer default(0)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "transaction_counters",
+    "detail": "updated_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "lorong",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "kategori_saldo",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "kategori_saldo",
+    "detail": "saldo_awal numeric default(0)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "hunian",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "hunian",
+    "detail": "nomor_urut integer default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "hunian",
+    "detail": "lorong_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "hunian",
+    "detail": "penghuni_saat_ini_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "hunian",
+    "detail": "penghuni_sebelumnya_1_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "hunian",
+    "detail": "penghuni_sebelumnya_2_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "hunian",
+    "detail": "pelanggan_air boolean default(false)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "periode_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "hunian_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "penghuni_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "meteran_periode_ini numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "meteran_periode_sebelumnya numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "pemakaian_m3 numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "tarif_per_kubik numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "nominal_tagihan numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "total_pembayaran numeric default(0)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "sisa_tagihan numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "tanggal_tagihan date default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "tanggal_jatuh_tempo date default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "created_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "updated_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "penghuni",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "penghuni",
+    "detail": "kondisi_khusus boolean default(false)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "subkategori",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "subkategori",
+    "detail": "kategori_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemasukan",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemasukan",
+    "detail": "tanggal date default(CURRENT_DATE)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemasukan",
+    "detail": "penghuni_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemasukan",
+    "detail": "hunian_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemasukan",
+    "detail": "nominal numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemasukan",
+    "detail": "kategori_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemasukan",
+    "detail": "periode_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemasukan",
+    "detail": "rekening_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "meteran_air_billing_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "pemasukan_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "nominal_dialokasikan numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "tanggal_alokasi date default(CURRENT_DATE)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "created_at timestamp with time zone default(now())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "periode",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "periode",
+    "detail": "nomor_urut integer default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "periode",
+    "detail": "tanggal_awal date default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "periode",
+    "detail": "tanggal_akhir date default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "rekening",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "rekening",
+    "detail": "saldo_awal numeric default(0)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pengeluaran",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pengeluaran",
+    "detail": "tanggal date default(CURRENT_DATE)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pengeluaran",
+    "detail": "nominal numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pengeluaran",
+    "detail": "kategori_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pengeluaran",
+    "detail": "subkategori_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pengeluaran",
+    "detail": "rekening_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemindahbukuan",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemindahbukuan",
+    "detail": "rekening_dari_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemindahbukuan",
+    "detail": "rekening_ke_id uuid default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemindahbukuan",
+    "detail": "nominal numeric default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemindahbukuan",
+    "detail": "tanggal date default(CURRENT_DATE)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "id uuid default(uuid_generate_v4())"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "tanggal date default(CURRENT_DATE)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "kategori_ipl character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "status character varying default('belum_bayar'::character varying)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "transaction_counters",
+    "detail": "counter_type character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "status character varying default('belum_bayar'::character varying)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemasukan",
+    "detail": "keterangan text default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pengeluaran",
+    "detail": "id_transaksi character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "keterangan text default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "lorong",
+    "detail": "nama_lorong character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "lorong",
+    "detail": "ketua_lorong character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "meteran_air_billing",
+    "detail": "billing_type character varying default('automatic'::character varying)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "kategori_saldo",
+    "detail": "nama_kategori character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "pemasukan_id_transaksi character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "kategori_saldo",
+    "detail": "keterangan text default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemindahbukuan",
+    "detail": "catatan text default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pengeluaran",
+    "detail": "keterangan text default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "hunian",
+    "detail": "nomor_blok_rumah character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "hunian",
+    "detail": "status character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "penghuni",
+    "detail": "nama_kepala_keluarga character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "penghuni",
+    "detail": "agama character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "penghuni",
+    "detail": "status character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_ipl",
+    "detail": "type_tarif character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tarif_ipl",
+    "detail": "nama_tarif character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pengeluaran",
+    "detail": "penerima character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "subkategori",
+    "detail": "nama_subkategori character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "id_transaksi character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemasukan",
+    "detail": "id_transaksi character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "periode",
+    "detail": "nama_periode character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pengeluaran",
+    "detail": "link_url text default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "tagihan_ipl",
+    "detail": "keterangan text default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "pemindahbukuan",
+    "detail": "id_transaksi character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "rekening",
+    "detail": "jenis_rekening character varying default(-)"
+  },
+  {
+    "section": "COLUMNS",
+    "table_name": "dana_titipan",
+    "detail": "keterangan text default(-)"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "transaction_counters",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "dana_titipan",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "tarif_ipl",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "tagihan_ipl",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "tarif_air",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "lorong",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "penghuni",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "hunian",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "kategori_saldo",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "subkategori",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "rekening",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "periode",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "pemasukan",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "pengeluaran",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "pemindahbukuan",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "meteran_air_billing",
+    "detail": "id"
+  },
+  {
+    "section": "PRIMARY KEY",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "dana_titipan",
+    "detail": "penghuni_id → penghuni.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "dana_titipan",
+    "detail": "hunian_id → hunian.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "dana_titipan",
+    "detail": "kategori_id → kategori_saldo.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "dana_titipan",
+    "detail": "periode_id → periode.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "dana_titipan",
+    "detail": "rekening_id → rekening.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "tagihan_ipl",
+    "detail": "periode_id → periode.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "tagihan_ipl",
+    "detail": "hunian_id → hunian.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "tagihan_ipl",
+    "detail": "penghuni_id → penghuni.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "tagihan_ipl_id → tagihan_ipl.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "pemasukan_id → pemasukan.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "hunian",
+    "detail": "lorong_id → lorong.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "hunian",
+    "detail": "penghuni_saat_ini_id → penghuni.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "hunian",
+    "detail": "penghuni_sebelumnya_1_id → penghuni.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "hunian",
+    "detail": "penghuni_sebelumnya_2_id → penghuni.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "subkategori",
+    "detail": "kategori_id → kategori_saldo.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "pemasukan",
+    "detail": "penghuni_id → penghuni.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "pemasukan",
+    "detail": "hunian_id → hunian.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "pemasukan",
+    "detail": "kategori_id → kategori_saldo.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "pemasukan",
+    "detail": "periode_id → periode.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "pemasukan",
+    "detail": "rekening_id → rekening.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "pengeluaran",
+    "detail": "kategori_id → kategori_saldo.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "pengeluaran",
+    "detail": "subkategori_id → subkategori.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "pengeluaran",
+    "detail": "rekening_id → rekening.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "pemindahbukuan",
+    "detail": "rekening_dari_id → rekening.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "pemindahbukuan",
+    "detail": "rekening_ke_id → rekening.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "meteran_air_billing",
+    "detail": "periode_id → periode.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "meteran_air_billing",
+    "detail": "hunian_id → hunian.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "meteran_air_billing",
+    "detail": "penghuni_id → penghuni.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "meteran_air_billing_id → meteran_air_billing.id"
+  },
+  {
+    "section": "FOREIGN KEY",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "pemasukan_id → pemasukan.id"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_proc",
+    "detail": "pg_proc_proname_args_nsp_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_type",
+    "detail": "pg_type_typname_nsp_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_attribute",
+    "detail": "pg_attribute_relid_attnam_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "users_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_class",
+    "detail": "pg_class_relname_nsp_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_class",
+    "detail": "pg_class_tblspc_relfilenode_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_type",
+    "detail": "pg_type_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_attribute",
+    "detail": "pg_attribute_relid_attnum_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_attrdef",
+    "detail": "pg_attrdef_adrelid_adnum_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_client_states",
+    "detail": "oauth_client_states_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_constraint",
+    "detail": "pg_constraint_conname_nsp_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_constraint",
+    "detail": "pg_constraint_conrelid_contypid_conname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_constraint",
+    "detail": "pg_constraint_contypid_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_client_states",
+    "detail": "idx_oauth_client_states_created_at (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_constraint",
+    "detail": "pg_constraint_conparentid_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_inherits",
+    "detail": "pg_inherits_parent_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_index",
+    "detail": "pg_index_indrelid_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_operator",
+    "detail": "pg_operator_oprname_l_r_n_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_opfamily",
+    "detail": "pg_opfamily_am_name_nsp_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_opclass",
+    "detail": "pg_opclass_am_name_nsp_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_am",
+    "detail": "pg_am_name_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_amop",
+    "detail": "pg_amop_fam_strat_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_amop",
+    "detail": "pg_amop_opr_fam_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_amproc",
+    "detail": "pg_amproc_fam_proc_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_language",
+    "detail": "pg_language_name_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_statistic_ext",
+    "detail": "pg_statistic_ext_name_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_statistic_ext",
+    "detail": "pg_statistic_ext_relid_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_rewrite",
+    "detail": "pg_rewrite_rel_rulename_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_trigger",
+    "detail": "pg_trigger_tgconstraint_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_trigger",
+    "detail": "pg_trigger_tgrelid_tgname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_event_trigger",
+    "detail": "pg_event_trigger_evtname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_cast",
+    "detail": "pg_cast_source_target_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_inherits",
+    "detail": "pg_inherits_relid_seqno_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_index",
+    "detail": "pg_index_indexrelid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_operator",
+    "detail": "pg_operator_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_opfamily",
+    "detail": "pg_opfamily_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_opclass",
+    "detail": "pg_opclass_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_am",
+    "detail": "pg_am_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_amop",
+    "detail": "pg_amop_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_amproc",
+    "detail": "pg_amproc_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_language",
+    "detail": "pg_language_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_largeobject_metadata",
+    "detail": "pg_largeobject_metadata_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_largeobject",
+    "detail": "pg_largeobject_loid_pn_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_aggregate",
+    "detail": "pg_aggregate_fnoid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_statistic",
+    "detail": "pg_statistic_relid_att_inh_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_statistic_ext",
+    "detail": "pg_statistic_ext_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_statistic_ext_data",
+    "detail": "pg_statistic_ext_data_stxoid_inh_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_rewrite",
+    "detail": "pg_rewrite_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_trigger",
+    "detail": "pg_trigger_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_event_trigger",
+    "detail": "pg_event_trigger_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_description",
+    "detail": "pg_description_o_c_o_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_cast",
+    "detail": "pg_cast_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_enum",
+    "detail": "pg_enum_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_enum",
+    "detail": "pg_enum_typid_label_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_enum",
+    "detail": "pg_enum_typid_sortorder_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_namespace",
+    "detail": "pg_namespace_nspname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "users_instance_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_conversion",
+    "detail": "pg_conversion_default_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_conversion",
+    "detail": "pg_conversion_name_nsp_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_depend",
+    "detail": "pg_depend_depender_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_depend",
+    "detail": "pg_depend_reference_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_database",
+    "detail": "pg_database_datname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_tablespace",
+    "detail": "pg_tablespace_spcname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_authid",
+    "detail": "pg_authid_rolname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_auth_members",
+    "detail": "pg_auth_members_role_member_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_auth_members",
+    "detail": "pg_auth_members_member_role_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_auth_members",
+    "detail": "pg_auth_members_grantor_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_shdepend",
+    "detail": "pg_shdepend_depender_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_shdepend",
+    "detail": "pg_shdepend_reference_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_ts_config",
+    "detail": "pg_ts_config_cfgname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_ts_dict",
+    "detail": "pg_ts_dict_dictname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_ts_parser",
+    "detail": "pg_ts_parser_prsname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_ts_template",
+    "detail": "pg_ts_template_tmplname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_extension",
+    "detail": "pg_extension_name_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_foreign_data_wrapper",
+    "detail": "pg_foreign_data_wrapper_name_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_foreign_server",
+    "detail": "pg_foreign_server_name_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_user_mapping",
+    "detail": "pg_user_mapping_user_server_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_policy",
+    "detail": "pg_policy_polrelid_polname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_replication_origin",
+    "detail": "pg_replication_origin_roname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_conversion",
+    "detail": "pg_conversion_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_database",
+    "detail": "pg_database_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_db_role_setting",
+    "detail": "pg_db_role_setting_databaseid_rol_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_tablespace",
+    "detail": "pg_tablespace_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_authid",
+    "detail": "pg_authid_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_auth_members",
+    "detail": "pg_auth_members_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_shdescription",
+    "detail": "pg_shdescription_o_c_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_ts_config",
+    "detail": "pg_ts_config_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_ts_config_map",
+    "detail": "pg_ts_config_map_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_ts_dict",
+    "detail": "pg_ts_dict_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_ts_parser",
+    "detail": "pg_ts_parser_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_ts_template",
+    "detail": "pg_ts_template_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_extension",
+    "detail": "pg_extension_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_foreign_data_wrapper",
+    "detail": "pg_foreign_data_wrapper_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_foreign_server",
+    "detail": "pg_foreign_server_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_user_mapping",
+    "detail": "pg_user_mapping_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_foreign_table",
+    "detail": "pg_foreign_table_relid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_policy",
+    "detail": "pg_policy_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_replication_origin",
+    "detail": "pg_replication_origin_roiident_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_default_acl",
+    "detail": "pg_default_acl_role_nsp_obj_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_collation",
+    "detail": "pg_collation_name_enc_nsp_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_parameter_acl",
+    "detail": "pg_parameter_acl_parname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_range",
+    "detail": "pg_range_rngmultitypid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_transform",
+    "detail": "pg_transform_type_lang_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_publication",
+    "detail": "pg_publication_pubname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_publication_namespace",
+    "detail": "pg_publication_namespace_pnnspid_pnpubid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_publication_rel",
+    "detail": "pg_publication_rel_prrelid_prpubid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_publication_rel",
+    "detail": "pg_publication_rel_prpubid_index (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_subscription",
+    "detail": "pg_subscription_subname_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_proc",
+    "detail": "pg_proc_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_class",
+    "detail": "pg_class_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_attrdef",
+    "detail": "pg_attrdef_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_constraint",
+    "detail": "pg_constraint_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_namespace",
+    "detail": "pg_namespace_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_default_acl",
+    "detail": "pg_default_acl_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_init_privs",
+    "detail": "pg_init_privs_o_c_o_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_seclabel",
+    "detail": "pg_seclabel_object_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_shseclabel",
+    "detail": "pg_shseclabel_object_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_collation",
+    "detail": "pg_collation_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_parameter_acl",
+    "detail": "pg_parameter_acl_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_partitioned_table",
+    "detail": "pg_partitioned_table_partrelid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_range",
+    "detail": "pg_range_rngtypid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_transform",
+    "detail": "pg_transform_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_sequence",
+    "detail": "pg_sequence_seqrelid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_publication",
+    "detail": "pg_publication_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_publication_namespace",
+    "detail": "pg_publication_namespace_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_publication_rel",
+    "detail": "pg_publication_rel_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_subscription",
+    "detail": "pg_subscription_oid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pg_subscription_rel",
+    "detail": "pg_subscription_rel_srrelid_srsubid_index (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "refresh_tokens",
+    "detail": "refresh_tokens_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "refresh_tokens",
+    "detail": "refresh_tokens_instance_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "refresh_tokens",
+    "detail": "refresh_tokens_instance_id_user_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "instances",
+    "detail": "instances_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "audit_log_entries",
+    "detail": "audit_log_entries_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "audit_log_entries",
+    "detail": "audit_logs_instance_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "schema_migrations",
+    "detail": "schema_migrations_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "buckets",
+    "detail": "buckets_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "buckets",
+    "detail": "bname (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "objects",
+    "detail": "objects_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "objects",
+    "detail": "bucketid_objname (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "objects",
+    "detail": "name_prefix_search (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "migrations",
+    "detail": "migrations_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "migrations",
+    "detail": "migrations_name_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "secrets",
+    "detail": "secrets_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "secrets",
+    "detail": "secrets_name_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "refresh_tokens",
+    "detail": "refresh_tokens_token_unique (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "refresh_tokens",
+    "detail": "refresh_tokens_parent_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "identities",
+    "detail": "identities_user_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "users_instance_id_email_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "confirmation_token_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "recovery_token_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "email_change_token_current_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "email_change_token_new_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "reauthentication_token_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sessions",
+    "detail": "sessions_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "mfa_factors",
+    "detail": "mfa_factors_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "mfa_factors",
+    "detail": "mfa_factors_user_friendly_name_unique (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "mfa_challenges",
+    "detail": "mfa_challenges_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "mfa_amr_claims",
+    "detail": "mfa_amr_claims_session_id_authentication_method_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "mfa_amr_claims",
+    "detail": "amr_id_pk (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sessions",
+    "detail": "user_id_created_at_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "mfa_factors",
+    "detail": "factor_id_created_at_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sessions",
+    "detail": "sessions_user_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "refresh_tokens",
+    "detail": "refresh_tokens_session_id_revoked_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sso_providers",
+    "detail": "sso_providers_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sso_providers",
+    "detail": "sso_providers_resource_id_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sso_domains",
+    "detail": "sso_domains_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sso_domains",
+    "detail": "sso_domains_sso_provider_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sso_domains",
+    "detail": "sso_domains_domain_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "saml_providers",
+    "detail": "saml_providers_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "saml_providers",
+    "detail": "saml_providers_entity_id_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "saml_providers",
+    "detail": "saml_providers_sso_provider_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "saml_relay_states",
+    "detail": "saml_relay_states_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "saml_relay_states",
+    "detail": "saml_relay_states_sso_provider_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "saml_relay_states",
+    "detail": "saml_relay_states_for_email_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "users_email_partial_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "identities",
+    "detail": "identities_email_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "users_phone_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "flow_state",
+    "detail": "flow_state_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "flow_state",
+    "detail": "idx_auth_code (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "flow_state",
+    "detail": "idx_user_id_auth_method (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "refresh_tokens",
+    "detail": "refresh_tokens_updated_at_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "flow_state",
+    "detail": "flow_state_created_at_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "saml_relay_states",
+    "detail": "saml_relay_states_created_at_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sessions",
+    "detail": "sessions_not_after_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "mfa_challenges",
+    "detail": "mfa_challenge_created_at_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "mfa_factors",
+    "detail": "mfa_factors_user_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "identities",
+    "detail": "identities_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "identities",
+    "detail": "identities_provider_id_provider_unique (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "users",
+    "detail": "users_is_anonymous_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "one_time_tokens",
+    "detail": "one_time_tokens_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "one_time_tokens",
+    "detail": "one_time_tokens_token_hash_hash_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "one_time_tokens",
+    "detail": "one_time_tokens_relates_to_hash_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "one_time_tokens",
+    "detail": "one_time_tokens_user_id_token_type_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "dana_titipan",
+    "detail": "idx_dana_titipan_converted (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "mfa_factors",
+    "detail": "unique_phone_factor_per_user (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "mfa_factors",
+    "detail": "mfa_factors_last_challenged_at_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sso_providers",
+    "detail": "sso_providers_resource_id_pattern_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_clients",
+    "detail": "oauth_clients_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "dana_titipan",
+    "detail": "idx_dana_titipan_pemasukan_id (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_clients",
+    "detail": "oauth_clients_deleted_at_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_authorizations",
+    "detail": "oauth_authorizations_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_authorizations",
+    "detail": "oauth_authorizations_authorization_id_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_authorizations",
+    "detail": "oauth_authorizations_authorization_code_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_authorizations",
+    "detail": "oauth_auth_pending_exp_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_consents",
+    "detail": "oauth_consents_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_consents",
+    "detail": "oauth_consents_user_client_unique (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_consents",
+    "detail": "oauth_consents_active_user_client_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_consents",
+    "detail": "oauth_consents_user_order_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "oauth_consents",
+    "detail": "oauth_consents_active_client_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "sessions",
+    "detail": "sessions_oauth_client_id_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "objects",
+    "detail": "idx_objects_bucket_id_name (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "s3_multipart_uploads",
+    "detail": "s3_multipart_uploads_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "s3_multipart_uploads_parts",
+    "detail": "s3_multipart_uploads_parts_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "s3_multipart_uploads",
+    "detail": "idx_multipart_uploads_list (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "prefixes",
+    "detail": "prefixes_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "buckets_vectors",
+    "detail": "buckets_vectors_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "schema_migrations",
+    "detail": "schema_migrations_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "subscription",
+    "detail": "pk_subscription (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "subscription",
+    "detail": "subscription_subscription_id_entity_filters_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "objects",
+    "detail": "idx_name_bucket_level_unique (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "prefixes",
+    "detail": "idx_prefixes_lower_name (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "objects",
+    "detail": "objects_bucket_id_level_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "objects",
+    "detail": "idx_objects_lower_name (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "vector_indexes",
+    "detail": "vector_indexes_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "vector_indexes",
+    "detail": "vector_indexes_name_bucket_id_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "buckets_analytics",
+    "detail": "buckets_analytics_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "buckets_analytics",
+    "detail": "buckets_analytics_unique_name_idx (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "subscription",
+    "detail": "ix_realtime_subscription_entity (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_11_30",
+    "detail": "messages_2025_11_30_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_11_30",
+    "detail": "messages_2025_11_30_inserted_at_topic_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_12_01",
+    "detail": "messages_2025_12_01_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_12_01",
+    "detail": "messages_2025_12_01_inserted_at_topic_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_12_02",
+    "detail": "messages_2025_12_02_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_12_02",
+    "detail": "messages_2025_12_02_inserted_at_topic_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_12_03",
+    "detail": "messages_2025_12_03_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_12_03",
+    "detail": "messages_2025_12_03_inserted_at_topic_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_12_04",
+    "detail": "messages_2025_12_04_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_12_04",
+    "detail": "messages_2025_12_04_inserted_at_topic_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "lorong",
+    "detail": "lorong_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "lorong",
+    "detail": "lorong_nama_lorong_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "penghuni",
+    "detail": "penghuni_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "hunian",
+    "detail": "hunian_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "hunian",
+    "detail": "hunian_nomor_blok_rumah_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "kategori_saldo",
+    "detail": "kategori_saldo_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "kategori_saldo",
+    "detail": "kategori_saldo_nama_kategori_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "subkategori",
+    "detail": "subkategori_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "rekening",
+    "detail": "rekening_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "rekening",
+    "detail": "rekening_jenis_rekening_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "periode",
+    "detail": "periode_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "periode",
+    "detail": "periode_nama_periode_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemasukan",
+    "detail": "pemasukan_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemasukan",
+    "detail": "pemasukan_id_transaksi_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_12_05",
+    "detail": "messages_2025_12_05_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "messages_2025_12_05",
+    "detail": "messages_2025_12_05_inserted_at_topic_idx (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pengeluaran",
+    "detail": "pengeluaran_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pengeluaran",
+    "detail": "pengeluaran_id_transaksi_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemindahbukuan",
+    "detail": "pemindahbukuan_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemindahbukuan",
+    "detail": "pemindahbukuan_id_transaksi_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "hunian",
+    "detail": "idx_hunian_lorong (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "hunian",
+    "detail": "idx_hunian_penghuni_saat_ini (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemasukan",
+    "detail": "idx_pemasukan_tanggal (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemasukan",
+    "detail": "idx_pemasukan_kategori (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pengeluaran",
+    "detail": "idx_pengeluaran_tanggal (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pengeluaran",
+    "detail": "idx_pengeluaran_kategori (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemindahbukuan",
+    "detail": "idx_pemindahbukuan_tanggal (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "transaction_counters",
+    "detail": "transaction_counters_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "transaction_counters",
+    "detail": "transaction_counters_counter_type_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "dana_titipan",
+    "detail": "dana_titipan_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "dana_titipan",
+    "detail": "dana_titipan_id_transaksi_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tarif_air",
+    "detail": "tarif_air_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tarif_air",
+    "detail": "idx_tarif_air_mulai (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tarif_air",
+    "detail": "idx_tarif_air_aktif (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tarif_ipl",
+    "detail": "tarif_ipl_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tarif_ipl",
+    "detail": "tarif_ipl_type_tarif_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl",
+    "detail": "tagihan_ipl_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl",
+    "detail": "idx_tagihan_ipl_periode (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl",
+    "detail": "idx_tagihan_ipl_hunian (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl",
+    "detail": "idx_tagihan_ipl_penghuni (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl",
+    "detail": "idx_tagihan_ipl_status (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl",
+    "detail": "idx_tagihan_ipl_tanggal_tagihan (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl",
+    "detail": "idx_tagihan_ipl_jatuh_tempo (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "tagihan_ipl_pembayaran_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "tagihan_ipl_pembayaran_tagihan_ipl_id_pemasukan_id_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "idx_tagihan_ipl_pembayaran_tagihan (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "idx_tagihan_ipl_pembayaran_pemasukan (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "meteran_air_billing_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "meteran_air_billing_periode_id_hunian_id_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "meteran_air_billing_pembayaran_pkey (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "meteran_air_billing_pembayara_meteran_air_billing_id_pemasu_key (unique=true)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "idx_meteran_air_billing_periode (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "idx_meteran_air_billing_hunian (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "idx_meteran_air_billing_penghuni (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "idx_meteran_air_billing_status (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "idx_meteran_air_billing_tanggal_tagihan (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "idx_meteran_air_billing_jatuh_tempo (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "idx_meteran_air_billing_pembayaran_billing (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "idx_meteran_air_billing_pembayaran_pemasukan (unique=false)"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "get_next_transaction_number(character varying)",
+    "detail": "see full in pg_get_functiondef()"
+  }
+]

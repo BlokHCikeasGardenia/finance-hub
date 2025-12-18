@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Informasi Blok H</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Report Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('dashboard')">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="https://blokhcikeasgardenia.github.io/home">Home & Arsip 2025</a></li>
+                    <li class="nav-item dropdown" id="admin-dropdown" style="display: none;">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            Admin
+                        </a>
+                        <ul class="dropdown-menu">
+                            <!-- 1. Master Data (Pengaturan Dasar) -->
+                            <li><h6 class="dropdown-header">1. Master Data (Pengaturan Dasar)</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('hunian')" title="Pengaturan Data Rumah/Hunian">Master Hunian</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('penghuni')" title="Pengaturan Data Warga/Penghuni">Master Penghuni</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('lorong')" title="Pengaturan Lorong">Master Lorong</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('kategori')" title="Pengaturan Data Kategori">Master Kategori</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('subkategori')" title="Pengaturan Subkategori">Master Subkategori</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('rekening')" title="Pengaturan Jenis Rekening">Master Rekening</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('periode')" title="Pengaturan Periode">Master Periode</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('tarif_air')" title="Pengaturan Tarif Air">Tarif Air</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('tarif_ipl')" title="Pengaturan Tarif IPL">Tarif IPL</a></li>
+                            <li><hr class="dropdown-divider"></li>
+
+                            <!-- 2. IPL Management (Pengelolaan IPL) -->
+                            <li><h6 class="dropdown-header">2. IPL Management (Pengelolaan IPL)</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('input_ipl')" title="Input & Kelola tagihan IPL">Input & Kelola IPL</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('tagihan_ipl')" title="Input tagihan IPL Bulk">Tagihan IPL</a></li>
+                            <li><hr class="dropdown-divider"></li>
+
+                            <!-- 3. Air Management (Pengelolaan Air) -->
+                            <li><h6 class="dropdown-header">3. Air Management (Pengelolaan Air)</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('meteran_air_billing')" title="Input angka meteran Air">Pemakaian Air</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('tagihan_air')" title="Input angka meteran Air Bulk">Tagihan Air</a></li>
+                            <li><hr class="dropdown-divider"></li>
+
+                            <!-- 4. Transaksi (Input Data Keuangan) -->
+                            <li><h6 class="dropdown-header">4. Transaksi (Input Data Keuangan)</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('pembayaran')" title="Input pembayaran tagihan IPL dan Air">Pembayaran</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('pemasukan')" title="Input pemasukan Non Tagihan IPL dan Air">Pemasukan</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('pengeluaran')" title="Input Pengeluaran">Pengeluaran</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('dana_titipan')" title="Input dana masuk ke rekening, tapi belum masuk ke sistem">Dana Titipan</a></li>
+                            <li><hr class="dropdown-divider"></li>
+
+                            <!-- 5. Admin (Fitur Administrasi) -->
+                            <li><h6 class="dropdown-header">5. Admin (Fitur Administrasi)</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('pemindahbukuan')" title="Input pemindahan dana antar rekening">Pemindah Bukuan</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('admin')" title="Validasi saldo per Kategori / per Rekening">Konsistensi Saldo</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('laporan')" title="Generate laporan PDF/Excel">Generator Laporan</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item" id="login-btn">
+                        <a class="nav-link" href="#" onclick="showLoginModal()">Login</a>
+                    </li>
+                    <li class="nav-item" id="logout-btn" style="display: none;">
+                        <a class="nav-link" href="#" onclick="logout()">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+        <main class="container-fluid mt-4 px-4">
+            <section id="dashboard" class="section active mb-4">
+                <div id="dashboard-content">
+                    <!-- All dashboard content will be loaded here -->
+                </div>
+            </section>
+
+            <section id="views" class="section active">
+                <div id="views-content"></div>
+            </section>
+
+            <section id="hunian" class="section">
+                <div id="hunian-content"></div>
+            </section>
+
+            <section id="penghuni" class="section">
+                <div id="penghuni-content"></div>
+            </section>
+
+            <section id="lorong" class="section">
+                <div id="lorong-content"></div>
+            </section>
+
+            <section id="kategori" class="section">
+                <div id="kategori-content"></div>
+            </section>
+
+            <section id="rekening" class="section">
+                <div id="rekening-content"></div>
+            </section>
+
+            <section id="subkategori" class="section">
+                <div id="subkategori-content"></div>
+            </section>
+
+            <section id="periode" class="section">
+                <div id="periode-content"></div>
+            </section>
+
+            <section id="tarif_air" class="section">
+                <div id="tarif_air-content"></div>
+            </section>
+
+            <section id="tarif_ipl" class="section">
+                <div id="tarif_ipl-content"></div>
+            </section>
+
+            <section id="tagihan_ipl" class="section">
+                <div id="tagihan_ipl-content"></div>
+            </section>
+
+
+
+            <section id="meteran_air_billing" class="section">
+                <div id="meteran_air_billing-content"></div>
+            </section>
+
+            <section id="tagihan_air" class="section">
+                <div id="tagihan_air-content"></div>
+            </section>
+
+            <section id="input_ipl" class="section">
+                <div id="input_ipl-content"></div>
+            </section>
+
+            <section id="pemasukan" class="section">
+                <div id="pemasukan-content"></div>
+            </section>
+
+            <section id="dana_titipan" class="section">
+                <div id="dana_titipan-content"></div>
+            </section>
+
+            <section id="pengeluaran" class="section">
+                <div id="pengeluaran-content"></div>
+            </section>
+
+            <section id="pemindahbukuan" class="section">
+                <div id="pemindahbukuan-content"></div>
+            </section>
+
+            <section id="pembayaran" class="section">
+                <div id="pembayaran-content"></div>
+            </section>
+
+
+            <section id="admin" class="section">
+                <div id="admin-content"></div>
+            </section>
+
+            <section id="laporan" class="section">
+                <div id="laporan-content"></div>
+            </section>
+        </main>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Login ke Keuangan RT Modern</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email:</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password:</label>
+                            <input type="password" class="form-control" id="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                        <div id="auth-message" class="mt-3 text-center text-danger"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Modal for forms -->
+    <div class="modal fade" id="formModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Modal title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    <!-- Form content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Konfirmasi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirm-message">Apakah Anda yakin?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="confirm-yes">Ya, Lanjutkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="toast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toast-body"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

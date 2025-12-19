@@ -18,6 +18,10 @@ async function loadViewAir() {
     console.log('loadViewAir called'); // Debug log
     const contentDiv = document.getElementById('views-content');
 
+    // Aggressive content clearing to prevent showing dashboard cards
+    contentDiv.innerHTML = '';
+    contentDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Loading Air data...</p></div>';
+
     try {
         // PERFORMANCE OPTIMIZATION: Pre-load all required data in parallel
         const [
@@ -227,9 +231,9 @@ async function loadViewAir() {
             <div class="row">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4>View Data Air</h4>
-                        <button class="btn btn-secondary" onclick="loadViewsSection()">
-                            <i class="bi bi-arrow-left"></i> Kembali ke Views
+                        <h4>Detail Data Air</h4>
+                        <button class="btn btn-warning text-dark" onclick="loadViewsSection()">
+                            <i class="bi bi-arrow-left"></i> Back
                         </button>
                     </div>
                     <p class="text-muted">Data pemakaian air per rumah beserta pembayaran</p>

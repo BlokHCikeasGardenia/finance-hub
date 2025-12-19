@@ -87,7 +87,12 @@ async function showHunianSelectionForIplInput() {
 }
 
 // Global form state for smart autofill
-let hunianSearchable, penghuniSearchable, periodeSearchable, tarifIplSearchable;
+let hunianSearchable, penghuniSearchable;
+
+// Arrays to store multiple period and tarif searchable selects
+let periodSearchables = [];
+let tarifIplSearchables = [];
+let nextRowId = 2; // Start from 2 since first row is 1
 
 // Show IPL input form with searchable dropdowns and smart autofill
 async function showIplInputForm() {
@@ -107,10 +112,11 @@ async function showIplInputFormForHunian(hunianId) {
     showIplInputForm();
 }
 
-// Create IPL input form HTML with searchable dropdowns
+// Create IPL input form HTML with searchable dropdowns and multiple periods
 function createIplInputFormHtml() {
     return `
         <form id="ipl-input-form">
+            <!-- Housing and Occupant Selection (Fixed at top) -->
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="ipl_hunian_id" class="form-label required-field">Nomor Rumah:</label>
@@ -119,25 +125,49 @@ function createIplInputFormHtml() {
                     </select>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="ipl_penghuni_id" class="form-label required-field">Penghuni:</label>
-                    <select class="form-select" id="ipl_penghuni_id" name="penghuni_id" required>
+                    <label for="ipl_penghuni_id" class="form-label" id="penghuni-label">Penghuni:</label>
+                    <select class="form-select" id="ipl_penghuni_id" name="penghuni_id">
                         <option value="">Pilih Penghuni</option>
                     </select>
+                    <div class="form-text" id="penghuni-help" style="display: none;">Opsional untuk rumah kosong</div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="ipl_periode_id" class="form-label required-field">Periode:</label>
-                    <select class="form-select" id="ipl_periode_id" name="periode_id" required>
-                        <option value="">Pilih Periode</option>
-                    </select>
+            <!-- Multiple Periods Section -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <label class="form-label required-field">Periode dan Jenis Tarif IPL:</label>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-period-btn">
+                        <i class="bi bi-plus-lg"></i> Tambah Periode
+                    </button>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="ipl_tarif_id" class="form-label required-field">Jenis Tarif IPL:</label>
-                    <select class="form-select" id="ipl_tarif_id" name="tarif_id" required>
-                        <option value="">Pilih Jenis Tarif IPL</option>
-                    </select>
+
+                <!-- Period rows container -->
+                <div id="periods-container">
+                    <!-- First period row (cannot be deleted) -->
+                    <div class="period-row card mb-2" data-row-id="1">
+                        <div class="card-body p-3">
+                            <div class="row align-items-end">
+                                <div class="col-md-5 mb-2">
+                                    <label class="form-label required-field">Periode:</label>
+                                    <select class="form-select period-select" name="periode_1" required>
+                                        <option value="">Pilih Periode</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-5 mb-2">
+                                    <label class="form-label required-field">Jenis Tarif IPL:</label>
+                                    <select class="form-select tarif-select" name="tarif_1" required>
+                                        <option value="">Pilih Jenis Tarif IPL</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-period-btn d-none" disabled>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -150,7 +180,7 @@ function createIplInputFormHtml() {
                 <label class="form-label">Preview Tagihan:</label>
                 <div id="preview-container" class="alert alert-warning">
                     <div id="preview-content">
-                        <strong>⚠️ Pilih semua field terlebih dahulu</strong>
+                        <strong>⚠️ Pilih rumah dan setidaknya satu periode terlebih dahulu</strong>
                     </div>
                 </div>
             </div>
@@ -262,6 +292,162 @@ async function initializeIplInputFormSelects() {
     }
 }
 
+// Initialize multiple period and tarif selects for dynamic rows
+async function initializeMultiplePeriodSelects() {
+    // Clear existing arrays
+    periodSearchables = [];
+    tarifIplSearchables = [];
+
+    // Initialize first row (always exists)
+    await initializePeriodRowSelects(1);
+
+    // Setup add period button
+    const addBtn = document.getElementById('add-period-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => addPeriodRow());
+    }
+
+    // Setup remove buttons for existing rows
+    setupRemoveButtons();
+}
+
+// Initialize searchable selects for a specific period row
+async function initializePeriodRowSelects(rowId) {
+    const periodeSelect = document.querySelector(`select[name="periode_${rowId}"]`);
+    const tarifSelect = document.querySelector(`select[name="tarif_${rowId}"]`);
+
+    if (periodeSelect) {
+        const periodeSearchable = new SearchableSelect(periodeSelect, {
+            placeholder: 'Pilih Periode',
+            searchPlaceholder: 'Cari periode...'
+        });
+
+        periodeSearchable.loadData(async () => {
+            const { data, error } = await supabase
+                .from('periode')
+                .select('id, nama_periode, nomor_urut')
+                .order('nomor_urut', { ascending: false });
+
+            if (error) return [];
+
+            return data.map(item => ({
+                value: item.id,
+                text: item.nama_periode
+            }));
+        });
+
+        periodSearchables.push({ rowId, searchable: periodeSearchable });
+    }
+
+    if (tarifSelect) {
+        const tarifSearchable = new SearchableSelect(tarifSelect, {
+            placeholder: 'Pilih Jenis Tarif IPL',
+            searchPlaceholder: 'Cari jenis tarif...'
+        });
+
+        tarifSearchable.loadData(async () => {
+            const { data, error } = await supabase
+                .from('tarif_ipl')
+                .select('id, type_tarif, nominal')
+                .eq('aktif', true)
+                .order('type_tarif');
+
+            if (error) return [];
+
+            return data.map(item => ({
+                value: item.id,
+                text: `${getTypeDisplayName(item.type_tarif)} - Rp ${formatCurrency(item.nominal)}`
+            }));
+        });
+
+        tarifIplSearchables.push({ rowId, searchable: tarifSearchable });
+    }
+}
+
+// Add a new period row
+function addPeriodRow() {
+    const container = document.getElementById('periods-container');
+    if (!container) return;
+
+    const rowId = nextRowId++;
+    const rowHtml = createPeriodRowHtml(rowId);
+
+    // Insert before the last child (to maintain order)
+    const rows = container.querySelectorAll('.period-row');
+    const lastRow = rows[rows.length - 1];
+    lastRow.insertAdjacentHTML('afterend', rowHtml);
+
+    // Initialize selects for the new row
+    setTimeout(() => {
+        initializePeriodRowSelects(rowId);
+        setupRemoveButtons(); // Re-setup remove buttons
+        updatePreview(); // Update preview with new row
+    }, 100);
+}
+
+// Remove a period row
+function removePeriodRow(rowId) {
+    const row = document.querySelector(`.period-row[data-row-id="${rowId}"]`);
+    if (!row) return;
+
+    // Remove from searchable arrays
+    periodSearchables = periodSearchables.filter(item => item.rowId !== rowId);
+    tarifIplSearchables = tarifIplSearchables.filter(item => item.rowId !== rowId);
+
+    // Remove the row
+    row.remove();
+
+    // Update preview after removal
+    updatePreview();
+}
+
+// Create HTML for a period row
+function createPeriodRowHtml(rowId) {
+    return `
+        <div class="period-row card mb-2" data-row-id="${rowId}">
+            <div class="card-body p-3">
+                <div class="row align-items-end">
+                    <div class="col-md-5 mb-2">
+                        <label class="form-label required-field">Periode:</label>
+                        <select class="form-select period-select" name="periode_${rowId}" required>
+                            <option value="">Pilih Periode</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5 mb-2">
+                        <label class="form-label required-field">Jenis Tarif IPL:</label>
+                        <select class="form-select tarif-select" name="tarif_${rowId}" required>
+                            <option value="">Pilih Jenis Tarif IPL</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-period-btn" data-row-id="${rowId}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Setup remove buttons for all rows
+function setupRemoveButtons() {
+    const removeButtons = document.querySelectorAll('.remove-period-btn');
+    removeButtons.forEach(btn => {
+        // Remove existing listeners
+        btn.replaceWith(btn.cloneNode(true));
+    });
+
+    // Add new listeners
+    const newRemoveButtons = document.querySelectorAll('.remove-period-btn');
+    newRemoveButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const rowId = parseInt(e.currentTarget.getAttribute('data-row-id'));
+            removePeriodRow(rowId);
+        });
+    });
+}
+
 // Attach form event listeners
 async function attachIplInputFormEventListeners() {
     const form = document.getElementById('ipl-input-form');
@@ -270,6 +456,9 @@ async function attachIplInputFormEventListeners() {
 
     // Setup smart autofill
     setupIplSmartAutofill();
+
+    // Setup multiple period selects
+    initializeMultiplePeriodSelects();
 
     // Setup preview updates
     setupIplPreviewUpdates();
@@ -308,17 +497,21 @@ function setupIplSmartAutofill() {
             const hunianId = hunianSearchable.getValue();
             if (!hunianId) {
                 penghuniSearchable.setValue('');
+                updatePenghuniFieldRequirement(false); // Reset to optional
                 isAutofilling = false;
                 return;
             }
 
             try {
-                // Get current resident for this house
+                // Get current resident and status for this house
                 const { data, error } = await supabase
                     .from('hunian')
-                    .select('penghuni_saat_ini:penghuni_saat_ini_id (id, nama_kepala_keluarga)')
+                    .select('status, penghuni_saat_ini:penghuni_saat_ini_id (id, nama_kepala_keluarga)')
                     .eq('id', hunianId)
                     .single();
+
+                const isEmptyHouse = data?.status === 'kosong';
+                updatePenghuniFieldRequirement(isEmptyHouse);
 
                 if (!error && data?.penghuni_saat_ini) {
                     // Check if this resident exists in the penghuni dropdown data
@@ -336,6 +529,7 @@ function setupIplSmartAutofill() {
             } catch (error) {
                 console.error('Error auto-filling penghuni:', error);
                 penghuniSearchable.setValue('');
+                updatePenghuniFieldRequirement(false); // Reset to optional on error
             }
 
             isAutofilling = false;
@@ -385,89 +579,163 @@ function setupIplSmartAutofill() {
     });
 }
 
-// Setup preview updates
+// Global function to update preview (accessible from other functions)
+window.updatePreview = updatePreview;
+
+// Setup preview updates for multiple bills
 function setupIplPreviewUpdates() {
-    const updatePreview = async () => {
-        const hunianId = hunianSearchable?.getValue();
-        const penghuniId = penghuniSearchable?.getValue();
-        const periodeId = periodeSearchable?.getValue();
-        const tarifId = tarifIplSearchable?.getValue();
-
-        const previewContainer = document.getElementById('preview-container');
-        const previewContent = document.getElementById('preview-content');
-
-        if (!previewContainer || !previewContent) return;
-
-        // Check if all fields are complete
-        const allFieldsComplete = hunianId && penghuniId && periodeId && tarifId;
-
-        if (!allFieldsComplete) {
-            // Show warning state - red background
-            previewContainer.className = 'alert alert-danger';
-            previewContent.innerHTML = '<strong>⚠️ Pilih semua field terlebih dahulu</strong>';
-            return;
-        }
-
-        // All fields complete - show detailed information
-        try {
-            // Get detailed information for the selected items
-            const [hunianData, penghuniData, periodeData] = await Promise.all([
-                // Get hunian details
-                supabase.from('hunian').select('nomor_blok_rumah').eq('id', hunianId).single(),
-                // Get penghuni details
-                supabase.from('penghuni').select('nama_kepala_keluarga').eq('id', penghuniId).single(),
-                // Get periode details
-                supabase.from('periode').select('nama_periode').eq('id', periodeId).single()
-            ]);
-
-            const hunian = hunianData.data;
-            const penghuni = penghuniData.data;
-            const periode = periodeData.data;
-
-            // Get tariff details
-            const tarifOptions = tarifIplSearchable.selectElement.options;
-            const selectedOption = Array.from(tarifOptions).find(opt => opt.value === tarifId);
-            const tarifText = selectedOption ? selectedOption.text : '';
-
-            // Change to success/info styling
-            previewContainer.className = 'alert alert-success';
-
-            // Show detailed preview
-            previewContent.innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-2"><strong>🏠 No Rumah:</strong> ${hunian?.nomor_blok_rumah || '-'}</div>
-                        <div class="mb-2"><strong>👤 Penghuni:</strong> ${penghuni?.nama_kepala_keluarga || '-'}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-2"><strong>📅 Periode:</strong> ${periode?.nama_periode || '-'}</div>
-                        <div class="mb-2"><strong>🏷️ Jenis IPL:</strong> ${tarifText.split(' - Rp ')[0] || '-'}</div>
-                        <div class="mb-0"><strong>💰 Tagihan:</strong> <span class="text-primary">${tarifText.split(' - Rp ')[1] ? 'Rp ' + tarifText.split(' - Rp ')[1] : '-'}</span></div>
-                    </div>
-                </div>
-            `;
-
-        } catch (error) {
-            console.error('Error updating preview:', error);
-            // Fallback to simple preview
-            previewContainer.className = 'alert alert-info';
-            const tarifOptions = tarifIplSearchable.selectElement.options;
-            const selectedOption = Array.from(tarifOptions).find(opt => opt.value === tarifId);
-            if (selectedOption) {
-                const textParts = selectedOption.text.split(' - Rp ');
-                previewContent.innerHTML = `
-                    <strong>${textParts[0] || '-'}</strong><br>
-                    <span>${textParts[1] ? 'Rp ' + textParts[1] : '-'}</span>
-                `;
-            }
-        }
-    };
-
-    // Add change listeners to all searchable selects
+    // Add change listeners to main selects
     if (hunianSearchable) hunianSearchable.selectElement.addEventListener('change', updatePreview);
     if (penghuniSearchable) penghuniSearchable.selectElement.addEventListener('change', updatePreview);
-    if (periodeSearchable) periodeSearchable.selectElement.addEventListener('change', updatePreview);
-    if (tarifIplSearchable) tarifIplSearchable.selectElement.addEventListener('change', updatePreview);
+
+    // Add listeners for dynamic period selects
+    document.addEventListener('change', (e) => {
+        if (e.target.matches('.period-select, .tarif-select')) {
+            updatePreview();
+        }
+    });
+
+    // Initial preview update
+    updatePreview();
+}
+
+// Update preview for multiple bills
+async function updatePreview() {
+    const previewContainer = document.getElementById('preview-container');
+    const previewContent = document.getElementById('preview-content');
+
+    if (!previewContainer || !previewContent) return;
+
+    const hunianId = hunianSearchable?.getValue();
+    const penghuniId = penghuniSearchable?.getValue();
+
+    // Check if basic fields are complete
+    if (!hunianId) {
+        previewContainer.className = 'alert alert-warning';
+        previewContent.innerHTML = '<strong>⚠️ Pilih rumah dan setidaknya satu periode terlebih dahulu</strong>';
+        return;
+    }
+
+    // Check if penghuni is required for occupied houses
+    let penghuniRequired = true;
+    if (penghuniId === '') {
+        const hunianStatusData = await getHunianData(hunianId);
+        const isEmptyHouse = hunianStatusData?.status === 'kosong';
+        if (isEmptyHouse) {
+            penghuniRequired = false; // penghuni is optional for empty houses
+        }
+    }
+
+    if (penghuniRequired && !penghuniId) {
+        previewContainer.className = 'alert alert-warning';
+        previewContent.innerHTML = '<strong>⚠️ Pilih rumah dan setidaknya satu periode terlebih dahulu</strong>';
+        return;
+    }
+
+    // Collect all period-tarif combinations
+    const billPreviews = [];
+    let totalAmount = 0;
+    let hasIncompleteRows = false;
+
+    for (const periodItem of periodSearchables) {
+        const periodeId = periodItem.searchable.getValue();
+        const tarifItem = tarifIplSearchables.find(t => t.rowId === periodItem.rowId);
+
+        if (!periodeId || !tarifItem || !tarifItem.searchable.getValue()) {
+            hasIncompleteRows = true;
+            continue;
+        }
+
+        const tarifId = tarifItem.searchable.getValue();
+
+        try {
+            // Get periode and tariff details
+            const [periodeData, tarifData] = await Promise.all([
+                supabase.from('periode').select('nama_periode').eq('id', periodeId).single(),
+                supabase.from('tarif_ipl').select('type_tarif, nominal').eq('id', tarifId).single()
+            ]);
+
+            const periode = periodeData.data;
+            const tarif = tarifData.data;
+
+            if (periode && tarif) {
+                const amount = parseFloat(tarif.nominal) || 0;
+                totalAmount += amount;
+
+                billPreviews.push({
+                    periode: periode.nama_periode,
+                    type: getTypeDisplayName(tarif.type_tarif),
+                    amount: amount
+                });
+            }
+        } catch (error) {
+            console.error('Error getting preview data:', error);
+            hasIncompleteRows = true;
+        }
+    }
+
+    // Get hunian details
+    let hunianData;
+    try {
+        const result = await supabase.from('hunian').select('nomor_blok_rumah').eq('id', hunianId).single();
+        hunianData = result.data;
+    } catch (error) {
+        console.error('Error getting hunian data:', error);
+    }
+
+    // Get penghuni details if available
+    let penghuniData;
+    if (penghuniId) {
+        try {
+            const result = await supabase.from('penghuni').select('nama_kepala_keluarga').eq('id', penghuniId).single();
+            penghuniData = result.data;
+        } catch (error) {
+            console.error('Error getting penghuni data:', error);
+        }
+    }
+
+    // Show preview based on collected data
+    if (billPreviews.length === 0) {
+        previewContainer.className = 'alert alert-warning';
+        previewContent.innerHTML = '<strong>⚠️ Pilih rumah dan setidaknya satu periode terlebih dahulu</strong>';
+        return;
+    }
+
+    // Show detailed preview for all bills
+    previewContainer.className = 'alert alert-success';
+
+    let previewHtml = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-2"><strong>🏠 No Rumah:</strong> ${hunianData?.nomor_blok_rumah || '-'}</div>
+                <div class="mb-2"><strong>👤 Penghuni:</strong> ${penghuniData?.nama_kepala_keluarga || '-'}</div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-2"><strong>📋 Total Tagihan:</strong> <span class="text-primary fw-bold">${formatCurrency(totalAmount)}</span></div>
+                <div class="mb-2"><strong>📄 Jumlah Periode:</strong> ${billPreviews.length}</div>
+            </div>
+        </div>
+        <hr>
+        <div class="mb-0"><strong>Detail Tagihan:</strong></div>
+        <div style="max-height: 200px; overflow-y: auto;">
+    `;
+
+    billPreviews.forEach((bill, index) => {
+        previewHtml += `
+            <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                <small><strong>${index + 1}. ${bill.periode}</strong> - ${bill.type}</small>
+                <small class="text-primary fw-bold">${formatCurrency(bill.amount)}</small>
+            </div>
+        `;
+    });
+
+    previewHtml += '</div>';
+
+    if (hasIncompleteRows) {
+        previewHtml += '<div class="mt-2"><small class="text-muted">⚠️ Beberapa baris periode belum lengkap</small></div>';
+    }
+
+    previewContent.innerHTML = previewHtml;
 }
 
 // Reset form
@@ -486,11 +754,41 @@ function resetIplInputForm() {
         inlineErrorDiv.innerHTML = '<strong>Mohon lengkapi semua field yang diperlukan</strong>';
     }
 
-    // Clear SearchableSelect components
+    // Reset field requirements
+    updatePenghuniFieldRequirement(false);
+
+    // Clear main SearchableSelect components
     if (hunianSearchable) hunianSearchable.setValue('');
     if (penghuniSearchable) penghuniSearchable.setValue('');
-    if (periodeSearchable) periodeSearchable.setValue('');
-    if (tarifIplSearchable) tarifIplSearchable.setValue('');
+
+    // Remove all additional period rows (keep only the first one)
+    const container = document.getElementById('periods-container');
+    if (container) {
+        const rows = container.querySelectorAll('.period-row');
+        // Remove all rows except the first one
+        for (let i = 1; i < rows.length; i++) {
+            rows[i].remove();
+        }
+
+        // Reset the first row selects
+        const firstPeriodSelect = container.querySelector('select[name="periode_1"]');
+        const firstTarifSelect = container.querySelector('select[name="tarif_1"]');
+
+        if (firstPeriodSelect && periodSearchables[0]?.searchable) {
+            periodSearchables[0].searchable.setValue('');
+        }
+        if (firstTarifSelect && tarifIplSearchables[0]?.searchable) {
+            tarifIplSearchables[0].searchable.setValue('');
+        }
+    }
+
+    // Reset arrays and counters
+    periodSearchables = periodSearchables.slice(0, 1); // Keep only first item
+    tarifIplSearchables = tarifIplSearchables.slice(0, 1); // Keep only first item
+    nextRowId = 2; // Reset counter
+
+    // Re-setup remove buttons (first row should not have remove button)
+    setupRemoveButtons();
 
     showToast('Form berhasil direset', 'info');
 }
@@ -540,18 +838,64 @@ function updateIplPreview() {
     previewAmount.textContent = `Rp ${formatCurrency(parseFloat(amount))}`;
 }
 
-// Handle form submission
+// Handle form submission for multiple bills
 async function handleIplInputFormSubmit() {
     try {
-        // Get values from SearchableSelect components
+        // Get main form values
         const hunianId = hunianSearchable?.getValue();
         const penghuniId = penghuniSearchable?.getValue();
-        const periodeId = periodeSearchable?.getValue();
-        const tarifId = tarifIplSearchable?.getValue();
 
-        // Validate required fields
-        if (!hunianId || !penghuniId || !periodeId || !tarifId) {
-            showIplInlineFormError('Mohon lengkapi semua field yang diperlukan');
+        // Validate main fields
+        if (!hunianId) {
+            showIplInlineFormError('Mohon pilih rumah terlebih dahulu');
+            return;
+        }
+
+        // Check if penghuni is required (only for occupied houses)
+        const hunianStatusData = await getHunianData(hunianId);
+        const isEmptyHouse = hunianStatusData?.status === 'kosong';
+        if (!isEmptyHouse && !penghuniId) {
+            showIplInlineFormError('Mohon pilih penghuni untuk rumah berpenghuni');
+            return;
+        }
+
+        // Collect all period-tarif combinations
+        const billRequests = [];
+        const periodIds = new Set(); // For duplicate validation
+
+        for (const periodItem of periodSearchables) {
+            const periodeId = periodItem.searchable.getValue();
+            const tarifItem = tarifIplSearchables.find(t => t.rowId === periodItem.rowId);
+            const tarifId = tarifItem?.searchable.getValue();
+
+            // Skip incomplete rows
+            if (!periodeId || !tarifId) {
+                continue;
+            }
+
+            // Check for duplicate periods in form
+            if (periodIds.has(periodeId)) {
+                showIplInlineFormError('Tidak boleh ada periode yang sama dalam satu form');
+                return;
+            }
+            periodIds.add(periodeId);
+
+            // Check if bill already exists for this household and period
+            const existingBill = await checkExistingBill(hunianId, periodeId);
+            if (existingBill) {
+                showIplInlineFormError(`Tagihan IPL sudah ada untuk periode ini. Silakan pilih periode yang berbeda.`);
+                return;
+            }
+
+            billRequests.push({
+                periodeId,
+                tarifId
+            });
+        }
+
+        // Validate that at least one complete period row exists
+        if (billRequests.length === 0) {
+            showIplInlineFormError('Mohon lengkapi setidaknya satu baris periode dan jenis tarif IPL');
             return;
         }
 
@@ -575,53 +919,99 @@ async function handleIplInputFormSubmit() {
 
         const hunian = hunianData[0];
 
-        // Get tariff details
-        const { data: tariffData, error: tariffError } = await supabase
-            .from('tarif_ipl')
-            .select('type_tarif, nominal')
-            .eq('id', tarifId)
-            .single();
+        // Process each bill request
+        const results = [];
+        let totalCreated = 0;
+        let totalSkipped = 0;
 
-        if (tariffError || !tariffData) {
-            showIplInputFormError('Data tarif IPL tidak ditemukan');
-            return;
+        for (const request of billRequests) {
+            try {
+                // Get tariff details for this request
+                const { data: tariffData, error: tariffError } = await supabase
+                    .from('tarif_ipl')
+                    .select('type_tarif, nominal')
+                    .eq('id', request.tarifId)
+                    .single();
+
+                if (tariffError || !tariffData) {
+                    results.push({
+                        periodeId: request.periodeId,
+                        success: false,
+                        message: 'Data tarif IPL tidak ditemukan'
+                    });
+                    continue;
+                }
+
+                // Create billing data for this household with selected tariff type and penghuni
+                const billingData = [{
+                    ...hunian,
+                    selectedType: tariffData.type_tarif,
+                    selectedPenghuniId: penghuniId // Use the selected penghuni from form
+                }];
+
+                // Generate bill for this specific period
+                const result = await generateTagihanIplForPeriod(billingData, request.periodeId);
+
+                if (result.success) {
+                    totalCreated += result.count;
+                    totalSkipped += result.skippedCount;
+                    results.push({
+                        periodeId: request.periodeId,
+                        success: true,
+                        count: result.count,
+                        skipped: result.skippedCount
+                    });
+                } else {
+                    results.push({
+                        periodeId: request.periodeId,
+                        success: false,
+                        message: result.message || 'Gagal generate tagihan'
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error processing bill request:', error);
+                results.push({
+                    periodeId: request.periodeId,
+                    success: false,
+                    message: 'Terjadi kesalahan saat memproses'
+                });
+            }
         }
 
-        // Create billing data for this household with selected tariff type and penghuni
-        const billingData = [{
-            ...hunian,
-            selectedType: tariffData.type_tarif,
-            selectedPenghuniId: penghuniId // Use the selected penghuni from form
-        }];
+        // Check results
+        const successfulResults = results.filter(r => r.success);
+        const failedResults = results.filter(r => !r.success);
 
-        // Generate bill
-        const result = await generateTagihanIplForPeriod(billingData, periodeId);
-
-        if (result.success) {
-            // Don't close modal - keep it open for next input
+        if (successfulResults.length > 0) {
             // Reset form for next input
             resetIplInputForm();
 
-            // Show success message with indication for next input
-            showToast(`Tagihan IPL berhasil dibuat (${result.count} tagihan) - Siap input berikutnya`, 'success');
+            // Show success message
+            let message = `Tagihan IPL berhasil dibuat (${totalCreated} tagihan)`;
+            if (totalSkipped > 0) {
+                message += `, ${totalSkipped} dilewati (sudah ada)`;
+            }
+            showToast(message, 'success');
 
-            // Refresh the IPL bills table to show new bill
+            // Refresh the IPL bills table to show new bills
             if (window.loadIplBillsManagement) {
                 window.loadIplBillsManagement();
             }
 
-            // Check if any bills were actually created or all were skipped
-            if (result.count === 0 && result.skippedCount > 0) {
-                // All bills were skipped (duplicates) - show warning
-                showToast(`Tagihan sudah ada untuk periode ini (${result.skippedCount} dilewati)`, 'warning');
+            // Show detailed results if there were failures
+            if (failedResults.length > 0) {
+                showToast(`${failedResults.length} tagihan gagal dibuat`, 'warning');
             }
+
         } else {
-            showIplInputFormError(result.message || 'Gagal generate tagihan');
+            // All failed
+            showIplInlineFormError('Semua tagihan IPL gagal dibuat. Silakan coba lagi.');
         }
 
     } catch (error) {
         console.error('Error submitting IPL input form:', error);
-        showIplInputFormError('Terjadi kesalahan saat memproses form');
+        showIplInlineFormError('Terjadi kesalahan saat memproses form');
     }
 }
 
@@ -657,6 +1047,57 @@ function getTypeDisplayName(typeTarif) {
 
 function getTariffAmount(type, tariffMap) {
     return tariffMap[type]?.nominal || 0;
+}
+
+// Update penghuni field requirement based on house status
+function updatePenghuniFieldRequirement(isEmptyHouse) {
+    const label = document.getElementById('penghuni-label');
+    const help = document.getElementById('penghuni-help');
+
+    if (label && help) {
+        if (isEmptyHouse) {
+            label.textContent = 'Penghuni (Opsional):';
+            help.style.display = 'block';
+        } else {
+            label.textContent = 'Penghuni:';
+            help.style.display = 'none';
+        }
+    }
+}
+
+// Check if bill already exists for household and period
+async function checkExistingBill(hunianId, periodeId) {
+    try {
+        const { data, error } = await supabase
+            .from('tagihan_ipl')
+            .select('id')
+            .eq('hunian_id', hunianId)
+            .eq('periode_id', periodeId)
+            .limit(1);
+
+        if (error) throw error;
+        return data && data.length > 0;
+    } catch (error) {
+        console.error('Error checking existing bill:', error);
+        return false;
+    }
+}
+
+// Get hunian data for status check
+async function getHunianData(hunianId) {
+    try {
+        const { data, error } = await supabase
+            .from('hunian')
+            .select('status')
+            .eq('id', hunianId)
+            .single();
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error getting hunian data:', error);
+        return null;
+    }
 }
 
 function formatCurrency(amount) {

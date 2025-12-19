@@ -21,7 +21,7 @@ async function loadDashboard() {
         // Calculate total balance and check consistency
         const { total: totalSaldo, consistency: saldoConsistency } = await calculateTotalSaldo();
 
-        // Create dashboard HTML
+        // Create dashboard HTML - ultra compact for mobile
         const dashboardHtml = createDashboardHtml({
             totalHunian,
             hunianKosong,
@@ -47,45 +47,45 @@ function createDashboardHtml(data) {
         <div class="row g-4">
             <div class="col-md-6 col-lg-3">
                 <div class="card text-center h-100">
-                    <div class="card-body">
+                    <div class="card-body py-1 px-1 py-sm-2 px-sm-2 py-md-3 px-md-3">
                         <div class="card-title">
-                            <i class="bi bi-house-door fs-1 text-primary"></i>
+                            <i class="bi bi-house-door fs-2 fs-md-1 text-primary"></i>
                         </div>
-                        <h5 class="card-title">Total Hunian</h5>
-                        <p class="card-text fs-3 fw-bold text-primary">${data.totalHunian}</p>
+                        <h5 class="card-title fs-6 fs-md-5">Total Hunian</h5>
+                        <p class="card-text fs-4 fs-md-3 fw-bold text-primary">${data.totalHunian}</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="card text-center h-100">
-                    <div class="card-body">
+                    <div class="card-body py-1 px-1 py-sm-2 px-sm-2 py-md-3 px-md-3">
                         <div class="card-title">
-                            <i class="bi bi-house-x fs-1 text-danger"></i>
+                            <i class="bi bi-house-x fs-2 fs-md-1 text-danger"></i>
                         </div>
-                        <h5 class="card-title">Hunian Kosong</h5>
-                        <p class="card-text fs-3 fw-bold text-danger">${data.hunianKosong}</p>
+                        <h5 class="card-title fs-6 fs-md-5">Hunian Kosong</h5>
+                        <p class="card-text fs-4 fs-md-3 fw-bold text-danger">${data.hunianKosong}</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="card text-center h-100">
-                    <div class="card-body">
+                    <div class="card-body py-1 px-1 py-sm-2 px-sm-2 py-md-3 px-md-3">
                         <div class="card-title">
-                            <i class="bi bi-house-check fs-1 text-info"></i>
+                            <i class="bi bi-house-check fs-2 fs-md-1 text-info"></i>
                         </div>
-                        <h5 class="card-title">Hunian Berpenghuni</h5>
-                        <p class="card-text fs-3 fw-bold text-info">${data.hunianBerpenghuni}</p>
+                        <h5 class="card-title fs-6 fs-md-5">Hunian Berpenghuni</h5>
+                        <p class="card-text fs-4 fs-md-3 fw-bold text-info">${data.hunianBerpenghuni}</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="card text-center h-100">
-                    <div class="card-body">
+                    <div class="card-body py-1 px-1 py-sm-2 px-sm-2 py-md-3 px-md-3">
                         <div class="card-title">
-                            <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+                            <i class="bi bi-exclamation-triangle fs-2 fs-md-1 text-warning"></i>
                         </div>
-                        <h5 class="card-title">Perlu Perhatian Administrasi</h5>
-                        <p class="card-text fs-3 fw-bold text-warning" style="cursor: pointer;" onclick="showPerluPerhatianDetail()">${data.perluPerhatianAdministrasi}</p>
+                        <h5 class="card-title fs-6 fs-md-5">Perlu Perhatian Administrasi</h5>
+                        <p class="card-text fs-4 fs-md-3 fw-bold text-warning" style="cursor: pointer;" onclick="showPerluPerhatianDetail()">${data.perluPerhatianAdministrasi}</p>
                     </div>
                 </div>
             </div>
@@ -247,8 +247,22 @@ async function getPerluPerhatianAdministrasi() {
             }
         }
 
-        // Combine both sets (union)
-        const allProblematicHouseholds = new Set([...iplProblematicHouseholds, ...airProblematicHouseholds]);
+        // Get all households that are NOT empty (exclude 'kosong')
+        const { data: occupiedHouseholds, error: occupiedError } = await supabase
+            .from('hunian')
+            .select('id')
+            .neq('status', 'kosong');
+
+        if (occupiedError) throw occupiedError;
+
+        const occupiedHouseholdIds = new Set(occupiedHouseholds.map(h => h.id));
+
+        // Filter problematic households to only include occupied houses
+        const occupiedIPLProblematic = new Set([...iplProblematicHouseholds].filter(id => occupiedHouseholdIds.has(id)));
+        const occupiedAirProblematic = new Set([...airProblematicHouseholds].filter(id => occupiedHouseholdIds.has(id)));
+
+        // Combine both sets (union) - only occupied households
+        const allProblematicHouseholds = new Set([...occupiedIPLProblematic, ...occupiedAirProblematic]);
 
         return allProblematicHouseholds.size;
     } catch (error) {
@@ -361,16 +375,44 @@ async function getPerluPerhatianDetail() {
             }
         }
 
-        // Combine both maps (merge for households that have both issues)
+        // Get all households that are NOT empty (exclude 'kosong')
+        const { data: occupiedHouseholds, error: occupiedError } = await supabase
+            .from('hunian')
+            .select('id')
+            .neq('status', 'kosong');
+
+        if (occupiedError) throw occupiedError;
+
+        const occupiedHouseholdIds = new Set(occupiedHouseholds.map(h => h.id));
+
+        // Filter problematic households to only include occupied houses
+        const occupiedIPLProblematic = new Map();
+        const occupiedAirProblematic = new Map();
+
+        // Filter IPL problematic households
+        for (const [hunianId, data] of iplProblematicHouseholds) {
+            if (occupiedHouseholdIds.has(hunianId)) {
+                occupiedIPLProblematic.set(hunianId, data);
+            }
+        }
+
+        // Filter air problematic households
+        for (const [hunianId, airData] of airProblematicHouseholds) {
+            if (occupiedHouseholdIds.has(hunianId)) {
+                occupiedAirProblematic.set(hunianId, airData);
+            }
+        }
+
+        // Combine both maps (merge for households that have both issues) - only occupied households
         const allProblematicHouseholds = new Map();
 
         // Add IPL problematic households
-        for (const [hunianId, data] of iplProblematicHouseholds) {
+        for (const [hunianId, data] of occupiedIPLProblematic) {
             allProblematicHouseholds.set(hunianId, data);
         }
 
         // Add or merge air problematic households
-        for (const [hunianId, airData] of airProblematicHouseholds) {
+        for (const [hunianId, airData] of occupiedAirProblematic) {
             if (allProblematicHouseholds.has(hunianId)) {
                 // Merge both categories
                 const existing = allProblematicHouseholds.get(hunianId);

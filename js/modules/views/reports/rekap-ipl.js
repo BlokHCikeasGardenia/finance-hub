@@ -13,9 +13,11 @@ let iplItemsPerPage = 10;
 async function loadViewRekapIPL() {
     const contentDiv = document.getElementById('views-content');
 
+    // Aggressive content clearing to prevent showing dashboard cards
+    contentDiv.innerHTML = '';
+    contentDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Loading Rekap IPL...</p></div>';
+
     try {
-        // Show loading indicator
-        contentDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Loading Rekap IPL...</p></div>';
 
         // Get all periods for the recap
         const { data: allPeriods, error: periodsError } = await supabase
@@ -106,8 +108,8 @@ async function loadViewRekapIPL() {
                                     ${availableYears.map(year => `<option value="${year}" ${year === defaultYear ? 'selected' : ''}>📅 ${year}</option>`).join('')}
                                 </select>
                             </div>
-                            <button class="btn btn-secondary" onclick="loadViewsSection()">
-                                <i class="bi bi-arrow-left"></i> Kembali ke Views
+                            <button class="btn btn-warning text-dark" onclick="loadViewsSection()">
+                                <i class="bi bi-arrow-left"></i> Back
                             </button>
                         </div>
                     </div>
@@ -122,41 +124,7 @@ async function loadViewRekapIPL() {
 
                     <p class="text-muted">Rekap komprehensif IPL per periode dengan detail pembayaran, DAU, dan status warga</p>
 
-                    <!-- Summary Cards -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h6 class="card-title">Total Periode</h6>
-                                    <p class="card-text fs-5 fw-bold text-primary">${rekapData.length}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h6 class="card-title">Total Pemasukan IPL</h6>
-                                    <p class="card-text fs-5 fw-bold text-success">${formatCurrency(rekapData.reduce((sum, item) => sum + item.pemasukan, 0))}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h6 class="card-title">Total DAU Terkumpul</h6>
-                                    <p class="card-text fs-5 fw-bold text-info">${formatCurrency(rekapData.reduce((sum, item) => sum + item.dau_terkumpul, 0))}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h6 class="card-title">Total Warga Bayar</h6>
-                                    <p class="card-text fs-5 fw-bold text-warning">${rekapData.reduce((sum, item) => sum + item.jumlah_warga_bayar, 0)}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <!-- Main Rekap Table -->
                     <div class="table-responsive">

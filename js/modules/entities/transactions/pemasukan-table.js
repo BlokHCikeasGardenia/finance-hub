@@ -6,16 +6,16 @@ import { filterAndDisplayPemasukan } from './pemasukan-filters.js';
 import { paginateData } from '../../crud.js';
 import { formatCurrency } from '../../utils.js';
 
-// Table columns configuration
+// Table columns configuration - maximum compact for mobile (only essentials)
 const pemasukanTableColumns = [
-    { key: 'id_transaksi', label: 'ID Transaksi', sortable: true },
-    { key: 'tanggal', label: 'Tanggal', width: '100px', sortable: true, render: (item) => new Date(item.tanggal).toLocaleDateString('id-ID') },
+    { key: 'id_transaksi', label: 'ID', sortable: true, mobileClass: 'd-none d-none-mobile' },
+    { key: 'tanggal', label: 'Tanggal', width: '100px', sortable: true, render: (item) => new Date(item.tanggal).toLocaleDateString('id-ID'), mobileClass: 'd-none-mobile' },
     { key: 'penghuni', label: 'Penghuni', sortable: true, render: (item) => item.penghuni?.nama_kepala_keluarga || item.nama_pembayar || '-' },
-    { key: 'hunian', label: 'Nomor Rumah 🏠', sortable: true, render: (item) => item.hunian?.nomor_blok_rumah || '-' },
     { key: 'kategori', label: 'Kategori', sortable: true, render: renderPemasukanCategory },
     { key: 'nominal', label: 'Nominal', sortable: true, render: (item) => formatCurrency(item.nominal) },
-    { key: 'rekening', label: 'Rekening', sortable: true, render: (item) => item.rekening?.jenis_rekening || '-' },
-    { key: 'keterangan', label: 'Keterangan', sortable: false }
+    { key: 'hunian', label: 'Rumah', sortable: true, render: (item) => item.hunian?.nomor_blok_rumah || '-', mobileClass: 'd-none-mobile' },
+    { key: 'rekening', label: 'Rekening', sortable: true, render: (item) => item.rekening?.jenis_rekening || '-', mobileClass: 'd-none-mobile' },
+    { key: 'keterangan', label: 'Keterangan', sortable: false, mobileClass: 'd-none-mobile' }
 ];
 
 // Custom renderers
@@ -65,8 +65,9 @@ function createPemasukanTableHtml(data, pagination = null) {
                         <th>No</th>
                         ${pemasukanTableColumns.map(col => {
                             const sortableClass = col.sortable ? 'sortable' : '';
-                                const sortIcon = col.sortable ? ' <i class="bi bi-chevron-expand sort-icon"></i>' : '';
-                                return `<th class="${sortableClass}" data-column="${col.key}">${col.label}${sortIcon}</th>`;
+                            const mobileClass = col.mobileClass || '';
+                            const sortIcon = col.sortable ? ' <i class="bi bi-chevron-expand sort-icon"></i>' : '';
+                            return `<th class="${sortableClass} ${mobileClass}" data-column="${col.key}">${col.label}${sortIcon}</th>`;
                         }).join('')}
                         <th width="150px">Aksi</th>
                     </tr>
@@ -89,9 +90,11 @@ function createPemasukanTableHtml(data, pagination = null) {
                     return `<td>${value}</td>`;
                 }).join('')}
                 <td>
-                    <button onclick="editPemasukan('${item.id}')" class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                    <button onclick="confirmCancelPemasukan('${item.id}')" class="btn btn-sm btn-outline-warning me-1" title="Batalkan transaksi yang sudah dialokasikan">Batalkan</button>
-                    <button onclick="confirmDeletePemasukan('${item.id}')" class="btn btn-sm btn-outline-danger">Hapus</button>
+                    <div class="btn-action-mobile-stack">
+                        <button onclick="editPemasukan('${item.id}')" class="btn btn-sm btn-outline-primary">Edit</button>
+                        <button onclick="confirmCancelPemasukan('${item.id}')" class="btn btn-sm btn-outline-warning" title="Batalkan transaksi yang sudah dialokasikan">Batalkan</button>
+                        <button onclick="confirmDeletePemasukan('${item.id}')" class="btn btn-sm btn-outline-danger">Hapus</button>
+                    </div>
                 </td>
             </tr>`;
         });

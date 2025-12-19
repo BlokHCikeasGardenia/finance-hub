@@ -13,6 +13,9 @@ let pengeluaranItemsPerPage = 10;
 async function loadViewPengeluaran(selectedYear = null) {
     const contentDiv = document.getElementById('views-content');
 
+    // Clear content immediately to prevent showing dashboard cards
+    contentDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Loading Pengeluaran data...</p></div>';
+
     try {
         // Get all periods ordered by sequence
         const { data: allPeriods, error: periodsError } = await supabase
@@ -117,9 +120,7 @@ async function loadViewPengeluaran(selectedYear = null) {
 
         const displayYear = isAllYearsMode ? null : selectedYear;
 
-        const dynamicTitle = isAllYearsMode
-            ? 'View Data Pengeluaran'
-            : `View Data Pengeluaran ${displayYear}`;
+        const dynamicTitle = 'Detail Pengeluaran';
 
         const titleBadge = isAllYearsMode
             ? '<span class="badge bg-secondary ms-2">Semua Periode</span>'
@@ -147,9 +148,9 @@ async function loadViewPengeluaran(selectedYear = null) {
                                     ${availableYears.map(year => `<option value="${year}" ${year === selectedYear ? 'selected' : ''}>📅 ${year}</option>`).join('')}
                                 </select>
                             </div>
-                            <button class="btn btn-secondary" onclick="loadViewsSection()">
-                                <i class="bi bi-arrow-left"></i> Kembali ke Views
-                            </button>
+                        <button class="btn btn-warning text-dark" onclick="loadViewsSection()">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </button>
                         </div>
                     </div>
 
@@ -191,33 +192,7 @@ async function loadViewPengeluaran(selectedYear = null) {
                         </div>
                     </div>
 
-                    <!-- Summary Cards -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h6 class="card-title">Total Transaksi</h6>
-                                    <p class="card-text fs-5 fw-bold text-primary">${pengeluaranViewDataGlobal.length}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h6 class="card-title">Total Pengeluaran</h6>
-                                    <p class="card-text fs-5 fw-bold text-danger">${formatCurrency(pengeluaranViewDataGlobal.reduce((sum, item) => sum + (item.nominal || 0), 0))}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h6 class="card-title">Rata-rata per Transaksi</h6>
-                                    <p class="card-text fs-5 fw-bold text-warning">${formatCurrency(pengeluaranViewDataGlobal.length > 0 ? pengeluaranViewDataGlobal.reduce((sum, item) => sum + (item.nominal || 0), 0) / pengeluaranViewDataGlobal.length : 0)}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <div id="pengeluaran-table-container"></div>
                 </div>

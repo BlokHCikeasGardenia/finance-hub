@@ -272,39 +272,7 @@ export async function loadAdminSection() {
                     <h3>Konsistensi Saldo</h3>
                     <p class="text-muted">Perbandingan saldo antara kategori dan rekening untuk memastikan konsistensi data</p>
 
-                    <!-- Summary Cards -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h5 class="card-title">Total Saldo Kategori</h5>
-                                    <p class="card-text fs-4 fw-bold text-primary">${formatCurrency(totalKategori)}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h5 class="card-title">Total Saldo Rekening</h5>
-                                    <p class="card-text fs-4 fw-bold text-success">${formatCurrency(totalRekening)}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h5 class="card-title">Selisih</h5>
-                                    <p class="card-text fs-4 fw-bold ${difference > 0.01 ? 'text-danger' : 'text-success'}">
-                                        ${formatCurrency(difference)}
-                                    </p>
-                                    ${difference > 0.01 ?
-                                        '<small class="text-danger">⚠️ Ada selisih yang perlu diperbaiki</small>' :
-                                        '<small class="text-success">✅ Data konsisten</small>'
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <!-- Detailed Tables -->
                     <div class="row">

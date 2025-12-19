@@ -74,8 +74,8 @@ async function loadViewRekap() {
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4>Rekap Pembayaran IPL Bulanan</h4>
-                        <button class="btn btn-secondary" onclick="loadViewsSection()">
-                            <i class="bi bi-arrow-left"></i> Kembali ke Views
+                        <button class="btn btn-warning text-dark" onclick="loadViewsSection()">
+                            <i class="bi bi-arrow-left"></i> Back
                         </button>
                     </div>
                     <p class="text-muted">Rekap bulan per bulan pembayaran IPL oleh penghuni</p>

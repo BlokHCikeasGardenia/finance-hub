@@ -1,0 +1,8 @@
+19-12-2025
+update perhitungan perlu perhatian administrasi supaya mengecualikan rumah kosong
+menghapus summary cards dari semua view kecuali halaman utama (belum berhasil)
+ganti warna dan text "kembali ke views" menjadi "back"
+rename beberapa Label
+form input tagihan ipl multiple periode
+modified tampilan mobile
+form input tagihan IPL, rumah kosong tidak bisa diinput karena harus semua field dipilih (solved)

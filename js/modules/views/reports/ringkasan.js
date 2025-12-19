@@ -8,6 +8,10 @@ import { showToast, formatCurrency } from '../../utils.js';
 async function loadViewRingkasan(selectedYear = null) {
     const contentDiv = document.getElementById('views-content');
 
+    // Aggressive content clearing to prevent showing dashboard cards
+    contentDiv.innerHTML = '';
+    contentDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Loading Ringkasan data...</p></div>';
+
     try {
         // Get all periods for year filtering
         const { data: allPeriods, error: periodsError } = await supabase
@@ -247,9 +251,9 @@ async function loadViewRingkasan(selectedYear = null) {
                                     ${availableYears.map(year => `<option value="${year}" ${year === filterYear ? 'selected' : ''}>📅 ${year}</option>`).join('')}
                                 </select>
                             </div>
-                            <button class="btn btn-secondary" onclick="loadViewsSection()">
-                                <i class="bi bi-arrow-left"></i> Kembali ke Views
-                            </button>
+                        <button class="btn btn-warning text-dark" onclick="loadViewsSection()">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </button>
                         </div>
                     </div>
 

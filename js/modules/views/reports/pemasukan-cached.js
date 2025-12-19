@@ -131,33 +131,7 @@ async function loadViewPemasukan(selectedYear = null) {
                         </div>
                     </div>
 
-                    <!-- Summary Cards -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h6 class="card-title">Total Transaksi</h6>
-                                    <p class="card-text fs-5 fw-bold text-primary" id="pemasukan-total-count">0</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h6 class="card-title">Total Pemasukan</h6>
-                                    <p class="card-text fs-5 fw-bold text-success" id="pemasukan-total-nominal">Total: Rp 0</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h6 class="card-title">Rata-rata per Transaksi</h6>
-                                    <p class="card-text fs-5 fw-bold text-info">Rp 0</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <div id="pemasukan-table-container"></div>
                 </div>

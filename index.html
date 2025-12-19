@@ -19,8 +19,9 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
+            <a class="navbar-brand d-lg-none d-xl-none" href="#" onclick="showSection('dashboard')">Sistem Informasi</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+                <img src="icons/menu.svg" alt="Menu" class="navbar-menu-icon">
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
@@ -28,47 +29,47 @@
                     <li class="nav-item"><a class="nav-link" href="https://blokhcikeasgardenia.github.io/home">Home & Arsip 2025</a></li>
                     <li class="nav-item dropdown" id="admin-dropdown" style="display: none;">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            Admin
+                            <i class="bi bi-gear me-1"></i><span class="d-none d-sm-inline">Admin</span>
                         </a>
                         <ul class="dropdown-menu">
-                            <!-- 1. Master Data (Pengaturan Dasar) -->
-                            <li><h6 class="dropdown-header">1. Master Data (Pengaturan Dasar)</h6></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('hunian')" title="Pengaturan Data Rumah/Hunian">Master Hunian</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('penghuni')" title="Pengaturan Data Warga/Penghuni">Master Penghuni</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('lorong')" title="Pengaturan Lorong">Master Lorong</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('kategori')" title="Pengaturan Data Kategori">Master Kategori</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('subkategori')" title="Pengaturan Subkategori">Master Subkategori</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('rekening')" title="Pengaturan Jenis Rekening">Master Rekening</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('periode')" title="Pengaturan Periode">Master Periode</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('tarif_air')" title="Pengaturan Tarif Air">Tarif Air</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('tarif_ipl')" title="Pengaturan Tarif IPL">Tarif IPL</a></li>
+                            <!-- Master Data Section -->
+                            <li><h6 class="dropdown-header">📋 Master Data</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('hunian')">🏠 Hunian</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('penghuni')">👥 Penghuni</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('lorong')">🗺️ Lorong</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('kategori')">📂 Kategori</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('subkategori')">📂 Subkategori</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('rekening')">💳 Rekening</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('periode')">📅 Periode</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('tarif_air')">💧 Tarif Air</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('tarif_ipl')">💡 Tarif IPL</a></li>
                             <li><hr class="dropdown-divider"></li>
 
-                            <!-- 2. IPL Management (Pengelolaan IPL) -->
-                            <li><h6 class="dropdown-header">2. IPL Management (Pengelolaan IPL)</h6></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('input_ipl')" title="Input & Kelola tagihan IPL">Input & Kelola IPL</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('tagihan_ipl')" title="Input tagihan IPL Bulk">Tagihan IPL</a></li>
+                            <!-- IPL Management -->
+                            <li><h6 class="dropdown-header">💡 IPL Management</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('input_ipl')">📝 Input IPL</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('tagihan_ipl')">📋 Tagihan IPL</a></li>
                             <li><hr class="dropdown-divider"></li>
 
-                            <!-- 3. Air Management (Pengelolaan Air) -->
-                            <li><h6 class="dropdown-header">3. Air Management (Pengelolaan Air)</h6></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('meteran_air_billing')" title="Input angka meteran Air">Pemakaian Air</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('tagihan_air')" title="Input angka meteran Air Bulk">Tagihan Air</a></li>
+                            <!-- Air Management -->
+                            <li><h6 class="dropdown-header">💧 Air Management</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('meteran_air_billing')">📊 Pemakaian Air</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('tagihan_air')">📋 Tagihan Air</a></li>
                             <li><hr class="dropdown-divider"></li>
 
-                            <!-- 4. Transaksi (Input Data Keuangan) -->
-                            <li><h6 class="dropdown-header">4. Transaksi (Input Data Keuangan)</h6></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('pembayaran')" title="Input pembayaran tagihan IPL dan Air">Pembayaran</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('pemasukan')" title="Input pemasukan Non Tagihan IPL dan Air">Pemasukan</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('pengeluaran')" title="Input Pengeluaran">Pengeluaran</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('dana_titipan')" title="Input dana masuk ke rekening, tapi belum masuk ke sistem">Dana Titipan</a></li>
+                            <!-- Transactions -->
+                            <li><h6 class="dropdown-header">💰 Transaksi</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('pembayaran')">💳 Pembayaran</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('pemasukan')">📈 Pemasukan</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('pengeluaran')">📉 Pengeluaran</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('dana_titipan')">💵 Dana Titipan</a></li>
                             <li><hr class="dropdown-divider"></li>
 
-                            <!-- 5. Admin (Fitur Administrasi) -->
-                            <li><h6 class="dropdown-header">5. Admin (Fitur Administrasi)</h6></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('pemindahbukuan')" title="Input pemindahan dana antar rekening">Pemindah Bukuan</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('admin')" title="Validasi saldo per Kategori / per Rekening">Konsistensi Saldo</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="showSection('laporan')" title="Generate laporan PDF/Excel">Generator Laporan</a></li>
+                            <!-- Admin Features -->
+                            <li><h6 class="dropdown-header">⚙️ Admin</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('pemindahbukuan')">🔄 Pemindahbukuan</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('admin')">✅ Konsistensi Saldo</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="showSection('laporan')">📊 Generator Laporan</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -84,7 +85,7 @@
         </div>
     </nav>
 
-        <main class="container-fluid mt-4 px-4">
+        <main class="container-fluid mt-4 px-3 px-md-4">
             <section id="dashboard" class="section active mb-4">
                 <div id="dashboard-content">
                     <!-- All dashboard content will be loaded here -->

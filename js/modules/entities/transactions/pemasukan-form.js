@@ -66,57 +66,83 @@ function createPemasukanFormHtml(pemasukan = null) {
     return `
         <div id="pemasukan-form-error" class="alert alert-danger d-none" role="alert"></div>
         <form id="pemasukan-form">
-            <div class="mb-3">
-                <label for="id_transaksi" class="form-label">ID Transaksi:</label>
-                <input type="text" class="form-control" id="id_transaksi" readonly>
+            <!-- Transaction Info - Ultra Compact -->
+            <div class="row g-2 mb-3">
+                <div class="col-12">
+                    <label for="id_transaksi" class="form-label">ID Transaksi:</label>
+                    <input type="text" class="form-control" id="id_transaksi" readonly>
+                </div>
+                <div class="col-6">
+                    <label for="tanggal" class="form-label">Tanggal:</label>
+                    <input type="date" class="form-control" id="tanggal" name="tanggal"
+                           value="${pemasukan?.tanggal || today}" required>
+                </div>
+                <div class="col-6">
+                    <label for="nominal" class="form-label">Nominal:</label>
+                    <input type="text" class="form-control" id="nominal" name="nominal" placeholder="0" required>
+                </div>
             </div>
+
+            <!-- People & Property - Compact -->
             <div class="mb-3">
-                <label for="tanggal" class="form-label required-field">Tanggal:</label>
-                <input type="date" class="form-control" id="tanggal" name="tanggal"
-                       value="${pemasukan?.tanggal || today}" required>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label for="penghuni_id" class="form-label">Penghuni:</label>
+                        <select class="form-select" id="penghuni_id" name="penghuni_id">
+                            <option value="">Pilih</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label for="hunian_id" class="form-label">Rumah:</label>
+                        <select class="form-select" id="hunian_id" name="hunian_id">
+                            <option value="">Pilih</option>
+                        </select>
+                    </div>
+                </div>
             </div>
+
+            <!-- Financial Details - Compact -->
             <div class="mb-3">
-                <label for="penghuni_id" class="form-label">Diterima Dari (Penghuni):</label>
-                <select class="form-select" id="penghuni_id" name="penghuni_id">
-                    <option value="">Pilih Penghuni</option>
-                </select>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label for="kategori_id" class="form-label">Kategori:</label>
+                        <select class="form-select" id="kategori_id" name="kategori_id" required>
+                            <option value="">Pilih</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label for="periode_id" class="form-label">Periode:</label>
+                        <select class="form-select" id="periode_id" name="periode_id">
+                            <option value="">Pilih</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <label for="rekening_id" class="form-label">Rekening:</label>
+                    <select class="form-select" id="rekening_id" name="rekening_id" required>
+                        <option value="">Pilih Rekening</option>
+                    </select>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="hunian_id" class="form-label">Nomor Rumah:</label>
-                <select class="form-select" id="hunian_id" name="hunian_id">
-                    <option value="">Pilih Rumah</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="nominal" class="form-label required-field">Nominal:</label>
-                <input type="text" class="form-control" id="nominal" name="nominal" placeholder="0" required>
-            </div>
-            <div class="mb-3">
-                <label for="kategori_id" class="form-label required-field">Kategori:</label>
-                <select class="form-select" id="kategori_id" name="kategori_id" required>
-                    <option value="">Pilih Kategori</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="periode_id" class="form-label">Periode:</label>
-                <select class="form-select" id="periode_id" name="periode_id">
-                    <option value="">Pilih Periode</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="rekening_id" class="form-label required-field">Dikredit Ke (Rekening):</label>
-                <select class="form-select" id="rekening_id" name="rekening_id" required>
-                    <option value="">Pilih Rekening</option>
-                </select>
-            </div>
+
+            <!-- Notes - Compact -->
             <div class="mb-3">
                 <label for="keterangan" class="form-label">Keterangan:</label>
-                <textarea class="form-control" id="keterangan" name="keterangan" rows="3">${pemasukan?.keterangan || ''}</textarea>
+                <textarea class="form-control" id="keterangan" name="keterangan" rows="2"
+                          placeholder="Opsional">${pemasukan?.keterangan || ''}</textarea>
             </div>
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">${isEdit ? 'Update' : 'Simpan'}</button>
-                <button type="reset" class="btn btn-warning">Reset</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Batal</button>
+
+            <!-- Action Buttons - Ultra Compact -->
+            <div class="d-flex gap-2 justify-content-end">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeModal()">
+                    Batal
+                </button>
+                <button type="reset" class="btn btn-outline-warning btn-sm">
+                    Reset
+                </button>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    ${isEdit ? 'Update' : 'Simpan'}
+                </button>
             </div>
         </form>
     `;

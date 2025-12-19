@@ -20,28 +20,28 @@ async function loadViewsSection() {
         <div class="row">
             <div class="col-12">
                 <!-- Data Iuran Lingkungan -->
-                <h4 class="mb-3 text-primary"><i class="bi bi-house-door"></i> Data Iuran Lingkungan</h4>
+                <h4 class="mb-3 text-primary"><i class="bi bi-house-door"></i> Iuran Lingkungan</h4>
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="bi bi-cash-stack fs-2 text-primary mb-3"></i>
-                                <h5 class="card-title">IPL</h5>
-                                <p class="card-text">Laporan pembayaran IPL per rumah</p>
-                                <button class="btn btn-primary" onclick="loadViewIPL()">
-                                    <i class="bi bi-eye"></i> Lihat IPL
+                            <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
+                                <i class="bi bi-cash-stack fs-2 text-primary mb-2 mb-md-3"></i>
+                                <h5 class="card-title fs-6 fs-md-5">IPL</h5>
+                                <p class="card-text small mb-2">Iuran IPL</p>
+                                <button class="btn btn-primary btn-sm" onclick="loadViewIPL()">
+                                    <i class="bi bi-eye"></i> Lihat
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="bi bi-droplet fs-2 text-info mb-3"></i>
-                                <h5 class="card-title">Air</h5>
-                                <p class="card-text">Laporan pemakaian air dan pembayaran</p>
-                                <button class="btn btn-info" onclick="loadViewAir()">
-                                    <i class="bi bi-eye"></i> Lihat Air
+                            <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
+                                <i class="bi bi-droplet fs-2 text-info mb-2 mb-md-3"></i>
+                                <h5 class="card-title fs-6 fs-md-5">Air</h5>
+                                <p class="card-text small mb-2">Iuran Air</p>
+                                <button class="btn btn-info btn-sm" onclick="loadViewAir()">
+                                    <i class="bi bi-eye"></i> Lihat
                                 </button>
                             </div>
                         </div>
@@ -53,24 +53,24 @@ async function loadViewsSection() {
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="bi bi-graph-up-arrow fs-2 text-success mb-3"></i>
-                                <h5 class="card-title">Pemasukan</h5>
-                                <p class="card-text">Laporan semua transaksi pemasukan</p>
-                                <button class="btn btn-success" onclick="loadViewPemasukan()">
-                                    <i class="bi bi-eye"></i> Lihat Pemasukan
+                            <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
+                                <i class="bi bi-graph-up-arrow fs-2 text-success mb-2 mb-md-3"></i>
+                                <h5 class="card-title fs-6 fs-md-5">Pemasukan</h5>
+                                <p class="card-text small mb-2">Transaksi Masuk</p>
+                                <button class="btn btn-success btn-sm" onclick="loadViewPemasukan()">
+                                    <i class="bi bi-eye"></i> Lihat
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="bi bi-graph-down-arrow fs-2 text-danger mb-3"></i>
-                                <h5 class="card-title">Pengeluaran</h5>
-                                <p class="card-text">Laporan semua transaksi pengeluaran</p>
-                                <button class="btn btn-danger" onclick="loadViewPengeluaran()">
-                                    <i class="bi bi-eye"></i> Lihat Pengeluaran
+                            <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
+                                <i class="bi bi-graph-down-arrow fs-2 text-danger mb-2 mb-md-3"></i>
+                                <h5 class="card-title fs-6 fs-md-5">Pengeluaran</h5>
+                                <p class="card-text small mb-2">Transaksi Keluar</p>
+                                <button class="btn btn-danger btn-sm" onclick="loadViewPengeluaran()">
+                                    <i class="bi bi-eye"></i> Lihat
                                 </button>
                             </div>
                         </div>
@@ -82,60 +82,56 @@ async function loadViewsSection() {
                 <div class="row g-3">
                     <div class="col-md-4">
                         <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="bi bi-bar-chart fs-2 text-success mb-3"></i>
-                                <h5 class="card-title">Ringkasan Saldo</h5>
-                                <p class="card-text">Ringkasan saldo per kategori</p>
-                                <button class="btn btn-success" onclick="loadViewRingkasan()">
-                                    <i class="bi bi-eye"></i> Lihat Ringkasan
+                            <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
+                                <i class="bi bi-bar-chart fs-2 text-success mb-2 mb-md-3"></i>
+                                <h5 class="card-title fs-6 fs-md-5">Ringkasan Saldo</h5>
+                                <p class="card-text small mb-2">Per Kategori</p>
+                                <button class="btn btn-success btn-sm" onclick="loadViewRingkasan()">
+                                    <i class="bi bi-eye"></i> Lihat
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="card h-100 border-primary">
-                            <div class="card-body text-center">
-                                <i class="bi bi-bar-chart-fill fs-2 text-primary mb-3"></i>
-                                <h5 class="card-title">Rekap IPL</h5>
-                                <p class="card-text">Rekap IPL lengkap dengan DAU & status warga</p>
-                                <button class="btn btn-primary" onclick="loadViewRekapIPL()">
-                                    <i class="bi bi-eye"></i> Lihat Detail
+                            <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
+                                <i class="bi bi-bar-chart-fill fs-2 text-primary mb-2 mb-md-3"></i>
+                                <h5 class="card-title fs-6 fs-md-5">Rekap IPL</h5>
+                                <button class="btn btn-primary btn-sm" onclick="loadViewRekapIPL()">
+                                    <i class="bi bi-eye"></i> Lihat
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="bi bi-droplet-fill fs-2 text-info mb-3"></i>
-                                <h5 class="card-title">Rekap Air</h5>
-                                <p class="card-text">Rekap pembayaran air bulanan</p>
-                                <button class="btn btn-info" onclick="loadViewRekapAir()">
-                                    <i class="bi bi-eye"></i> Lihat Rekap
+                            <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
+                                <i class="bi bi-droplet-fill fs-2 text-info mb-2 mb-md-3"></i>
+                                <h5 class="card-title fs-6 fs-md-5">Rekap Air</h5>
+                                <button class="btn btn-info btn-sm" onclick="loadViewRekapAir()">
+                                    <i class="bi bi-eye"></i> Lihat
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="bi bi-building fs-2 text-warning mb-3"></i>
-                                <h5 class="card-title">Rekap Aula</h5>
-                                <p class="card-text">Rekap transaksi aula bulanan</p>
-                                <button class="btn btn-warning" onclick="loadViewRekapAula()">
-                                    <i class="bi bi-eye"></i> Lihat Rekap
+                            <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
+                                <i class="bi bi-building fs-2 text-warning mb-2 mb-md-3"></i>
+                                <h5 class="card-title fs-6 fs-md-5">Rekap Aula</h5>
+                                <button class="btn btn-warning btn-sm" onclick="loadViewRekapAula()">
+                                    <i class="bi bi-eye"></i> Lihat
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="bi bi-list-check fs-2 text-secondary mb-3"></i>
-                                <h5 class="card-title">Rekap Lainnya</h5>
-                                <p class="card-text">Rekap transaksi lainnya bulanan</p>
-                                <button class="btn btn-secondary" onclick="loadViewRekapLainnya()">
-                                    <i class="bi bi-eye"></i> Lihat Rekap
+                            <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
+                                <i class="bi bi-list-check fs-2 text-secondary mb-2 mb-md-3"></i>
+                                <h5 class="card-title fs-6 fs-md-5">Rekap Lainnya</h5>
+                                <button class="btn btn-secondary btn-sm" onclick="loadViewRekapLainnya()">
+                                    <i class="bi bi-eye"></i> Lihat
                                 </button>
                             </div>
                         </div>

@@ -960,7 +960,8 @@ export {
     refreshViewAir,
     loadViewRekapAir,
     refreshViewRekapAir,
-    initializeRekapAirYearSelector
+    initializeRekapAirYearSelector,
+    changeAirPage
 };
 
 // Load and cache all tariff data for performance

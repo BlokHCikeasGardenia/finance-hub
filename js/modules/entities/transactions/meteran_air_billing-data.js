@@ -30,7 +30,7 @@ async function loadMeteranAirBilling(filters = {}) {
             `)
             .order('tanggal_tagihan', { ascending: false });
 
-        // Apply filters
+        // Apply database filters
         if (filters.status) query = query.eq('status', filters.status);
         if (filters.hunian_id) query = query.eq('hunian_id', filters.hunian_id);
         if (filters.periode_id) query = query.eq('periode_id', filters.periode_id);
@@ -43,7 +43,24 @@ async function loadMeteranAirBilling(filters = {}) {
 
         if (error) throw error;
 
-        meteranAirBillingData = data || [];
+        let filteredData = data || [];
+
+        // Apply client-side text filters
+        if (filters.hunian_search) {
+            const searchTerm = filters.hunian_search.toLowerCase();
+            filteredData = filteredData.filter(item =>
+                item.hunian?.nomor_blok_rumah?.toLowerCase().includes(searchTerm)
+            );
+        }
+
+        if (filters.periode_search) {
+            const searchTerm = filters.periode_search.toLowerCase();
+            filteredData = filteredData.filter(item =>
+                item.periode?.nama_periode?.toLowerCase().includes(searchTerm)
+            );
+        }
+
+        meteranAirBillingData = filteredData;
         return { success: true, data: meteranAirBillingData };
     } catch (error) {
         console.error('Error loading meteran air billing:', error);
@@ -83,6 +100,8 @@ async function generateMeteranAirBilling(hunianData, periodeId, options = {}) {
         }
 
         // Check if this is an inisiasi period (new meter/baseline)
+
+        // Check if this is an inisiasi period (new meter/baseline)
         const isInisiasi = options.isInisiasi || false;
 
         for (const hunian of hunianData) {
@@ -97,8 +116,13 @@ async function generateMeteranAirBilling(hunianData, periodeId, options = {}) {
                 continue;
             }
 
+            // For bulk input, get current reading from hunian data
+            const currentReadingForEdgeCase = options.useInputData && hunian.currentReading ?
+                hunian.currentReading : (options.currentReading || 0);
+
             // Handle billing edge cases
-            const edgeCaseResult = await handleBillingEdgeCases(hunian.id, periodeId, periode, options);
+            const edgeCaseOptions = { ...options, currentReading: currentReadingForEdgeCase };
+            const edgeCaseResult = await handleBillingEdgeCases(hunian.id, periodeId, periode, edgeCaseOptions);
 
             // For inisiasi/baseline, we still create a record but with zero billing
             const isBaseline = !edgeCaseResult.shouldBill;
@@ -123,8 +147,18 @@ async function generateMeteranAirBilling(hunianData, periodeId, options = {}) {
                 continue;
             }
 
+            // Use currentReading from input data if available (for bulk input)
+            const currentReading = options.useInputData && hunian.currentReading ?
+                hunian.currentReading :
+                (edgeCaseResult.usage ? edgeCaseResult.usage.currentReading : options.currentReading);
+
+            const previousReading = edgeCaseResult.usage ? edgeCaseResult.usage.previousReading : 0;
+            const totalUsage = options.useInputData && hunian.currentReading ?
+                Math.max(0, currentReading - previousReading) :
+                (edgeCaseResult.usage ? edgeCaseResult.usage.totalUsage : 0);
+
             // Calculate bill amount (zero for baseline/inisiasi)
-            const billAmount = isBaseline ? 0 : edgeCaseResult.usage.totalUsage * tariff.harga_per_kubik;
+            const billAmount = isBaseline ? 0 : totalUsage * tariff.harga_per_kubik;
 
             const billingData = {
                 periode_id: periodeId,
@@ -132,9 +166,9 @@ async function generateMeteranAirBilling(hunianData, periodeId, options = {}) {
                 penghuni_id: hunian.penghuni_saat_ini?.id,
 
                 // Meter data
-                meteran_periode_ini: edgeCaseResult.usage ? edgeCaseResult.usage.currentReading : options.currentReading,
-                meteran_periode_sebelumnya: edgeCaseResult.usage ? edgeCaseResult.usage.previousReading : 0,
-                pemakaian_m3: edgeCaseResult.usage ? edgeCaseResult.usage.totalUsage : 0,
+                meteran_periode_ini: currentReading,
+                meteran_periode_sebelumnya: previousReading,
+                pemakaian_m3: totalUsage,
 
                 // Bill calculation
                 tarif_per_kubik: isBaseline ? 0 : tariff.harga_per_kubik,
@@ -152,6 +186,16 @@ async function generateMeteranAirBilling(hunianData, periodeId, options = {}) {
                 status: isBaseline ? 'lunas' : 'belum_bayar',
                 billing_type: isInisiasi ? 'inisiasi' : (isBaseline ? 'baseline' : 'automatic')
             };
+
+            // Determine penghuni_id: use current assignment, or fallback to most recent from billing history
+            let penghuniId = hunian.penghuni_saat_ini?.id;
+            if (!penghuniId) {
+                // Try to get penghuni from previous billing records
+                penghuniId = await getMostRecentPenghuniFromBilling(hunian.id);
+            }
+
+            // Update billing data with determined penghuni_id
+            billingData.penghuni_id = penghuniId;
 
             // Create the billing record
             const result = await createRecord('meteran_air_billing', billingData, 'Meteran Air Billing');
@@ -327,19 +371,21 @@ async function getPreviousPeriodReading(hunianId, currentPeriode) {
         for (let i = currentPeriodIndex + 1; i < allPeriods.length; i++) {
             const { data: previousBilling, error: billingError } = await supabase
                 .from('meteran_air_billing')
-                .select('meteran_periode_ini')
+                .select('id, meteran_periode_ini')
                 .eq('hunian_id', hunianId)
                 .eq('periode_id', allPeriods[i].id)
-                .single();
+                .limit(1);
 
             if (billingError) {
-                if (billingError.code === 'PGRST116') continue; // No billing record for this period
                 console.warn('Error querying billing data:', billingError);
                 continue;
             }
 
-            if (previousBilling?.meteran_periode_ini !== undefined && previousBilling.meteran_periode_ini !== null) {
-                return previousBilling.meteran_periode_ini;
+            if (previousBilling && previousBilling.length > 0) {
+                const reading = previousBilling[0].meteran_periode_ini;
+                if (reading !== undefined && reading !== null) {
+                    return reading;
+                }
             }
         }
 
@@ -576,15 +622,32 @@ async function checkExistingMeteranAirBilling(hunianId, periodeId) {
     }
 }
 
+// Get most recent penghuni from previous billing records for a household
+async function getMostRecentPenghuniFromBilling(hunianId) {
+    try {
+        const { data, error } = await supabase
+            .from('meteran_air_billing')
+            .select('penghuni_id')
+            .eq('hunian_id', hunianId)
+            .not('penghuni_id', 'is', null)
+            .order('tanggal_tagihan', { ascending: false })
+            .limit(1);
+
+        if (error) throw error;
+        return data && data.length > 0 ? data[0].penghuni_id : null;
+    } catch (error) {
+        console.error('Error getting most recent penghuni from billing:', error);
+        return null;
+    }
+}
+
 // Delete billing record with confirmation
 async function confirmDeleteMeteranAirBilling(id) {
     if (typeof showConfirm === 'function') {
         const confirmed = await showConfirm('Apakah Anda yakin ingin menghapus data meteran air billing ini?');
         if (confirmed) {
             const result = await deleteRecord('meteran_air_billing', id, 'Meteran Air Billing');
-            if (result.success) {
-                await loadMeteranAirBilling();
-            }
+            // Note: Table refresh is handled by the table module's global override
             return result;
         }
     }
@@ -597,7 +660,8 @@ export {
     allocatePaymentToMeteranAirBilling,
     getOutstandingMeteranAirBillingByHunian,
     getMeteranAirBillingForPeriod,
-    confirmDeleteMeteranAirBilling
+    confirmDeleteMeteranAirBilling,
+    getMostRecentPenghuniFromBilling
 };
 
 // Import UI-related functions dynamically

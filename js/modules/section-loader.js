@@ -29,6 +29,7 @@ import { loadPemindahbukuan, showAddPemindahbukuanForm, initializePemindahbukuan
 import { initializeMeteranAirBilling } from './entities/transactions/meteran_air_billing.js';
 import { loadTagihanIplInput } from './entities/transactions/tagihan_ipl.js';
 import { showInputIplForm, showIplInputForm } from './entities/transactions/tagihan_ipl-form.js';
+import { loadTagihanAirInputForPeriod } from './entities/transactions/tagihan_air.js';
 
 // Import views
 import { loadViewsSection } from './views/main.js';
@@ -583,13 +584,29 @@ async function loadSectionContent(sectionId) {
             contentDiv.innerHTML = `
                 <div class="row">
                     <div class="col-12">
-                        <div class="alert alert-warning">
-                            <h5>Fitur Tagihan Air</h5>
-                            <p>Fitur ini sedang dalam pengembangan.</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Input Meteran Air per Periode</h4>
+                            <div class="d-flex gap-2">
+                                <select class="form-select" id="periode-air-select" style="width: auto;">
+                                    <option value="">Pilih Periode</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="loadTagihanAirForSelectedPeriode()">
+                                    <i class="bi bi-upload"></i> Load Data Periode
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="tagihan_air-content">
+                            <div class="alert alert-info">
+                                <strong>Petunjuk:</strong> Pilih periode terlebih dahulu untuk mulai input meteran air.
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
+
+            // Load available periods
+            loadAvailablePeriodsForAir();
             break;
 
         case 'input_ipl':
@@ -734,17 +751,62 @@ async function loadTagihanIplForSelectedPeriode() {
     }
 }
 
+// Helper functions for Air billing
+async function loadAvailablePeriodsForAir() {
+    try {
+        const { data: periods, error } = await supabase
+            .from('periode')
+            .select('id, nama_periode, tanggal_awal, tanggal_akhir')
+            .order('tanggal_awal', { ascending: false });
+
+        if (error) throw error;
+
+        const selectElement = document.getElementById('periode-air-select');
+        if (selectElement && periods) {
+            const options = periods.map(periode => `
+                <option value="${periode.id}">${periode.nama_periode} (${periode.tanggal_awal} - ${periode.tanggal_akhir})</option>
+            `).join('');
+
+            selectElement.innerHTML = '<option value="">Pilih Periode</option>' + options;
+        }
+    } catch (error) {
+        console.error('Error loading periods for Air:', error);
+    }
+}
+
+async function loadTagihanAirForSelectedPeriode() {
+    const periodeSelect = document.getElementById('periode-air-select');
+    const selectedPeriodeId = periodeSelect?.value;
+
+    if (!selectedPeriodeId) {
+        alert('Pilih periode terlebih dahulu!');
+        return;
+    }
+
+    try {
+        // Load the air meter reading input interface for the selected period
+        await loadTagihanAirInputForPeriod(selectedPeriodeId);
+    } catch (error) {
+        console.error('Error loading air input for period:', error);
+        alert('Gagal memuat input meteran air untuk periode tersebut.');
+    }
+}
+
 
 
 export {
     loadSectionContent,
     loadAvailablePeriodsForIPL,
-    loadTagihanIplForSelectedPeriode
+    loadTagihanIplForSelectedPeriode,
+    loadAvailablePeriodsForAir,
+    loadTagihanAirForSelectedPeriode
 };
 
 // Global functions for HTML onclick
 window.loadAvailablePeriodsForIPL = loadAvailablePeriodsForIPL;
 window.loadTagihanIplForSelectedPeriode = loadTagihanIplForSelectedPeriode;
+window.loadAvailablePeriodsForAir = loadAvailablePeriodsForAir;
+window.loadTagihanAirForSelectedPeriode = loadTagihanAirForSelectedPeriode;
 
 // Meteran Air Billing functions
 window.showMeteranAirBillingForm = async () => {

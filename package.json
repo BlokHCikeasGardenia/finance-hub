@@ -6,7 +6,8 @@
   "main": "dist/bundle.js",
   "scripts": {
     "build": "rollup -c",
-    "dev": "python -m http.server 3000",
+    "dev": "cd dist && python -m http.server 3000",
+    "dev:root": "python -m http.server 3000",
     "deploy": "npm run build && git add dist && git commit -m 'Build for deployment' && git push"
   },
   "devDependencies": {

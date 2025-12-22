@@ -89,6 +89,11 @@ async function loadViewAir() {
         const allMeterData = allMeterDataResult.data || [];
         const allPayments = (await allPaymentsResult)?.data || [];
 
+        console.log('=== AIR VIEW DEBUG ===');
+        console.log('Air category:', airCategory);
+        console.log('Hunian data sample:', hunianData?.slice(0, 3));
+        console.log('All meter data sample:', allMeterData?.slice(0, 3));
+
         if (!airCategory) {
             console.error('Air category not found');
             contentDiv.innerHTML = '<p class="text-danger">Kategori Air tidak ditemukan. Pastikan data master kategori sudah diisi.</p>';
@@ -158,6 +163,9 @@ async function loadViewAir() {
             // Create payment details from billing records (now includes payment allocations)
             const paymentDetails = {};
 
+            // Get penghuni name from the first billing record (they should all be the same for a household)
+            const penghuniName = billingRecords.length > 0 ? (billingRecords[0].penghuni?.nama_kepala_keluarga || '-') : '-';
+
             // Sort billing records by period sequence (newest first for display)
             const sortedBillingRecords = billingRecords.sort((a, b) => {
                 const seqA = a.periode?.nomor_urut || 0;
@@ -211,9 +219,9 @@ async function loadViewAir() {
                 }
             });
 
-            return {
+            const result = {
                 nomor_blok_rumah: hunian.nomor_blok_rumah,
-                nama_kepala_keluarga: hunian.penghuni_saat_ini?.nama_kepala_keluarga || '-',
+                nama_kepala_keluarga: penghuniName,
                 area: hunian.lorong?.nama_lorong || '-',
                 ketua_lorong: hunian.lorong?.ketua_lorong || '-',
                 detail: paymentDetails,
@@ -222,6 +230,16 @@ async function loadViewAir() {
                     nominal: outstandingAmount
                 }
             };
+
+            // Debug penghuni data
+            if (result.nama_kepala_keluarga === '-') {
+                console.log('Penghuni kosong untuk rumah:', hunian.nomor_blok_rumah, {
+                    penghuni_saat_ini: hunian.penghuni_saat_ini,
+                    penghuni_saat_ini_id: hunian.penghuni_saat_ini_id
+                });
+            }
+
+            return result;
         });
 
         // Store data globally for search/filter operations

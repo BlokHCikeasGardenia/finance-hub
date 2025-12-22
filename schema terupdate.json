@@ -2436,6 +2436,136 @@
   },
   {
     "section": "INDEX",
+    "table_name": "pemasukan",
+    "detail": "idx_pemasukan_kategori_tanggal_hunian (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemasukan",
+    "detail": "idx_pemasukan_rekening_tanggal_kategori (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemasukan",
+    "detail": "idx_pemasukan_hunian_tanggal_kategori (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pengeluaran",
+    "detail": "idx_pengeluaran_kategori_tanggal_rekening (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pengeluaran",
+    "detail": "idx_pengeluaran_rekening_tanggal_kategori (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemasukan",
+    "detail": "idx_pemasukan_kategori_tanggal_search (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pengeluaran",
+    "detail": "idx_pengeluaran_kategori_tanggal_search (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl",
+    "detail": "idx_tagihan_ipl_periode_status_hunian (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl",
+    "detail": "idx_tagihan_ipl_hunian_periode_status (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "idx_tagihan_ipl_pembayaran_tagihan_pemasukan (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "idx_tagihan_ipl_pembayaran_pemasukan_tagihan (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl_pembayaran",
+    "detail": "idx_tagihan_ipl_pembayaran_tagihan_tanggal (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "tagihan_ipl",
+    "detail": "idx_tagihan_ipl_status_periode_hunian (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "idx_meteran_air_billing_periode_status_hunian (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "idx_meteran_air_billing_hunian_periode_status (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "idx_meteran_air_billing_pembayaran_billing_pemasukan (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "idx_meteran_air_billing_pembayaran_pemasukan_billing (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing_pembayaran",
+    "detail": "idx_meteran_air_billing_pembayaran_billing_tanggal (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "meteran_air_billing",
+    "detail": "idx_meteran_air_billing_status_periode_hunian (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "dana_titipan",
+    "detail": "idx_dana_titipan_kategori_tanggal_hunian (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "dana_titipan",
+    "detail": "idx_dana_titipan_hunian_tanggal_kategori (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "dana_titipan",
+    "detail": "idx_dana_titipan_converted_tanggal (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "dana_titipan",
+    "detail": "idx_dana_titipan_kategori_tanggal_search (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemasukan",
+    "detail": "idx_pemasukan_kategori_periode_tanggal (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pengeluaran",
+    "detail": "idx_pengeluaran_kategori_tanggal (unique=false)"
+  },
+  {
+    "section": "INDEX",
+    "table_name": "pemasukan",
+    "detail": "idx_pemasukan_periode_kategori_tanggal (unique=false)"
+  },
+  {
+    "section": "INDEX",
     "table_name": "meteran_air_billing",
     "detail": "meteran_air_billing_pkey (unique=true)"
   },
@@ -2497,6 +2627,76 @@
   {
     "section": "FUNCTION",
     "table_name": "get_next_transaction_number(character varying)",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "get_ipl_summary_for_period_v2(uuid,integer,integer,character va",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "get_pemasukan_paginated_v2(integer,integer,character varying,uu",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "get_pengeluaran_paginated_v2(integer,integer,character varying,",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "get_air_summary_for_period_v2(uuid,integer,integer,character va",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "get_monthly_summary_v2(uuid,integer,integer,character varying)",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "get_outstanding_summary_v2(uuid,integer,integer,character varyi",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "refresh_monthly_summary()",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "refresh_ipl_outstanding_summary()",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "refresh_air_outstanding_summary()",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "refresh_daily_cash_summary()",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "refresh_payment_summary_by_account()",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "refresh_ipl_payment_summary_by_house()",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "refresh_air_payment_summary_by_house()",
+    "detail": "see full in pg_get_functiondef()"
+  },
+  {
+    "section": "FUNCTION",
+    "table_name": "refresh_all_materialized_views()",
     "detail": "see full in pg_get_functiondef()"
   }
 ]

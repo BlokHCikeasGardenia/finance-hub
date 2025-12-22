@@ -50,11 +50,8 @@ async function loadMeteranAirBillingTableData(filters = {}) {
 // Render table HTML
 function renderMeteranAirBillingTable(container) {
     const tableHtml = `
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="mb-3">
             <h5>Data Meteran Air & Tagihan</h5>
-            <button type="button" class="btn btn-primary" onclick="showMeteranAirBillingForm()">
-                <i class="bi bi-plus-circle"></i> Input Meteran & Generate Tagihan
-            </button>
         </div>
 
         <!-- Filters -->
@@ -162,6 +159,11 @@ function renderMeteranAirBillingTableRows() {
                             onclick="viewMeteranAirBillingDetail('${item.id}')"
                             title="Lihat Detail">
                         <i class="bi bi-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm"
+                            onclick="editMeteranAirBilling('${item.id}')"
+                            title="Edit">
+                        <i class="bi bi-pencil"></i>
                     </button>
                     <button type="button" class="btn btn-outline-danger btn-sm"
                             onclick="confirmDeleteMeteranAirBilling('${item.id}')"
@@ -300,9 +302,213 @@ function getMeteranAirBillingDisplayRange() {
     return `${startIndex}-${endIndex}`;
 }
 
-// View billing detail (placeholder for future enhancement)
-function viewMeteranAirBillingDetail(id) {
-    showToast('Detail view akan diimplementasikan', 'info');
+// View billing detail with modal
+async function viewMeteranAirBillingDetail(id) {
+    try {
+        const { data: billing, error } = await supabase
+            .from('meteran_air_billing')
+            .select(`
+                *,
+                periode:periode_id (nama_periode, tanggal_awal, tanggal_akhir),
+                hunian:hunian_id (nomor_blok_rumah),
+                penghuni:penghuni_id (nama_kepala_keluarga)
+            `)
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+
+        const detailHtml = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Informasi Dasar</h6>
+                    <table class="table table-sm">
+                        <tr><td><strong>Rumah:</strong></td><td>${billing.hunian?.nomor_blok_rumah || '-'}</td></tr>
+                        <tr><td><strong>Penghuni:</strong></td><td>${billing.penghuni?.nama_kepala_keluarga || '-'}</td></tr>
+                        <tr><td><strong>Periode:</strong></td><td>${billing.periode?.nama_periode || '-'}</td></tr>
+                        <tr><td><strong>Status:</strong></td><td><span class="badge ${getStatusBadgeClass(billing.status)}">${formatStatus(billing.status)}</span></td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Data Meteran</h6>
+                    <table class="table table-sm">
+                        <tr><td><strong>Meter Saat Ini:</strong></td><td>${formatNumber(billing.meteran_periode_ini)} m³</td></tr>
+                        <tr><td><strong>Meter Sebelumnya:</strong></td><td>${formatNumber(billing.meteran_periode_sebelumnya)} m³</td></tr>
+                        <tr><td><strong>Pemakaian:</strong></td><td>${formatNumber(billing.pemakaian_m3)} m³</td></tr>
+                        <tr><td><strong>Tarif per m³:</strong></td><td>${formatCurrency(billing.tarif_per_kubik)}</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6>Informasi Tagihan</h6>
+                    <table class="table table-sm">
+                        <tr><td><strong>Nominal Tagihan:</strong></td><td>${formatCurrency(billing.nominal_tagihan)}</td></tr>
+                        <tr><td><strong>Sisa Tagihan:</strong></td><td>${formatCurrency(billing.sisa_tagihan)}</td></tr>
+                        <tr><td><strong>Total Pembayaran:</strong></td><td>${formatCurrency(billing.total_pembayaran || 0)}</td></tr>
+                        <tr><td><strong>Tanggal Tagihan:</strong></td><td>${formatDate(billing.tanggal_tagihan)}</td></tr>
+                        <tr><td><strong>Jatuh Tempo:</strong></td><td>${billing.tanggal_jatuh_tempo ? formatDate(billing.tanggal_jatuh_tempo) : '-'}</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Informasi Tambahan</h6>
+                    <table class="table table-sm">
+                        <tr><td><strong>Jenis Tagihan:</strong></td><td>${billing.billing_type || '-'}</td></tr>
+                        <tr><td><strong>Dibuat:</strong></td><td>${formatDate(billing.created_at)}</td></tr>
+                        <tr><td><strong>Diubah:</strong></td><td>${formatDate(billing.updated_at)}</td></tr>
+                    </table>
+                    ${billing.keterangan ? `<div class="alert alert-info mt-3"><small><i class="bi bi-info-circle"></i> ${billing.keterangan}</small></div>` : ''}
+                </div>
+            </div>
+        `;
+
+        showModal('Detail Tagihan Air', detailHtml, 'lg');
+
+    } catch (error) {
+        console.error('Error loading billing detail:', error);
+        showToast('Error loading detail', 'danger');
+    }
+}
+
+// Edit billing record
+async function editMeteranAirBilling(id) {
+    try {
+        const { data: billing, error } = await supabase
+            .from('meteran_air_billing')
+            .select(`
+                *,
+                periode:periode_id (nama_periode),
+                hunian:hunian_id (nomor_blok_rumah),
+                penghuni:penghuni_id (nama_kepala_keluarga)
+            `)
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+
+        const editHtml = `
+            <div id="edit-billing-error" class="alert alert-danger d-none" role="alert"></div>
+            <form id="edit-billing-form">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Rumah</label>
+                        <input type="text" class="form-control" value="${billing.hunian?.nomor_blok_rumah || ''}" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Penghuni</label>
+                        <input type="text" class="form-control" value="${billing.penghuni?.nama_kepala_keluarga || ''}" readonly>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Periode</label>
+                        <input type="text" class="form-control" value="${billing.periode?.nama_periode || ''}" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="edit_meter_reading" class="form-label">Meter Saat Ini (m³)</label>
+                        <input type="number" class="form-control" id="edit_meter_reading" name="meter_reading"
+                               step="0.01" min="0" value="${billing.meteran_periode_ini || 0}" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="edit_tarif" class="form-label">Tarif per m³ (Rp)</label>
+                        <input type="number" class="form-control" id="edit_tarif" name="tarif"
+                               step="0.01" min="0" value="${billing.tarif_per_kubik || 0}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="edit_status" class="form-label">Status</label>
+                        <select class="form-select" id="edit_status" name="status" required>
+                            <option value="belum_bayar" ${billing.status === 'belum_bayar' ? 'selected' : ''}>Belum Bayar</option>
+                            <option value="sebagian" ${billing.status === 'sebagian' ? 'selected' : ''}>Sebagian</option>
+                            <option value="lunas" ${billing.status === 'lunas' ? 'selected' : ''}>Lunas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="edit_keterangan" class="form-label">Keterangan</label>
+                    <textarea class="form-control" id="edit_keterangan" name="keterangan" rows="2">${billing.keterangan || ''}</textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i> Simpan Perubahan
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Batal</button>
+                </div>
+            </form>
+        `;
+
+        showModal('Edit Tagihan Air', editHtml);
+
+        // Setup form submission
+        setTimeout(() => {
+            const form = document.getElementById('edit-billing-form');
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await handleEditBillingSubmit(id);
+                });
+            }
+        }, 100);
+
+    } catch (error) {
+        console.error('Error loading billing for edit:', error);
+        showToast('Error loading data for edit', 'danger');
+    }
+}
+
+// Handle edit form submission
+async function handleEditBillingSubmit(id) {
+    try {
+        const meterReading = parseFloat(document.getElementById('edit_meter_reading').value) || 0;
+        const tarif = parseFloat(document.getElementById('edit_tarif').value) || 0;
+        const status = document.getElementById('edit_status').value;
+        const keterangan = document.getElementById('edit_keterangan').value;
+
+        // Recalculate usage and bill amount
+        const { data: billing, error: fetchError } = await supabase
+            .from('meteran_air_billing')
+            .select('meteran_periode_sebelumnya')
+            .eq('id', id)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        const usage = meterReading - (billing.meteran_periode_sebelumnya || 0);
+        const billAmount = usage * tarif;
+
+        const updateData = {
+            meteran_periode_ini: meterReading,
+            pemakaian_m3: usage,
+            tarif_per_kubik: tarif,
+            nominal_tagihan: billAmount,
+            sisa_tagihan: status === 'lunas' ? 0 : billAmount - (billing.total_pembayaran || 0),
+            status: status,
+            keterangan: keterangan
+        };
+
+        const { error: updateError } = await supabase
+            .from('meteran_air_billing')
+            .update(updateData)
+            .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        closeModal();
+        showToast('Data berhasil diperbarui', 'success');
+
+        // Refresh table
+        await loadMeteranAirBillingTableData();
+        updateMeteranAirBillingTableDisplay();
+
+    } catch (error) {
+        console.error('Error updating billing:', error);
+        const errorDiv = document.getElementById('edit-billing-error');
+        if (errorDiv) {
+            errorDiv.textContent = error.message || 'Terjadi kesalahan saat menyimpan';
+            errorDiv.classList.remove('d-none');
+        }
+    }
 }
 
 // Helper functions
@@ -357,10 +563,22 @@ function debounce(func, wait) {
 
 // Export functions for global access
 window.showMeteranAirBillingForm = showMeteranAirBillingForm;
-window.confirmDeleteMeteranAirBilling = confirmDeleteMeteranAirBilling;
+window.confirmDeleteMeteranAirBilling = async (id) => {
+    // Import the data function and call it directly to avoid recursion
+    const { confirmDeleteMeteranAirBilling: dataDelete } = await import('./meteran_air_billing-data.js');
+    const result = await dataDelete(id);
+    if (result.success) {
+        // Refresh table after successful delete
+        await loadMeteranAirBillingTableData();
+        updateMeteranAirBillingTableDisplay();
+        showToast('Data berhasil dihapus', 'success');
+    }
+    return result;
+};
 window.changeMeteranAirBillingPage = changeMeteranAirBillingPage;
 window.clearMeteranAirBillingFilters = clearMeteranAirBillingFilters;
 window.viewMeteranAirBillingDetail = viewMeteranAirBillingDetail;
+window.editMeteranAirBilling = editMeteranAirBilling;
 
 export {
     initializeMeteranAirBillingTable,

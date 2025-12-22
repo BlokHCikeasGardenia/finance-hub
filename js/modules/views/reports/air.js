@@ -701,8 +701,8 @@ async function loadViewRekapAir(selectedYear = null) {
                                     ${availableYears.map(year => `<option value="${year}" ${year === selectedYear ? 'selected' : ''}>📅 ${year}</option>`).join('')}
                                 </select>
                             </div>
-                            <button class="btn btn-secondary" onclick="loadViewsSection()">
-                                <i class="bi bi-arrow-left"></i> Kembali ke Views
+                            <button class="btn btn-warning text-dark" onclick="loadViewsSection()">
+                                <i class="bi bi-arrow-left"></i> Back
                             </button>
                         </div>
                     </div>

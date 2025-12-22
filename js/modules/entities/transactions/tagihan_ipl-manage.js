@@ -1,11 +1,11 @@
 // Tagihan IPL Management Module
 // Handles viewing, editing, and managing existing IPL bills
 
-import { supabase } from '/js/modules/config.js';
-import { showModal, closeModal, showConfirm } from '/js/modules/ui.js';
-import { showToast, formatCurrency, parseFormattedNumber } from '/js/modules/utils.js';
-import { paginateData } from '/js/modules/crud.js';
-import { setupIplSmartAutofill } from '/js/modules/entities/transactions/tagihan_ipl-form.js';
+import { supabase } from '../../config.js';
+import { showModal, closeModal, showConfirm } from '../../ui.js';
+import { showToast, formatCurrency, parseFormattedNumber } from '../../utils.js';
+import { paginateData } from '../../crud.js';
+import { setupIplSmartAutofill } from './tagihan_ipl-form.js';
 
 // Helper function for tariff type display names
 function getTypeDisplayName(typeTarif) {
@@ -519,8 +519,8 @@ async function editIplBill(billId) {
 // Initialize edit form selects with SearchableSelect components and pre-populate with bill data
 async function initializeEditFormSelects(bill) {
     // Import the SearchableSelect class
-    const { SearchableSelect } = await import('/js/modules/ui.js');
-    const { supabase } = await import('/js/modules/config.js');
+    const { SearchableSelect } = await import('../../ui.js');
+    const { supabase } = await import('../../config.js');
 
     // Initialize hunian select
     const hunianSelect = document.getElementById('ipl_hunian_id');
@@ -677,7 +677,7 @@ function setupEditSmartAutofill() {
             if (!hunianId) return;
 
             try {
-                const { supabase } = await import('/js/modules/config.js');
+                const { supabase } = await import('../../config.js');
                 const { data, error } = await supabase
                     .from('hunian')
                     .select('penghuni_saat_ini:penghuni_saat_ini_id (id, nama_kepala_keluarga)')
@@ -705,7 +705,7 @@ function setupEditSmartAutofill() {
             if (!penghuniId) return;
 
             try {
-                const { supabase } = await import('/js/modules/config.js');
+                const { supabase } = await import('../../config.js');
                 const { data, error } = await supabase
                     .from('hunian')
                     .select('id, nomor_blok_rumah')
@@ -831,7 +831,7 @@ async function handleEditBillFormSubmission(billId) {
         }
 
         // Get tariff details to determine the nominal amount
-        const { supabase } = await import('/js/modules/config.js');
+        const { supabase } = await import('../../config.js');
         const { data: tariffData, error: tariffError } = await supabase
             .from('tarif_ipl')
             .select('nominal')

@@ -35,12 +35,22 @@ function displayDanaTitipanTable(data) {
     const state = getDanaTitipanState();
     // Calculate pagination info
     const totalPages = Math.ceil(data.length / state.danaTitipanItemsPerPage);
-    const startIndex = (state.danaTitipanCurrentPage - 1) * state.danaTitipanItemsPerPage;
+
+    // Handle case where current page is beyond available pages (e.g., after filtering)
+    let currentPage = state.danaTitipanCurrentPage;
+    if (currentPage > totalPages && totalPages > 0) {
+        currentPage = totalPages;
+        setDanaTitipanState({ danaTitipanCurrentPage: currentPage });
+    } else if (totalPages === 0) {
+        currentPage = 1;
+    }
+
+    const startIndex = (currentPage - 1) * state.danaTitipanItemsPerPage;
     const endIndex = startIndex + state.danaTitipanItemsPerPage;
     const paginatedData = data.slice(startIndex, endIndex);
 
     const tableHtml = createDanaTitipanTableHtml(paginatedData, {
-        currentPage: state.danaTitipanCurrentPage,
+        currentPage,
         totalPages,
         itemsPerPage: state.danaTitipanItemsPerPage
     });
@@ -109,11 +119,7 @@ function getNestedValue(obj, path) {
 
 // Change page
 function changeDanaTitipanPage(page) {
-    const state = getDanaTitipanState();
-    const totalPages = Math.ceil(state.danaTitipanData.length / state.danaTitipanItemsPerPage);
-
-    if (page < 1 || page > totalPages) return;
-
+    // Set the page (validation will be handled by the display function)
     setDanaTitipanState({ danaTitipanCurrentPage: page });
 
     // Re-render table with filters applied
@@ -170,3 +176,6 @@ export {
     changeDanaTitipanPage,
     attachDanaTitipanSortListeners
 };
+
+// Make changeDanaTitipanPage globally available for pagination
+window.changeDanaTitipanPage = changeDanaTitipanPage;

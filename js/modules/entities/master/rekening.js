@@ -216,6 +216,46 @@ function sortRekeningData(column, direction) {
 
 // CRUD Functions
 
+// Show add form for rekening
+async function showAddForm(entity) {
+    // Use global showModal directly
+    const formHtml = `
+        <form id="rekening-form">
+            <div class="mb-3">
+                <label for="jenis_rekening" class="form-label">Jenis Rekening:</label>
+                <input type="text" class="form-control" id="jenis_rekening" value="" required>
+            </div>
+            <div class="mb-3">
+                <label for="saldo_awal" class="form-label">Saldo Awal:</label>
+                <input type="number" class="form-control" id="saldo_awal" step="0.01" min="0" value="" required>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Simpan</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </form>
+    `;
+
+    // Call global showModal
+    if (window.showModal) {
+        window.showModal('Tambah Rekening', formHtml);
+    } else {
+        console.error('showModal function not available');
+        showToast('Modal function not available', 'error');
+        return;
+    }
+
+    setTimeout(() => {
+        const form = document.getElementById('rekening-form');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await handleFormSubmit('rekening', null);
+            });
+        }
+    }, 100);
+}
+
 // Add new rekening
 async function addRekening(formData) {
     try {
@@ -308,7 +348,7 @@ async function editRekening(id) {
             if (form) {
                 form.addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    await handleFormSubmit(entity, id);
+                    await handleFormSubmit('rekening', id);
                 });
             }
         }, 100);
@@ -391,7 +431,8 @@ export {
     deleteRekening,
     editRekening,
     confirmDeleteRekening,
-    getRekeningData
+    getRekeningData,
+    showAddForm
 };
 
 // Backward compatibility for global functions

@@ -13,7 +13,8 @@ import {
 import {
     initializeDanaTitipanSearchAndFilter,
     resetDanaTitipanFilters,
-    sortDanaTitipanData
+    sortDanaTitipanData,
+    filterAndDisplayDanaTitipan
 } from './dana_titipan-filters.js';
 
 import {
@@ -29,7 +30,8 @@ export {
     confirmDeleteDanaTitipan,
     initializeDanaTitipanSearchAndFilter,
     changeDanaTitipanPage,
-    resetDanaTitipanFilters
+    resetDanaTitipanFilters,
+    filterAndDisplayDanaTitipan
 };
 
 // Convert dana titipan to pemasukan

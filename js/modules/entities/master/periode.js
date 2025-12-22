@@ -356,6 +356,46 @@ function initializePeriodeSearchAndFilter() {
 
 // CRUD Functions
 
+// Show add form for periode
+async function showAddForm(entity) {
+    const { showModal } = await import('../../ui.js');
+
+    const formHtml = `
+        <form id="periode-form">
+            <div class="mb-3">
+                <label for="nomor_urut" class="form-label">No. Urut:</label>
+                <input type="number" class="form-control" id="nomor_urut" value="" required min="1">
+            </div>
+            <div class="mb-3">
+                <label for="nama_periode" class="form-label">Nama Periode:</label>
+                <input type="text" class="form-control" id="nama_periode" value="" required>
+            </div>
+            <div class="mb-3">
+                <label for="tanggal_awal" class="form-label">Tanggal Awal:</label>
+                <input type="date" class="form-control" id="tanggal_awal" value="" required>
+            </div>
+            <div class="mb-3">
+                <label for="tanggal_akhir" class="form-label">Tanggal Akhir:</label>
+                <input type="date" class="form-control" id="tanggal_akhir" value="" required>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Simpan</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </form>
+    `;
+
+    showModal('Tambah Periode', formHtml);
+
+    setTimeout(() => {
+        const form = document.getElementById('periode-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleFormSubmit('periode', null);
+        });
+    }, 100);
+}
+
 // Add new periode
 async function addPeriode(formData) {
     try {
@@ -449,7 +489,7 @@ async function editPeriode(id) {
             const form = document.getElementById('periode-form');
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                await handleFormSubmit(entity, id);
+                await handleFormSubmit('periode', id);
             });
         }, 100);
 
@@ -509,7 +549,8 @@ export {
     confirmDeletePeriode,
     changePeriodePage,
     initializePeriodeSearchAndFilter,
-    filterAndDisplayPeriode
+    filterAndDisplayPeriode,
+    showAddForm
 };
 
 // Backward compatibility for global functions

@@ -599,6 +599,13 @@ window.changePage = async (tableType, page) => {
                 changeAirPage(page);
                 break;
 
+            case 'dana_titipan':
+                // Call the globally available Dana Titipan page change function
+                if (window.changeDanaTitipanPage) {
+                    window.changeDanaTitipanPage(page);
+                }
+                break;
+
             default:
                 console.warn(`Page change not implemented for table type: ${tableType}`);
                 const { showToast } = await import('./utils.js');

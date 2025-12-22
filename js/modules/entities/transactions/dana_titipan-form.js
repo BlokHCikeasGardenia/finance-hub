@@ -14,6 +14,7 @@ import {
     getHunianOptions,
     getPeriodeOptions
 } from './dana_titipan-data.js';
+import { filterAndDisplayDanaTitipan } from './dana_titipan-filters.js';
 
 // Show add form for dana_titipan
 function showAddDanaTitipanForm() {
@@ -428,6 +429,7 @@ async function handleDanaTitipanFormSubmit(isEdit, editId) {
         if (result.success) {
             closeModal();
             await loadDanaTitipan();
+            filterAndDisplayDanaTitipan();
             showToast(`Dana titipan ${isEdit ? 'updated' : 'added'} successfully`, 'success');
         } else {
             showDanaTitipanFormError('Error: ' + result.message);
@@ -594,6 +596,7 @@ async function confirmDeleteDanaTitipan(id) {
         const result = await deleteDanaTitipan(id);
         if (result.success) {
             await loadDanaTitipan();
+            filterAndDisplayDanaTitipan();
             showToast('Dana titipan berhasil dihapus', 'success');
         } else {
             showToast('Error deleting: ' + result.error, 'danger');

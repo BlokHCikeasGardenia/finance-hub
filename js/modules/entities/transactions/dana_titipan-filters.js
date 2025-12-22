@@ -54,9 +54,8 @@ function filterAndDisplayDanaTitipan(isFilterChange = true) {
     if (totalCountElement) totalCountElement.textContent = `${filteredData.length} transaksi`;
     if (totalNominalElement) totalNominalElement.textContent = `Total: ${formatCurrency(totalNominal)}`;
 
-    // Display filtered data
-    const { data: paginatedData } = paginateData(filteredData, state.danaTitipanCurrentPage, state.danaTitipanItemsPerPage);
-    displayDanaTitipanTable(paginatedData);
+    // Display filtered data (let displayDanaTitipanTable handle pagination internally)
+    displayDanaTitipanTable(filteredData);
 
     // Reset to page 1 only when filters actually change
     if (isFilterChange) {
@@ -150,7 +149,7 @@ function resetDanaTitipanFilters() {
 // Sort dana_titipan data
 function sortDanaTitipanData(column, direction) {
     if (direction === 'none') {
-        displayDanaTitipanTable(getDanaTitipanData());
+        filterAndDisplayDanaTitipan(false);
         return;
     }
 
@@ -189,9 +188,8 @@ function sortDanaTitipanData(column, direction) {
         'tanggal', 'created_at'
     ]);
 
-    // Display sorted data
-    const { data: paginatedData } = paginateData(filteredData, state.danaTitipanCurrentPage, state.danaTitipanItemsPerPage);
-    displayDanaTitipanTable(paginatedData);
+    // Display sorted data (let displayDanaTitipanTable handle pagination internally)
+    displayDanaTitipanTable(filteredData);
 }
 
 export {

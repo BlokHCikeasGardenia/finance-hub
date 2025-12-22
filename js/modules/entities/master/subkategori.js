@@ -131,6 +131,43 @@ function changeSubkategoriPage(page) {
 
 // CRUD Functions
 
+// Show add form for subkategori
+async function showAddForm(entity) {
+    const { showModal } = await import('../../ui.js');
+
+    const formHtml = `
+        <form id="subkategori-form">
+            <div class="mb-3">
+                <label for="kategori_id" class="form-label">Kategori:</label>
+                <select class="form-select" id="kategori_id" required>
+                    <option value="">Pilih Kategori</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="nama_subkategori" class="form-label">Nama Subkategori:</label>
+                <input type="text" class="form-control" id="nama_subkategori" value="" required>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Simpan</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </form>
+    `;
+
+    showModal('Tambah Subkategori', formHtml);
+
+    // Load kategori options
+    setTimeout(async () => {
+        await loadKategoriOptionsForSubkategori();
+
+        const form = document.getElementById('subkategori-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleFormSubmit('subkategori', null);
+        });
+    }, 100);
+}
+
 // Add new subkategori
 async function addSubkategori(formData) {
     try {
@@ -245,7 +282,7 @@ async function editSubkategori(id) {
             const form = document.getElementById('subkategori-form');
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                await handleFormSubmit(entity, id);
+                await handleFormSubmit('subkategori', id);
             });
         }, 100);
 
@@ -301,7 +338,8 @@ export {
     deleteSubkategori,
     editSubkategori,
     confirmDeleteSubkategori,
-    loadKategoriOptionsForSubkategori
+    loadKategoriOptionsForSubkategori,
+    showAddForm
 };
 
 // Backward compatibility for global functions

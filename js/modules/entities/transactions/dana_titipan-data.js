@@ -104,13 +104,6 @@ async function loadDanaTitipan(refreshUI = true) {
 
         danaTitipanData = data || [];
 
-        if (refreshUI) {
-            // This will be imported and called from the filters module
-            if (typeof filterAndDisplayDanaTitipan === 'function') {
-                filterAndDisplayDanaTitipan();
-            }
-        }
-
         return { success: true, data: danaTitipanData };
     } catch (error) {
         console.error('Error loading dana_titipan:', error);
@@ -282,8 +275,6 @@ export {
     setDanaTitipanState,
     resetDanaTitipanFilters
 };
-
-import { filterAndDisplayDanaTitipan } from './dana_titipan-filters.js';
 
 let showConfirm;
 import('../../utils.js').then(utils => {

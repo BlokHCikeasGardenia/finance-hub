@@ -24,7 +24,7 @@ import { loadTarifAir } from './entities/master/tarif-air.js';
 import { loadTarifIpl } from './entities/master/tarif_ipl.js';
 import { loadPemasukan, showAddPemasukanForm, initializePemasukanSearchAndFilter } from './entities/transactions/pemasukan.js';
 import { loadPengeluaran, showAddPengeluaranForm, initializePengeluaranSearchAndFilter } from './entities/transactions/pengeluaran.js';
-import { loadDanaTitipan, showAddDanaTitipanForm, initializeDanaTitipanSearchAndFilter } from './entities/transactions/dana_titipan.js';
+import { loadDanaTitipan, showAddDanaTitipanForm, initializeDanaTitipanSearchAndFilter, filterAndDisplayDanaTitipan } from './entities/transactions/dana_titipan.js';
 import { loadPemindahbukuan, showAddPemindahbukuanForm, initializePemindahbukuanSearchAndFilter } from './entities/transactions/pemindahbukuan.js';
 import { initializeMeteranAirBilling } from './entities/transactions/meteran_air_billing.js';
 import { loadTagihanIplInput } from './entities/transactions/tagihan_ipl.js';
@@ -408,6 +408,16 @@ async function loadSectionContent(sectionId) {
                                         <label for="dana_titipan-date-to" class="form-label">Sampai:</label>
                                         <input type="date" class="form-control" id="dana_titipan-date-to">
                                     </div>
+                                    <div class="col-md-1">
+                                        <label for="dana_titipan-items-per-page" class="form-label">Per Halaman:</label>
+                                        <select class="form-select" id="dana_titipan-items-per-page">
+                                            <option value="5">5</option>
+                                            <option value="10" selected>10</option>
+                                            <option value="25">25</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                        </select>
+                                    </div>
                                     <div class="col-md-1 d-flex align-items-end">
                                         <button class="btn btn-outline-secondary btn-sm" onclick="resetDanaTitipanFilters()">Reset</button>
                                     </div>
@@ -423,6 +433,7 @@ async function loadSectionContent(sectionId) {
             `;
             await loadDanaTitipan();
             initializeDanaTitipanSearchAndFilter();
+            filterAndDisplayDanaTitipan();
             break;
 
         case 'pengeluaran':

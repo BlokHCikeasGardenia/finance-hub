@@ -14,8 +14,7 @@ const pemindahbukuanTableColumns = [
     { key: 'nominal', label: 'Nominal', sortable: true, render: (item) => formatCurrency(item.nominal) },
     { key: 'rekening_dari', label: 'Rekening Dari', sortable: true, render: (item) => item.rekening_dari?.jenis_rekening || '-' },
     { key: 'rekening_ke', label: 'Rekening Ke', sortable: true, render: (item) => item.rekening_ke?.jenis_rekening || '-' },
-    { key: 'catatan', label: 'Catatan', sortable: false },
-    { key: 'created_at', label: 'Dibuat', sortable: true, render: (item) => new Date(item.created_at).toLocaleDateString('id-ID') }
+    { key: 'catatan', label: 'Catatan', sortable: false }
 ];
 
 // Filter and display pemindahbukuan data

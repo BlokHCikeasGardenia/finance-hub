@@ -74,7 +74,7 @@ function showAddPemindahbukuanForm() {
 
 async function showEditPemindahbukuanForm(id) {
     try {
-        const { success, data } = await supabase
+        const { data, error } = await supabase
             .from('pemindahbukuan')
             .select(`
                 *,
@@ -84,7 +84,7 @@ async function showEditPemindahbukuanForm(id) {
             .eq('id', id)
             .single();
 
-        if (!success || !data) {
+        if (error || !data) {
             showToast('Data pemindahbukuan tidak ditemukan', 'warning');
             return;
         }

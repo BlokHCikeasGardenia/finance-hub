@@ -163,8 +163,8 @@ async function loadViewAir() {
             // Create payment details from billing records (now includes payment allocations)
             const paymentDetails = {};
 
-            // Get penghuni name from the first billing record (they should all be the same for a household)
-            const penghuniName = billingRecords.length > 0 ? (billingRecords[0].penghuni?.nama_kepala_keluarga || '-') : '-';
+            // Get penghuni name from hunian data
+            const penghuniName = hunian.penghuni_saat_ini?.nama_kepala_keluarga || '-';
 
             // Sort billing records by period sequence (newest first for display)
             const sortedBillingRecords = billingRecords.sort((a, b) => {

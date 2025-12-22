@@ -1,0 +1,19 @@
+{
+  "name": "keuangan-rt-modern",
+  "version": "1.0.0",
+  "description": "Sistem Informasi Keuangan RT Modern",
+  "type": "module",
+  "main": "dist/bundle.js",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "python -m http.server 3000",
+    "deploy": "npm run build && git add dist && git commit -m 'Build for deployment' && git push"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "rollup": "^4.9.6",
+    "rollup-plugin-copy": "^3.5.0"
+  },
+  "homepage": "https://blokhcikeasgardenia.github.io/finance-hub"
+}

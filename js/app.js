@@ -16,6 +16,9 @@ import {
     loadSectionContent
 } from './modules/ui.js';
 
+// Import backward compatibility first to ensure global functions are available
+import './modules/backward-compatibility.js';
+
 // Global state
 let appInitialized = false;
 

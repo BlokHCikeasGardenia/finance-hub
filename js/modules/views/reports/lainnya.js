@@ -101,9 +101,9 @@ async function loadViewLainnya() {
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4>View Data Lainnya</h4>
-                        <button class="btn btn-secondary" onclick="loadViewsSection()">
-                            <i class="bi bi-arrow-left"></i> Kembali ke Views
-                        </button>
+                            <button class="btn btn-warning text-dark" onclick="loadViewsSection()">
+                                <i class="bi bi-arrow-left"></i> Back
+                            </button>
                     </div>
                     <p class="text-muted">Data transaksi pemasukan dan pengeluaran kategori lainnya</p>
 
@@ -286,9 +286,7 @@ async function loadViewRekapLainnya(selectedYear = null) {
 
         const displayYear = isAllYearsMode ? null : selectedYear;
 
-        const dynamicTitle = isAllYearsMode
-            ? 'Rekap Lainnya'
-            : `Rekap Lainnya ${displayYear}`;
+        const dynamicTitle = 'Rekap Lainnya';
 
         const titleBadge = isAllYearsMode
             ? '<span class="badge bg-secondary ms-2">Semua Periode</span>'
@@ -316,8 +314,8 @@ async function loadViewRekapLainnya(selectedYear = null) {
                                     ${availableYears.map(year => `<option value="${year}" ${year === selectedYear ? 'selected' : ''}>📅 ${year}</option>`).join('')}
                                 </select>
                             </div>
-                            <button class="btn btn-secondary" onclick="loadViewsSection()">
-                                <i class="bi bi-arrow-left"></i> Kembali ke Views
+                            <button class="btn btn-warning text-dark" onclick="loadViewsSection()">
+                                <i class="bi bi-arrow-left"></i> Back
                             </button>
                         </div>
                     </div>

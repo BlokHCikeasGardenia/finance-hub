@@ -77,9 +77,7 @@ async function loadViewRekapIPL() {
 
         const displayYear = isAllYearsMode ? null : defaultYear;
 
-        const dynamicTitle = isAllYearsMode
-            ? 'Rekap IPL Detail'
-            : `Rekap IPL ${displayYear}`;
+        const dynamicTitle = 'Rekap IPL';
 
         const titleBadge = isAllYearsMode
             ? '<span class="badge bg-secondary ms-2">Semua Periode</span>'

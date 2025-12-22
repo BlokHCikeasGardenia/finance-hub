@@ -221,9 +221,7 @@ async function loadViewRingkasan(selectedYear = null) {
 
         const displayYear = isAllYearsMode ? null : selectedYear;
 
-        const dynamicTitle = isAllYearsMode
-            ? 'Ringkasan Saldo per Kategori'
-            : `Ringkasan Saldo ${displayYear}`;
+        const dynamicTitle = 'Ringkasan Saldo';
 
         const titleBadge = isAllYearsMode
             ? '<span class="badge bg-secondary ms-2">Semua Tahun</span>'

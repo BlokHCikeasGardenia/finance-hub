@@ -671,9 +671,7 @@ async function loadViewRekapAir(selectedYear = null) {
 
         const displayYear = isAllYearsMode ? null : selectedYear;
 
-        const dynamicTitle = isAllYearsMode
-            ? 'Rekap Air'
-            : `Rekap Air ${displayYear}`;
+        const dynamicTitle = 'Rekap Air';
 
         const titleBadge = isAllYearsMode
             ? '<span class="badge bg-secondary ms-2">Semua Periode</span>'

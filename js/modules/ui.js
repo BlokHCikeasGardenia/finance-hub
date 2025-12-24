@@ -582,9 +582,17 @@ window.changePage = async (tableType, page) => {
                 break;
 
             case 'pengeluaran':
-                // Import and call pengeluaran page change function
-                const { changePengeluaranPage } = await import('./views/reports/pengeluaran.js');
-                changePengeluaranPage(page);
+                // Check if we're in views section (reports) or admin section (CRUD)
+                const currentSection = getCurrentSection();
+                if (currentSection === 'views') {
+                    // Views pengeluaran (reports)
+                    const { changePengeluaranPage } = await import('./views/reports/pengeluaran.js');
+                    changePengeluaranPage(page);
+                } else {
+                    // Admin pengeluaran (CRUD)
+                    const { changePengeluaranPage } = await import('./entities/transactions/pengeluaran-table.js');
+                    changePengeluaranPage(page);
+                }
                 break;
 
             case 'ipl':

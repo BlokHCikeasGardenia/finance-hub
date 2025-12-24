@@ -9,6 +9,19 @@ let pengeluaranViewDataGlobal = [];
 let pengeluaranCurrentPage = 1;
 let pengeluaranItemsPerPage = 10;
 
+// Helper function to get badge color based on category
+function getCategoryBadgeColor(categoryName) {
+    if (!categoryName) return 'bg-danger';
+
+    const category = categoryName.toLowerCase();
+    if (category.includes('ipl')) return 'bg-info';        // Light blue for IPL
+    if (category.includes('air')) return 'bg-primary';     // Blue for Air
+    if (category.includes('aula')) return 'bg-warning';    // Yellow for Aula
+    if (category.includes('lainnya')) return 'bg-secondary'; // Gray for Lainnya
+
+    return 'bg-danger'; // Red for other categories
+}
+
 // Load Pengeluaran View
 async function loadViewPengeluaran(selectedYear = null) {
     const contentDiv = document.getElementById('views-content');
@@ -217,9 +230,16 @@ async function loadViewPengeluaran(selectedYear = null) {
 
 // Render Pengeluaran Table with pagination
 function renderPengeluaranTable(data) {
+    // Ensure current page is valid
     const totalPages = Math.ceil(data.length / pengeluaranItemsPerPage);
+    if (pengeluaranCurrentPage > totalPages && totalPages > 0) {
+        pengeluaranCurrentPage = totalPages;
+    } else if (pengeluaranCurrentPage < 1 || totalPages === 0) {
+        pengeluaranCurrentPage = 1;
+    }
+
     const startIndex = (pengeluaranCurrentPage - 1) * pengeluaranItemsPerPage;
-    const endIndex = startIndex + pengeluaranItemsPerPage;
+    const endIndex = Math.min(startIndex + pengeluaranItemsPerPage, data.length);
     const paginatedData = data.slice(startIndex, endIndex);
 
     const tableHtml = `
@@ -238,37 +258,59 @@ function renderPengeluaranTable(data) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${paginatedData.map((item, index) => `
+                    ${paginatedData.length > 0 ? paginatedData.map((item, index) => `
                         <tr>
                             <td>${startIndex + index + 1}</td>
                             <td>${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
                             <td class="text-end text-danger fw-bold">${formatCurrency(item.nominal)}</td>
                             <td>${item.keterangan || '-'}</td>
-                            <td><span class="badge bg-danger">${item.kategori?.nama_kategori || '-'}</span></td>
+                            <td><span class="badge ${getCategoryBadgeColor(item.kategori?.nama_kategori)}">${item.kategori?.nama_kategori || '-'}</span></td>
                             <td>${item.subkategori?.nama_subkategori || '-'}</td>
                             <td>${item.penerima || '-'}</td>
                             <td>
                                 ${item.link_url ? `<a href="${item.link_url}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-link-45deg"></i> Lihat</a>` : '-'}
                             </td>
                         </tr>
-                    `).join('')}
+                    `).join('') : '<tr><td colspan="8" class="text-center text-muted">Tidak ada data pengeluaran</td></tr>'}
                 </tbody>
             </table>
         </div>
 
         <!-- Pagination -->
+        ${totalPages > 1 ? `
         <div class="d-flex justify-content-between align-items-center mt-3">
             <div class="text-muted">
                 Menampilkan ${paginatedData.length > 0 ? startIndex + 1 : 0}-${startIndex + paginatedData.length} dari ${data.length} data
             </div>
-            ${renderPagination('pengeluaran', pengeluaranCurrentPage, totalPages)}
+            <nav aria-label="Pengeluaran pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item ${pengeluaranCurrentPage === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="changePengeluaranPage(${pengeluaranCurrentPage - 1}); return false;" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    ${Array.from({length: totalPages}, (_, i) => i + 1).map(page => `
+                        <li class="page-item ${page === pengeluaranCurrentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="changePengeluaranPage(${page}); return false;">${page}</a>
+                        </li>
+                    `).join('')}
+                    <li class="page-item ${pengeluaranCurrentPage === totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="changePengeluaranPage(${pengeluaranCurrentPage + 1}); return false;" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
+        ` : ''}
     `;
 
-    document.getElementById('pengeluaran-table-container').innerHTML = tableHtml;
-
-    // Re-attach sort event listeners
-    attachPengeluaranSortListeners();
+    const container = document.getElementById('pengeluaran-table-container');
+    if (container) {
+        container.innerHTML = tableHtml;
+        // Re-attach sort event listeners
+        attachPengeluaranSortListeners();
+    }
 }
 
 // Initialize Pengeluaran Search and Filter
@@ -441,7 +483,22 @@ function sortPengeluaranData(column, direction) {
 // Change Pengeluaran Page
 function changePengeluaranPage(page) {
     pengeluaranCurrentPage = page;
-    applyPengeluaranFilters(false); // false = not a filter change, just pagination
+    // Re-filter data and render
+    const searchTerm = document.getElementById('pengeluaran-search')?.value.toLowerCase() || '';
+    let filteredData = [...pengeluaranViewDataGlobal];
+
+    if (searchTerm) {
+        filteredData = filteredData.filter(item =>
+            new Date(item.tanggal).toLocaleDateString('id-ID').toLowerCase().includes(searchTerm) ||
+            item.nominal.toString().includes(searchTerm) ||
+            (item.keterangan || '').toLowerCase().includes(searchTerm) ||
+            (item.kategori?.nama_kategori || '').toLowerCase().includes(searchTerm) ||
+            (item.subkategori?.nama_subkategori || '').toLowerCase().includes(searchTerm) ||
+            (item.penerima || '').toLowerCase().includes(searchTerm)
+        );
+    }
+
+    renderPengeluaranTable(filteredData);
 }
 
 // Initialize Pengeluaran Year Selector

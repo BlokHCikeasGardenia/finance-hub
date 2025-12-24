@@ -24,11 +24,6 @@ function getNestedValue(obj, path) {
 // Filter and display pengeluaran data (wrapper to work with state)
 function filterAndDisplayPengeluaranWrapper(isFilterChange = true) {
     filterAndDisplayPengeluaran();
-
-    // Reset to page 1 only when filters actually change
-    if (isFilterChange) {
-        setPengeluaranState({ pengeluaranCurrentPage: 1 });
-    }
 }
 
 // Initialize search and filter functionality
@@ -38,7 +33,7 @@ function initializePengeluaranSearchAndFilter() {
     if (searchInput) {
         searchInput.addEventListener('input', debounce(() => {
             const searchTerm = searchInput.value.trim().toLowerCase();
-            setPengeluaranState({ pengeluaranSearchTerm: searchTerm, pengeluaranCurrentPage: 1 });
+            setPengeluaranState({ pengeluaranSearchTerm: searchTerm });
             filterAndDisplayPengeluaranWrapper();
         }, 300));
     }
@@ -55,8 +50,7 @@ function initializePengeluaranSearchAndFilter() {
             const categoryId = e.target.value;
             setPengeluaranState({
                 pengeluaranFilterCategory: categoryId,
-                pengeluaranFilterSubcategory: '', // Reset subcategory filter when category changes
-                pengeluaranCurrentPage: 1
+                pengeluaranFilterSubcategory: '' // Reset subcategory filter when category changes
             });
 
             // Reload subcategories when category changes
@@ -77,7 +71,7 @@ function initializePengeluaranSearchAndFilter() {
     const subcategoryFilter = document.getElementById('pengeluaran-filter-subcategory');
     if (subcategoryFilter) {
         subcategoryFilter.addEventListener('change', (e) => {
-            setPengeluaranState({ pengeluaranFilterSubcategory: e.target.value, pengeluaranCurrentPage: 1 });
+            setPengeluaranState({ pengeluaranFilterSubcategory: e.target.value });
             filterAndDisplayPengeluaranWrapper();
         });
     }
@@ -88,7 +82,7 @@ function initializePengeluaranSearchAndFilter() {
     const accountFilter = document.getElementById('pengeluaran-filter-account');
     if (accountFilter) {
         accountFilter.addEventListener('change', (e) => {
-            setPengeluaranState({ pengeluaranFilterAccount: e.target.value, pengeluaranCurrentPage: 1 });
+            setPengeluaranState({ pengeluaranFilterAccount: e.target.value });
             filterAndDisplayPengeluaranWrapper();
         });
     }
@@ -145,8 +139,7 @@ function resetPengeluaranFilters() {
         pengeluaranFilterSubcategory: '',
         pengeluaranFilterAccount: '',
         pengeluaranFilterDateFrom: '',
-        pengeluaranFilterDateTo: '',
-        pengeluaranCurrentPage: 1
+        pengeluaranFilterDateTo: ''
     });
 
     // Reset UI elements
@@ -218,12 +211,6 @@ function sortPengeluaranData(column, direction) {
         pengeluaranSortDirection: direction
     });
 
-    // Display sorted data
-    const currentState = getPengeluaranState();
-    const startIndex = (currentState.pengeluaranCurrentPage - 1) * currentState.pengeluaranItemsPerPage;
-    const endIndex = startIndex + currentState.pengeluaranItemsPerPage;
-    const paginatedData = filteredData.slice(startIndex, endIndex);
-
     // Update total count display
     const totalNominal = filteredData.reduce((sum, item) => sum + (item.nominal || 0), 0);
     const totalCountElement = document.getElementById('pengeluaran-total-count');
@@ -250,9 +237,9 @@ function sortPengeluaranData(column, direction) {
                 <tbody>
     `;
 
-    if (paginatedData.length > 0) {
-        paginatedData.forEach((item, index) => {
-            const displayIndex = startIndex + index + 1;
+    if (filteredData.length > 0) {
+        filteredData.forEach((item, index) => {
+            const displayIndex = index + 1;
             tableHtml += `<tr>
                 <td>${displayIndex}</td>
                 ${pengeluaranTableColumns.map(col => {
@@ -272,13 +259,9 @@ function sortPengeluaranData(column, direction) {
 
     tableHtml += `</tbody></table></div>`;
 
-    // Add pagination
-    const totalPages = Math.ceil(filteredData.length / currentState.pengeluaranItemsPerPage);
-    const paginationHtml = renderPagination('pengeluaran', currentState.pengeluaranCurrentPage, totalPages);
-
     const tableElement = document.getElementById('pengeluaran-table');
     if (tableElement) {
-        tableElement.innerHTML = tableHtml + paginationHtml;
+        tableElement.innerHTML = tableHtml;
     }
 
     // Attach sort listeners

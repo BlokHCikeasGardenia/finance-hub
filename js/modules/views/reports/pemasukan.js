@@ -9,6 +9,19 @@ let pemasukanViewDataGlobal = [];
 let pemasukanCurrentPage = 1;
 let pemasukanItemsPerPage = 10;
 
+// Helper function to get badge color based on category
+function getCategoryBadgeColor(categoryName) {
+    if (!categoryName) return 'bg-danger';
+
+    const category = categoryName.toLowerCase();
+    if (category.includes('ipl')) return 'bg-info';        // Light blue for IPL
+    if (category.includes('air')) return 'bg-primary';     // Blue for Air
+    if (category.includes('aula')) return 'bg-warning';    // Yellow for Aula
+    if (category.includes('lainnya')) return 'bg-secondary'; // Gray for Lainnya
+
+    return 'bg-danger'; // Red for other categories
+}
+
 // Load Pemasukan View
 async function loadViewPemasukan(selectedYear = null) {
     const contentDiv = document.getElementById('views-content');
@@ -245,7 +258,7 @@ function renderPemasukanTable(data) {
                             <td>${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
                             <td class="text-end text-success fw-bold">${formatCurrency(item.nominal)}</td>
                             <td>${item.penghuni?.nama_kepala_keluarga || 'Sumber External'}</td>
-                            <td><span class="badge bg-primary">${item.kategori?.nama_kategori || '-'}</span></td>
+                            <td><span class="badge ${getCategoryBadgeColor(item.kategori?.nama_kategori)}">${item.kategori?.nama_kategori || '-'}</span></td>
                             <td>${item.rekening?.jenis_rekening || '-'}</td>
                             <td>${item.keterangan || '-'}</td>
                         </tr>

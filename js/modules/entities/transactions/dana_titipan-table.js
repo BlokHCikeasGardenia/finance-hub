@@ -3,6 +3,7 @@
 
 import { getDanaTitipanState, setDanaTitipanState } from './dana_titipan-data.js';
 import { renderPagination } from '../../utils.js';
+import { filterAndDisplayDanaTitipan } from './dana_titipan-filters.js';
 
 // Table columns configuration - matching app_old.js structure
 const danaTitipanTableColumns = [
@@ -123,9 +124,7 @@ function changeDanaTitipanPage(page) {
     setDanaTitipanState({ danaTitipanCurrentPage: page });
 
     // Re-render table with filters applied
-    if (typeof filterAndDisplayDanaTitipan === 'function') {
-        filterAndDisplayDanaTitipan(false); // false = not a filter change, just pagination
-    }
+    filterAndDisplayDanaTitipan(false); // false = not a filter change, just pagination
 }
 
 // Attach sort listeners

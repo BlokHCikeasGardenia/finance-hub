@@ -85,7 +85,7 @@ async function loadSectionContent(sectionId) {
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label for="hunian-items-per-page" class="form-label">Data per Halaman:</label>
+                                        <label for="hunian-items-per-page" class="form-label">Per Halaman:</label>
                                         <select class="form-select" id="hunian-items-per-page">
                                             <option value="5">5</option>
                                             <option value="10" selected>10</option>
@@ -145,7 +145,7 @@ async function loadSectionContent(sectionId) {
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label for="penghuni-items-per-page" class="form-label">Data per Halaman:</label>
+                                        <label for="penghuni-items-per-page" class="form-label">Per Halaman:</label>
                                         <select class="form-select" id="penghuni-items-per-page"></select>
                                     </div>
                                     <div class="col-md-2 d-flex align-items-end gap-2">
@@ -479,6 +479,16 @@ async function loadSectionContent(sectionId) {
                                         <label for="pengeluaran-date-to" class="form-label">Sampai:</label>
                                         <input type="date" class="form-control" id="pengeluaran-date-to">
                                     </div>
+                                    <div class="col-md-1">
+                                        <label for="pengeluaran-items-per-page" class="form-label">Per Halaman:</label>
+                                        <select class="form-select" id="pengeluaran-items-per-page">
+                                            <option value="5">5</option>
+                                            <option value="10" selected>10</option>
+                                            <option value="25">25</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                        </select>
+                                    </div>
                                     <div class="col-md-1 d-flex align-items-end">
                                         <button class="btn btn-outline-secondary btn-sm" onclick="resetPengeluaranFilters()">Reset</button>
                                     </div>
@@ -669,7 +679,7 @@ async function loadSectionContent(sectionId) {
                                             </select>
                                         </div>
                                         <div class="col-md-2">
-                                            <label for="ipl-bills-items-per-page" class="form-label">Data per Halaman:</label>
+                                            <label for="ipl-bills-items-per-page" class="form-label">Per Halaman:</label>
                                             <select class="form-select" id="ipl-bills-items-per-page">
                                                 <option value="5">5</option>
                                                 <option value="10" selected>10</option>

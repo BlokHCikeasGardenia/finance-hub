@@ -20,10 +20,23 @@ const pemasukanTableColumns = [
 
 // Custom renderers
 
+// Helper function to get badge color based on category
+function getCategoryBadgeColor(categoryName) {
+    if (!categoryName) return 'bg-danger';
+
+    const category = categoryName.toLowerCase();
+    if (category.includes('ipl')) return 'bg-info';        // Light blue for IPL
+    if (category.includes('air')) return 'bg-primary';     // Blue for Air
+    if (category.includes('aula')) return 'bg-warning';    // Yellow for Aula
+    if (category.includes('lainnya')) return 'bg-secondary'; // Gray for Lainnya
+
+    return 'bg-danger'; // Red for other categories
+}
+
 // Render pemasukan category badge
 function renderPemasukanCategory(item) {
     const categoryName = item.kategori_saldo?.nama_kategori || 'Lain-lain';
-    return `<span class="badge bg-success">${categoryName}</span>`;
+    return `<span class="badge ${getCategoryBadgeColor(categoryName)}">${categoryName}</span>`;
 }
 
 // Display pemasukan table with pagination support

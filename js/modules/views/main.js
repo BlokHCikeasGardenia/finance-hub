@@ -14,6 +14,20 @@ import { loadViewRekapIPL } from './reports/rekap-ipl.js';
 
 // Load Views Section
 async function loadViewsSection() {
+    // Show dashboard when displaying view cards
+    const dashboardSection = document.getElementById('dashboard');
+    if (dashboardSection) {
+        dashboardSection.classList.add('active');
+    }
+
+    // Reload dashboard content if it's empty (cleared when loading individual views)
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent && (!dashboardContent.innerHTML || dashboardContent.innerHTML.trim() === '')) {
+        // Import and load dashboard dynamically
+        const { loadDashboard } = await import('../dashboard.js');
+        await loadDashboard();
+    }
+
     const contentDiv = document.getElementById('views-content');
 
     contentDiv.innerHTML = `

@@ -9,6 +9,12 @@ let aulaRekapDataGlobal = [];
 
 // Load Aula View
 async function loadViewAula() {
+    // Clear dashboard content when showing individual view
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent) {
+        dashboardContent.innerHTML = '';
+    }
+
     const contentDiv = document.getElementById('views-content');
 
     try {
@@ -166,6 +172,12 @@ async function loadViewAula() {
 
 // Load Rekap Aula View - Summary table by period
 async function loadViewRekapAula(selectedYear = null) {
+    // Clear dashboard content when showing individual view
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent) {
+        dashboardContent.innerHTML = '';
+    }
+
     const contentDiv = document.getElementById('views-content');
 
     try {

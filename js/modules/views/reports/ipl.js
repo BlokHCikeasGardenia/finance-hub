@@ -13,6 +13,13 @@ let iplItemsPerPage = 10;
 // Load IPL View - Optimized for performance
 async function loadViewIPL() {
     console.log('loadViewIPL called'); // Debug log
+
+    // Clear dashboard content when showing individual view
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent) {
+        dashboardContent.innerHTML = '';
+    }
+
     const contentDiv = document.getElementById('views-content');
 
     // Aggressive content clearing to prevent showing dashboard cards

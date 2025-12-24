@@ -5,7 +5,13 @@ import { supabase } from '../../config.js';
 import { showToast, formatCurrency } from '../../utils.js';
 
 // Load Rekap View
-async function loadViewRekap() {
+async function loadViewRekap(selectedYear = null) {
+    // Clear dashboard content when showing individual view
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent) {
+        dashboardContent.innerHTML = '';
+    }
+
     const contentDiv = document.getElementById('views-content');
 
     try {

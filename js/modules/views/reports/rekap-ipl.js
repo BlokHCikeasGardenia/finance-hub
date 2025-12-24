@@ -11,6 +11,12 @@ let iplItemsPerPage = 10;
 
 // Load Rekap IPL View - Main comprehensive IPL recap
 async function loadViewRekapIPL() {
+    // Clear dashboard content when showing individual view
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent) {
+        dashboardContent.innerHTML = '';
+    }
+
     const contentDiv = document.getElementById('views-content');
 
     // Aggressive content clearing to prevent showing dashboard cards

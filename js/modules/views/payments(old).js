@@ -1,29 +1,96 @@
 // Payment Enhancement Module
 // Dedicated form for processing bill payments with household selection and bill details
 
-import { supabase } from '../config.js';
-import { showModal, closeModal, SearchableSelect } from '../ui.js';
-import { showToast, formatCurrency, parseFormattedNumber } from '../utils.js';
+import { supabase } from '/js/modules/config.js';
+import { showModal, closeModal, SearchableSelect } from '/js/modules/ui.js';
+import { showToast, formatCurrency, parseFormattedNumber } from '/js/modules/utils.js';
 import {
     addPemasukan,
     generateTransactionId,
     getKategoriOptions,
     getRekeningOptions
-} from '../entities/transactions/pemasukan-data.js';
+} from '/js/modules/entities/transactions/pemasukan-data.js';
 
 // Global state for payment form
 let selectedHousehold = null;
 let outstandingBills = [];
 let selectedBills = new Set();
+let householdSearchableSelect = null; // Instance of SearchableSelect for households
 
 // Load Payment View
 async function loadViewPayments() {
     console.log('🚀 loadViewPayments() called - Starting payment view initialization');
-    const contentDiv = document.getElementById('pembayaran-content');
+    const contentDiv = document.getElementById('views-content');
 
+    const html = `
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>Pembayaran Tagihan</h4>
+                    <button class="btn btn-secondary" onclick="loadViewsSection()">
+                        <i class="bi bi-arrow-left"></i> Kembali ke Admin
+                    </button>
+                </div>
+                <p class="text-muted">Pilih rumah dan bayar tagihan IPL/Air yang belum lunas</p>
+
+                <!-- Household Selection -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="payment-household-select" class="form-label">Pilih Rumah:</label>
+                                <select class="form-select" id="payment-household-select">
+                                    <option value="">Pilih rumah...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <button class="btn btn-primary" id="load-bills-btn" disabled>
+                                    <i class="bi bi-search"></i> Lihat Tagihan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bills Display Area -->
+                <div id="bills-display-area" class="d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Tagihan Outstanding</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="bills-list"></div>
+
+                            <!-- Payment Summary -->
+                            <div id="payment-summary" class="mt-3 p-3 bg-light rounded d-none">
+                                <h6>Ringkasan Pembayaran</h6>
+                                <div id="selected-bills-summary"></div>
+                                <div class="mt-3">
+                                    <button class="btn btn-success" id="process-payment-btn">
+                                        <i class="bi bi-credit-card"></i> Proses Pembayaran
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    contentDiv.innerHTML = html;
+
+    // Initialize household selector
+    await initializeHouseholdSelector();
+
+    // Set up event listeners
+    setupPaymentEventListeners();
+}
+
+// Initialize household selector with search functionality
+async function initializeHouseholdSelector() {
+    console.log('🏠 Initializing household searchable selector...');
     try {
-        // Load households data first
-        console.log('🏠 Loading households data...');
         const { data: households, error } = await supabase
             .from('hunian')
             .select(`
@@ -40,87 +107,49 @@ async function loadViewPayments() {
 
         console.log('✅ Households loaded:', households?.length || 0, 'households');
 
-        // Render the main UI
-        const html = `
-            <!-- Household Selection -->
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <label for="payment-household-select" class="form-label">Pilih Rumah:</label>
-                            <select class="form-select" id="payment-household-select">
-                                <option value="">Pilih rumah...</option>
-                                ${households.map(household =>
-                                    `<option value="${household.id}">${household.nomor_blok_rumah} - ${household.penghuni_saat_ini?.nama_kepala_keluarga || 'Tidak ada penghuni'}</option>`
-                                ).join('')}
-                            </select>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button class="btn btn-primary" id="load-bills-btn" disabled>
-                                <i class="bi bi-search"></i> Lihat Tagihan
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        const selectElement = document.getElementById('payment-household-select');
+        if (!selectElement) {
+            console.error('❌ Household select element not found');
+            return;
+        }
 
-            <!-- Bills Display Area -->
-            <div id="bills-display-area" class="d-none">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Tagihan Outstanding</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="bills-list"></div>
+        // Transform data for SearchableSelect
+        const householdOptions = households.map(household => ({
+            value: household.id,
+            text: `${household.nomor_blok_rumah} - ${household.penghuni_saat_ini?.nama_kepala_keluarga || 'Tidak ada penghuni'}`
+        }));
 
-                        <!-- Payment Summary -->
-                        <div id="payment-summary" class="mt-3 p-3 bg-light rounded d-none">
-                            <h6>Ringkasan Pembayaran</h6>
-                            <div id="selected-bills-summary"></div>
-                            <div class="mt-3">
-                                <button class="btn btn-success" id="process-payment-btn">
-                                    <i class="bi bi-credit-card"></i> Proses Pembayaran
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        // Initialize SearchableSelect
+        householdSearchableSelect = new SearchableSelect(selectElement, {
+            placeholder: 'Pilih rumah...',
+            searchPlaceholder: 'Cari berdasarkan nomor rumah atau nama penghuni...'
+        });
 
-        contentDiv.innerHTML = html;
-        console.log('✅ Payment page UI rendered successfully');
+        await householdSearchableSelect.loadData(async () => householdOptions);
 
-        // Set up event listeners
-        setupPaymentEventListeners();
-        console.log('✅ Event listeners set up');
+        console.log('✅ Household searchable selector initialized with', householdOptions.length, 'options');
 
     } catch (error) {
-        console.error('❌ Error initializing payment page:', error);
-        contentDiv.innerHTML = `
-            <div class="alert alert-danger" role="alert">
-                <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Gagal Memuat Halaman Pembayaran</h6>
-                <p class="mb-0">${error.message || 'Terjadi kesalahan saat memuat data rumah.'}</p>
-                <hr>
-                <p class="mb-0">Silakan coba lagi atau hubungi administrator jika masalah berlanjut.</p>
-            </div>
-        `;
-        showToast('Gagal memuat halaman pembayaran', 'danger');
+        console.error('❌ Error loading households:', error);
+        showToast('Error loading households', 'danger');
+
+        // Fallback to basic select
+        const selectElement = document.getElementById('payment-household-select');
+        if (selectElement) {
+            selectElement.innerHTML = '<option value="">Error loading households</option>';
+        }
     }
 }
 
-
-
 // Set up event listeners
 function setupPaymentEventListeners() {
-    const householdSelect = document.getElementById('payment-household-select');
     const loadBillsBtn = document.getElementById('load-bills-btn');
     const processPaymentBtn = document.getElementById('process-payment-btn');
 
-    // Set up regular select change event
-    if (householdSelect) {
-        householdSelect.addEventListener('change', function() {
-            const selectedValue = this.value;
+    // Set up SearchableSelect change event
+    if (householdSearchableSelect) {
+        householdSearchableSelect.selectElement.addEventListener('change', function() {
+            const selectedValue = householdSearchableSelect.getValue();
             loadBillsBtn.disabled = !selectedValue;
             selectedHousehold = selectedValue;
             console.log('🏠 Household selection changed:', selectedValue);
@@ -565,7 +594,7 @@ async function allocatePaymentToSelectedBills(pemasukanData, selectedBillsData) 
     for (const bill of selectedBillsData) {
         try {
             if (bill.type === 'IPL') {
-        const { allocatePaymentToTagihanIpl } = await import('../entities/transactions/tagihan_ipl-data.js');
+                const { allocatePaymentToTagihanIpl } = await import('/js/modules/entities/transactions/tagihan_ipl-data.js');
                 await allocatePaymentToTagihanIpl(pemasukanRecord.id, bill.sisa_tagihan);
             } else if (bill.type === 'Air') {
                 // Allocate payment to Air bill
@@ -614,7 +643,7 @@ async function allocatePaymentToTagihanAir(pemasukanId, nominalPembayaran, meter
             newStatus = 'belum_bayar';
         }
 
-        const { updateRecord } = await import('../crud.js');
+        const { updateRecord } = await import('/js/modules/crud.js');
         await updateRecord('meteran_air_billing', meteranAirBillingId, {
             total_pembayaran: newTotalPayment,
             sisa_tagihan: newRemaining,
@@ -661,10 +690,9 @@ function resetPaymentForm() {
     selectedHousehold = null;
     outstandingBills = [];
 
-    // Reset select element
-    const householdSelect = document.getElementById('payment-household-select');
-    if (householdSelect) {
-        householdSelect.value = '';
+    // Reset SearchableSelect
+    if (householdSearchableSelect) {
+        householdSearchableSelect.setValue('');
     }
 
     document.getElementById('load-bills-btn').disabled = true;

@@ -9,6 +9,12 @@ let lainnyaRekapDataGlobal = [];
 
 // Load Lainnya View
 async function loadViewLainnya() {
+    // Clear dashboard content when showing individual view
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent) {
+        dashboardContent.innerHTML = '';
+    }
+
     const contentDiv = document.getElementById('views-content');
 
     try {
@@ -166,6 +172,12 @@ async function loadViewLainnya() {
 
 // Load Rekap Lainnya View - Summary table by period
 async function loadViewRekapLainnya(selectedYear = null) {
+    // Clear dashboard content when showing individual view
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent) {
+        dashboardContent.innerHTML = '';
+    }
+
     const contentDiv = document.getElementById('views-content');
 
     try {

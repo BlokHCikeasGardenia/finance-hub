@@ -20,9 +20,37 @@ function showSection(sectionId) {
         return;
     }
 
+    // Define admin sections that should hide dashboard and views
+    const adminSections = [
+        'hunian', 'penghuni', 'lorong', 'kategori', 'subkategori', 'rekening', 'periode',
+        'tarif_air', 'tarif_ipl', 'input_ipl', 'tagihan_ipl', 'tagihan_air', 'meteran_air_billing',
+        'pemasukan', 'pengeluaran', 'dana_titipan', 'pemindahbukuan', 'pembayaran',
+        'admin', 'laporan'
+    ];
+
     // Hide all sections
     const sections = document.querySelectorAll('.section');
     sections.forEach(section => section.classList.remove('active'));
+
+    // If showing admin section, hide dashboard and views sections completely
+    if (adminSections.includes(sectionId)) {
+        const dashboardSection = document.getElementById('dashboard');
+        const viewsSection = document.getElementById('views');
+        if (dashboardSection) {
+            dashboardSection.classList.remove('active');
+            dashboardSection.style.display = 'none';
+        }
+        if (viewsSection) {
+            viewsSection.classList.remove('active');
+            viewsSection.style.display = 'none';
+        }
+    } else {
+        // If showing non-admin section, ensure dashboard and views are visible (if they should be)
+        const dashboardSection = document.getElementById('dashboard');
+        const viewsSection = document.getElementById('views');
+        if (dashboardSection) dashboardSection.style.display = '';
+        if (viewsSection) viewsSection.style.display = '';
+    }
 
     // Show selected section
     const selectedSection = document.getElementById(sectionId);

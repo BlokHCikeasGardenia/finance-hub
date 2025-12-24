@@ -6,6 +6,12 @@ import { showToast, formatCurrency } from '../../utils.js';
 
 // Load Ringkasan View
 async function loadViewRingkasan(selectedYear = null) {
+    // Clear dashboard content when showing individual view
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent) {
+        dashboardContent.innerHTML = '';
+    }
+
     const contentDiv = document.getElementById('views-content');
 
     // Aggressive content clearing to prevent showing dashboard cards

@@ -24,6 +24,12 @@ function getCategoryBadgeColor(categoryName) {
 
 // Load Pengeluaran View
 async function loadViewPengeluaran(selectedYear = null) {
+    // Clear dashboard content when showing individual view
+    const dashboardContent = document.getElementById('dashboard-content');
+    if (dashboardContent) {
+        dashboardContent.innerHTML = '';
+    }
+
     const contentDiv = document.getElementById('views-content');
 
     // Clear content immediately to prevent showing dashboard cards

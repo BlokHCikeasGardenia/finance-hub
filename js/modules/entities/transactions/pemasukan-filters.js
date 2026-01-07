@@ -17,7 +17,7 @@ import { applySearchFilter, applySorting, paginateData } from '../../crud.js';
 import { formatCurrency, debounce } from '../../utils.js';
 
 // Filter and display pemasukan data
-function filterAndDisplayPemasukan(isFilterChange = true) {
+async function filterAndDisplayPemasukan(isFilterChange = true) {
     const state = getPemasukanState();
     let filteredData = [...state.pemasukanData];
 
@@ -70,7 +70,7 @@ function filterAndDisplayPemasukan(isFilterChange = true) {
     // Display filtered data with pagination info for sort functionality
     const { data: paginatedData } = paginateData(filteredData, state.pemasukanCurrentPage, state.pemasukanItemsPerPage);
     const totalPages = Math.ceil(filteredData.length / state.pemasukanItemsPerPage);
-    displayPemasukanTable(paginatedData, {
+    await displayPemasukanTable(paginatedData, {
         currentPage: state.pemasukanCurrentPage,
         totalPages: totalPages,
         itemsPerPage: state.pemasukanItemsPerPage
@@ -204,9 +204,9 @@ function resetPemasukanFilters() {
 }
 
 // Sort pemasukan data
-function sortPemasukanData(column, direction) {
+async function sortPemasukanData(column, direction) {
     if (direction === 'none') {
-        displayPemasukanTable(getPemasukanData());
+        await displayPemasukanTable(getPemasukanData());
         return;
     }
 
@@ -248,7 +248,7 @@ function sortPemasukanData(column, direction) {
 
     // Display sorted data
     const { data: paginatedData } = paginateData(filteredData, state.pemasukanCurrentPage, state.pemasukanItemsPerPage);
-    displayPemasukanTable(paginatedData);
+    await displayPemasukanTable(paginatedData);
 }
 
 export {

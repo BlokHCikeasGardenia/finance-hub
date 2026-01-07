@@ -26,6 +26,17 @@ function getCategoryBadgeColor(categoryName) {
 // Get periode data from payment allocations
 async function getPeriodeData(pemasukanId) {
     try {
+        // Validate pemasukanId
+        if (!pemasukanId || pemasukanId === 'undefined') {
+            console.warn('Invalid pemasukanId:', pemasukanId);
+            return {
+                periodes: [],
+                details: [],
+                isMultiple: false,
+                count: 0
+            };
+        }
+
         // Query IPL payment allocations
         const { data: iplAllocations, error: iplError } = await supabase
             .from('tagihan_ipl_pembayaran')
@@ -41,22 +52,7 @@ async function getPeriodeData(pemasukanId) {
             console.error('Error fetching IPL allocations:', iplError);
         }
 
-        // Query Air payment allocations
-        const { data: airAllocations, error: airError } = await supabase
-            .from('tagihan_air_pembayaran')
-            .select(`
-                nominal_dialokasikan,
-                tagihan_air:tagihan_air_id (
-                    periode:periode_id (nama_periode)
-                )
-            `)
-            .eq('pemasukan_id', pemasukanId);
-
-        if (airError) {
-            console.error('Error fetching Air allocations:', airError);
-        }
-
-        // Query consolidated Air billing allocations
+        // Query consolidated Air billing allocations (corrected table name)
         const { data: meteranAirAllocations, error: meteranAirError } = await supabase
             .from('meteran_air_billing_pembayaran')
             .select(`
@@ -76,7 +72,7 @@ async function getPeriodeData(pemasukanId) {
         const periodeDetails = [];
 
         // Process IPL allocations
-        if (iplAllocations) {
+        if (iplAllocations && Array.isArray(iplAllocations)) {
             iplAllocations.forEach(allocation => {
                 if (allocation.tagihan_ipl?.periode?.nama_periode) {
                     periodeSet.add(allocation.tagihan_ipl.periode.nama_periode);
@@ -89,22 +85,8 @@ async function getPeriodeData(pemasukanId) {
             });
         }
 
-        // Process Air allocations
-        if (airAllocations) {
-            airAllocations.forEach(allocation => {
-                if (allocation.tagihan_air?.periode?.nama_periode) {
-                    periodeSet.add(allocation.tagihan_air.periode.nama_periode);
-                    periodeDetails.push({
-                        periode: allocation.tagihan_air.periode.nama_periode,
-                        nominal: allocation.nominal_dialokasikan,
-                        type: 'Air'
-                    });
-                }
-            });
-        }
-
         // Process Meteran Air allocations
-        if (meteranAirAllocations) {
+        if (meteranAirAllocations && Array.isArray(meteranAirAllocations)) {
             meteranAirAllocations.forEach(allocation => {
                 if (allocation.meteran_air_billing?.periode?.nama_periode) {
                     periodeSet.add(allocation.meteran_air_billing.periode.nama_periode);
@@ -127,7 +109,7 @@ async function getPeriodeData(pemasukanId) {
         };
 
     } catch (error) {
-        console.error('Error getting periode data:', error);
+        console.error('Error getting periode data for ID', pemasukanId, ':', error);
         return {
             periodes: [],
             details: [],
@@ -710,3 +692,4 @@ window.refreshViewPemasukan = refreshViewPemasukan;
 window.resetPemasukanFilters = resetPemasukanFilters;
 window.changePemasukanPage = changePemasukanPage;
 window.showPemasukanPeriodeDetail = showPemasukanPeriodeDetail;
+    loadViewPemasukan(selectedYear);

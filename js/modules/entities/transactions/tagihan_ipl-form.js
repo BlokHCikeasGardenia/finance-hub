@@ -286,7 +286,7 @@ async function initializeIplInputFormSelects() {
 
             return data.map(item => ({
                 value: item.id,
-                text: `${getTypeDisplayName(item.type_tarif)} - Rp ${formatCurrency(item.nominal)}`
+                text: `${getTypeDisplayName(item.type_tarif)} - ${formatCurrency(item.nominal)}`
             }));
         });
     }
@@ -356,7 +356,7 @@ async function initializePeriodRowSelects(rowId) {
 
             return data.map(item => ({
                 value: item.id,
-                text: `${getTypeDisplayName(item.type_tarif)} - Rp ${formatCurrency(item.nominal)}`
+                text: `${getTypeDisplayName(item.type_tarif)} - ${formatCurrency(item.nominal)}`
             }));
         });
 
@@ -835,7 +835,7 @@ function updateIplPreview() {
     const amount = selectedOption.getAttribute('data-amount') || '0';
 
     previewType.textContent = typeName;
-    previewAmount.textContent = `Rp ${formatCurrency(parseFloat(amount))}`;
+    previewAmount.textContent = formatCurrency(parseFloat(amount));
 }
 
 // Handle form submission for multiple bills
@@ -1249,8 +1249,8 @@ async function showDuplicateWarningModal(billingResults, hunian, periodeId) {
                         <h6><i class="bi bi-info-circle"></i> Tagihan Existing:</h6>
                         <small>
                             <strong>Status:</strong> <span class="badge bg-${existingBill.status === 'lunas' ? 'success' : existingBill.status === 'sebagian' ? 'warning' : 'danger'}">${existingBill.status}</span><br>
-                            <strong>Nominal:</strong> Rp ${formatCurrency(parseFloat(existingBill.nominal_tagihan) || 0)}<br>
-                            <strong>Sisa Tagihan:</strong> Rp ${formatCurrency(parseFloat(existingBill.sisa_tagihan) || 0)}
+                            <strong>Nominal:</strong> ${formatCurrency(parseFloat(existingBill.nominal_tagihan) || 0)}<br>
+                            <strong>Sisa Tagihan:</strong> ${formatCurrency(parseFloat(existingBill.sisa_tagihan) || 0)}
                         </small>
                     </div>
                 `;

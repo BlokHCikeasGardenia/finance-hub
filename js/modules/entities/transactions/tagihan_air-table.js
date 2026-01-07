@@ -138,7 +138,7 @@ function generateTagihanAirInputTableHtml(hunianData, periode) {
                                 <span class="usage-preview" data-hunian-id="${hunian.id}">0 m³</span>
                             </td>
                             <td>
-                                <span class="billing-preview" data-hunian-id="${hunian.id}">Rp 0</span>
+                                <span class="billing-preview" data-hunian-id="${hunian.id}">0</span>
                             </td>
                         </tr>
                     `).join('')}
@@ -160,7 +160,7 @@ function generateTagihanAirInputTableHtml(hunianData, periode) {
                     <div class="card">
                         <div class="card-body">
                             <h6>Preview Total Tagihan:</h6>
-                            <p id="air-total-preview">Rp 0</p>
+                            <p id="air-total-preview">0</p>
                         </div>
                     </div>
                 </div>

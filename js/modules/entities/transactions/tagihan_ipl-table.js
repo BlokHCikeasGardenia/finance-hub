@@ -124,7 +124,7 @@ function generateTagihanIplInputTableHtml(hunianData) {
                     <div class="card">
                         <div class="card-body">
                             <h6>Preview Total Tagihan:</h6>
-                            <p id="ipl-total-preview">Rp 0</p>
+                            <p id="ipl-total-preview">0</p>
                         </div>
                     </div>
                 </div>
@@ -147,10 +147,10 @@ function getDefaultType(hunian) {
 // Get preview amount for type
 function getPreviewAmount(type) {
     switch (type) {
-        case 'IPL': return 'Rp 60,000';
-        case 'IPL_RUMAH_KOSONG': return 'Rp 30,000';
-        case 'DAU': return 'Rp 5,000';
-        default: return 'Rp 0';
+        case 'IPL': return '60,000';
+        case 'IPL_RUMAH_KOSONG': return '30,000';
+        case 'DAU': return '5,000';
+        default: return '0';
     }
 }
 

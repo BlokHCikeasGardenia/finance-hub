@@ -141,7 +141,7 @@ async function generateTagihanIplForPeriod(hunianData, periodeId, options = {}) 
                 results.push({
                     type: 'bill',
                     data: result.data,
-                    message: `Tagihan IPL dibuat: ${hunian.nomor_blok_rumah} (${iplType}) = Rp ${formatCurrency(tariff.nominal)}`
+                    message: `Tagihan IPL dibuat: ${hunian.nomor_blok_rumah} (${iplType}) = ${formatCurrency(tariff.nominal)}`
                 });
             }
         }
@@ -278,7 +278,7 @@ async function allocatePaymentToTagihanIpl(pemasukanId, nominalPembayaran) {
             allocations: allocations,
             categoryAllocations: categoryAllocations,
             unallocated: remainingAmount,
-            message: `Rp ${formatCurrency(nominalPembayaran - remainingAmount)} berhasil dialokasikan ke ${allocations.length} tagihan IPL`
+            message: `${formatCurrency(nominalPembayaran - remainingAmount)} berhasil dialokasikan ke ${allocations.length} tagihan IPL`
         };
     } catch (error) {
         console.error('Error allocating payment to tagihan IPL:', error);

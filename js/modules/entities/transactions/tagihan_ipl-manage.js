@@ -662,7 +662,7 @@ async function initializeEditFormSelects(bill) {
 
             return data.map(item => ({
                 value: item.id,
-                text: `${getTypeDisplayName(item.type_tarif)} - Rp ${formatCurrency(item.nominal)}`
+                text: `${getTypeDisplayName(item.type_tarif)} - ${formatCurrency(item.nominal)}`
             }));
         });
 

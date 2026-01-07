@@ -105,7 +105,7 @@ function parseFormattedNumber(value) {
 // Format currency in Indonesian Rupiah
 function formatCurrency(amount, showSymbol = true) {
     const formatted = new Intl.NumberFormat('id-ID').format(amount);
-    return showSymbol ? `Rp ${formatted}` : formatted;
+    return showSymbol ? formatted : formatted;
 }
 
 // Debounce function for search inputs

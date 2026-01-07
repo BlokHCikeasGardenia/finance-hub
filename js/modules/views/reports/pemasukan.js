@@ -692,4 +692,3 @@ window.refreshViewPemasukan = refreshViewPemasukan;
 window.resetPemasukanFilters = resetPemasukanFilters;
 window.changePemasukanPage = changePemasukanPage;
 window.showPemasukanPeriodeDetail = showPemasukanPeriodeDetail;
-    loadViewPemasukan(selectedYear);

@@ -558,6 +558,22 @@ export const showAddRekeningForm = window.showAddRekeningForm;
 
 // Initialize global functions immediately on module load
 (function initializeGlobalFunctions() {
+    // Make modal functions globally available
+    window.showModal = showModal;
+    window.closeModal = closeModal;
+    window.closeModalFn = closeModal;
+
+    // Make formatCurrency globally available
+    import('./utils.js').then(({ formatCurrency }) => {
+        window.formatCurrency = formatCurrency;
+    }).catch(error => {
+        console.warn('Could not load formatCurrency:', error);
+        // Fallback formatter
+        window.formatCurrency = (value) => {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value);
+        };
+    });
+    
     window.showAddPeriodeForm = async function(entity) {
         try {
             const { showAddForm } = await import('./entities/master/periode.js');

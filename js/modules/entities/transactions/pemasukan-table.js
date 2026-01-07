@@ -503,7 +503,7 @@ function showPemasukanPeriodeDetail(pemasukanId) {
         </div>
         <div class="modal-body">
             <div class="alert alert-info">
-                <strong>Total Pembayaran:</strong> ${formatCurrency(totalNominal)}
+                <strong>Total Pembayaran:</strong> ${window.formatCurrency(totalNominal)}
             </div>
 
             <div class="table-responsive">
@@ -520,14 +520,14 @@ function showPemasukanPeriodeDetail(pemasukanId) {
                             <tr>
                                 <td><span class="badge bg-light text-dark">${detail.periode}</span></td>
                                 <td><span class="badge ${detail.type === 'IPL' ? 'bg-info' : 'bg-primary'}">${detail.type}</span></td>
-                                <td class="text-end">${formatCurrency(detail.nominal)}</td>
+                                <td class="text-end">${window.formatCurrency(detail.nominal)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                     <tfoot>
                         <tr class="table-primary">
                             <th colspan="2">Total</th>
-                            <th class="text-end">${formatCurrency(totalNominal)}</th>
+                            <th class="text-end">${window.formatCurrency(totalNominal)}</th>
                         </tr>
                     </tfoot>
                 </table>

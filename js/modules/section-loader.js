@@ -567,7 +567,10 @@ async function loadSectionContent(sectionId) {
                 </div>
             `;
             await loadPemasukan();
-            initializePemasukanSearchAndFilter();
+            // Wait for DOM to update after loadPemasukan, then initialize search/filters
+            setTimeout(() => {
+                initializePemasukanSearchAndFilter();
+            }, 100);
             break;
 
         case 'tagihan_ipl':

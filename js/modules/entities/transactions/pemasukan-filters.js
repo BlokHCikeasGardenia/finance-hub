@@ -93,29 +93,34 @@ async function filterAndDisplayPemasukan(isFilterChange = true) {
 
 // Initialize search and filter functionality
 async function initializePemasukanSearchAndFilter() {
-    // Search filter
-    const searchInput = document.getElementById('pemasukan-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(() => {
-            const searchTerm = searchInput.value.trim().toLowerCase();
-            setPemasukanState({ pemasukanSearchTerm: searchTerm, pemasukanCurrentPage: 1 });
-            filterAndDisplayPemasukan();
-        }, 300));
-    }
+    try {
+        // Search filter
+        const searchInput = document.getElementById('pemasukan-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce(() => {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                setPemasukanState({ pemasukanSearchTerm: searchTerm, pemasukanCurrentPage: 1 });
+                filterAndDisplayPemasukan();
+            }, 300));
+        } else {
+            console.warn('pemasukan-search element not found');
+        }
 
-    // Category filter
-    const categoryFilter = document.getElementById('pemasukan-filter-category');
-    if (categoryFilter) {
-        const categories = await getPemasukanCategories();
-        const optionsHtml = '<option value="">Semua Kategori</option>' +
-            categories.map(cat => `<option value="${cat.value}">${cat.text}</option>`).join('');
-        categoryFilter.innerHTML = optionsHtml;
+        // Category filter
+        const categoryFilter = document.getElementById('pemasukan-filter-category');
+        if (categoryFilter) {
+            const categories = await getPemasukanCategories();
+            const optionsHtml = '<option value="">Semua Kategori</option>' +
+                categories.map(cat => `<option value="${cat.value}">${cat.text}</option>`).join('');
+            categoryFilter.innerHTML = optionsHtml;
 
-        categoryFilter.addEventListener('change', (e) => {
-            setPemasukanState({ pemasukanFilterCategory: e.target.value, pemasukanCurrentPage: 1 });
-            filterAndDisplayPemasukan();
-        });
-    }
+            categoryFilter.addEventListener('change', (e) => {
+                setPemasukanState({ pemasukanFilterCategory: e.target.value, pemasukanCurrentPage: 1 });
+                filterAndDisplayPemasukan();
+            });
+        } else {
+            console.warn('pemasukan-filter-category element not found');
+        }
 
     // Account filter - load options dynamically
     loadPemasukanAccountOptionsForFilter();
@@ -159,6 +164,10 @@ async function initializePemasukanSearchAndFilter() {
             setPemasukanState({ pemasukanItemsPerPage: parseInt(e.target.value), pemasukanCurrentPage: 1 });
             filterAndDisplayPemasukan();
         });
+    }
+
+    } catch (error) {
+        console.error('Error initializing pemasukan search and filters:', error);
     }
 }
 

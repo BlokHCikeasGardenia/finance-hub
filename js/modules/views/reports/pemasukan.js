@@ -8,6 +8,7 @@ import { showToast, formatCurrency, renderPagination, debounce } from '../../uti
 let pemasukanViewDataGlobal = [];
 let pemasukanCurrentPage = 1;
 let pemasukanItemsPerPage = 10;
+let pemasukanPeriodeCache = new Map(); // Cache for periode data
 
 // Helper function to get badge color based on category
 function getCategoryBadgeColor(categoryName) {
@@ -22,11 +23,137 @@ function getCategoryBadgeColor(categoryName) {
     return 'bg-danger'; // Red for other categories
 }
 
+// Get periode data from payment allocations
+async function getPeriodeData(pemasukanId) {
+    try {
+        // Query IPL payment allocations
+        const { data: iplAllocations, error: iplError } = await supabase
+            .from('tagihan_ipl_pembayaran')
+            .select(`
+                nominal_dialokasikan,
+                tagihan_ipl:tagihan_ipl_id (
+                    periode:periode_id (nama_periode)
+                )
+            `)
+            .eq('pemasukan_id', pemasukanId);
+
+        if (iplError) {
+            console.error('Error fetching IPL allocations:', iplError);
+        }
+
+        // Query Air payment allocations
+        const { data: airAllocations, error: airError } = await supabase
+            .from('tagihan_air_pembayaran')
+            .select(`
+                nominal_dialokasikan,
+                tagihan_air:tagihan_air_id (
+                    periode:periode_id (nama_periode)
+                )
+            `)
+            .eq('pemasukan_id', pemasukanId);
+
+        if (airError) {
+            console.error('Error fetching Air allocations:', airError);
+        }
+
+        // Query consolidated Air billing allocations
+        const { data: meteranAirAllocations, error: meteranAirError } = await supabase
+            .from('meteran_air_billing_pembayaran')
+            .select(`
+                nominal_dialokasikan,
+                meteran_air_billing:meteran_air_billing_id (
+                    periode:periode_id (nama_periode)
+                )
+            `)
+            .eq('pemasukan_id', pemasukanId);
+
+        if (meteranAirError) {
+            console.error('Error fetching Meteran Air allocations:', meteranAirError);
+        }
+
+        // Collect all unique periode names
+        const periodeSet = new Set();
+        const periodeDetails = [];
+
+        // Process IPL allocations
+        if (iplAllocations) {
+            iplAllocations.forEach(allocation => {
+                if (allocation.tagihan_ipl?.periode?.nama_periode) {
+                    periodeSet.add(allocation.tagihan_ipl.periode.nama_periode);
+                    periodeDetails.push({
+                        periode: allocation.tagihan_ipl.periode.nama_periode,
+                        nominal: allocation.nominal_dialokasikan,
+                        type: 'IPL'
+                    });
+                }
+            });
+        }
+
+        // Process Air allocations
+        if (airAllocations) {
+            airAllocations.forEach(allocation => {
+                if (allocation.tagihan_air?.periode?.nama_periode) {
+                    periodeSet.add(allocation.tagihan_air.periode.nama_periode);
+                    periodeDetails.push({
+                        periode: allocation.tagihan_air.periode.nama_periode,
+                        nominal: allocation.nominal_dialokasikan,
+                        type: 'Air'
+                    });
+                }
+            });
+        }
+
+        // Process Meteran Air allocations
+        if (meteranAirAllocations) {
+            meteranAirAllocations.forEach(allocation => {
+                if (allocation.meteran_air_billing?.periode?.nama_periode) {
+                    periodeSet.add(allocation.meteran_air_billing.periode.nama_periode);
+                    periodeDetails.push({
+                        periode: allocation.meteran_air_billing.periode.nama_periode,
+                        nominal: allocation.nominal_dialokasikan,
+                        type: 'Air'
+                    });
+                }
+            });
+        }
+
+        const uniquePeriodes = Array.from(periodeSet);
+
+        return {
+            periodes: uniquePeriodes,
+            details: periodeDetails,
+            isMultiple: uniquePeriodes.length > 1,
+            count: uniquePeriodes.length
+        };
+
+    } catch (error) {
+        console.error('Error getting periode data:', error);
+        return {
+            periodes: [],
+            details: [],
+            isMultiple: false,
+            count: 0
+        };
+    }
+}
+
 // Render periode column with conditional display
 function renderPeriodeColumn(item) {
-    // For now, show placeholder - will be enhanced with actual periode data
-    // TODO: Implement logic to get periode data from payment allocations
-    return '<span class="text-muted">-</span>';
+    const periodeData = pemasukanPeriodeCache.get(item.id);
+
+    if (!periodeData || periodeData.count === 0) {
+        return '<span class="text-muted">-</span>';
+    }
+
+    if (periodeData.count === 1) {
+        // Single periode - display directly
+        return `<span class="badge bg-light text-dark">${periodeData.periodes[0]}</span>`;
+    } else {
+        // Multiple periode - show "Multiple" with info icon
+        return `<span class="badge bg-warning text-dark" onclick="showPemasukanPeriodeDetail('${item.id}')" style="cursor: pointer;" title="Klik untuk detail periode">
+            Multiple ⓘ
+        </span>`;
+    }
 }
 
 // Load Pemasukan View
@@ -242,11 +369,14 @@ async function loadViewPemasukan(selectedYear = null) {
 }
 
 // Render Pemasukan Table with pagination
-function renderPemasukanTable(data) {
+async function renderPemasukanTable(data) {
     const totalPages = Math.ceil(data.length / pemasukanItemsPerPage);
     const startIndex = (pemasukanCurrentPage - 1) * pemasukanItemsPerPage;
     const endIndex = startIndex + pemasukanItemsPerPage;
     const paginatedData = data.slice(startIndex, endIndex);
+
+    // Pre-load periode data for all items in current page
+    await loadPeriodeDataForItems(paginatedData);
 
     const tableHtml = `
         <div class="table-responsive">
@@ -291,6 +421,22 @@ function renderPemasukanTable(data) {
 
     // Re-attach sort event listeners
     attachPemasukanSortListeners();
+}
+
+// Load periode data for multiple items at once
+async function loadPeriodeDataForItems(items) {
+    const uncachedItems = items.filter(item => !pemasukanPeriodeCache.has(item.id));
+
+    if (uncachedItems.length === 0) return;
+
+    // Load periode data for uncached items
+    const periodePromises = uncachedItems.map(item => getPeriodeData(item.id));
+    const periodeResults = await Promise.all(periodePromises);
+
+    // Store results in cache
+    uncachedItems.forEach((item, index) => {
+        pemasukanPeriodeCache.set(item.id, periodeResults[index]);
+    });
 }
 
 // Initialize Pemasukan Search and Filter
@@ -473,6 +619,76 @@ function initializePemasukanYearSelector() {
     }
 }
 
+// Show periode detail modal for multiple periode transactions
+function showPemasukanPeriodeDetail(pemasukanId) {
+    const periodeData = pemasukanPeriodeCache.get(pemasukanId);
+
+    if (!periodeData || periodeData.count <= 1) {
+        return;
+    }
+
+    // Calculate total nominal from all periode details
+    const totalNominal = periodeData.details.reduce((sum, detail) => sum + detail.nominal, 0);
+
+    // Group details by periode for cleaner display
+    const periodeGroups = {};
+    periodeData.details.forEach(detail => {
+        if (!periodeGroups[detail.periode]) {
+            periodeGroups[detail.periode] = [];
+        }
+        periodeGroups[detail.periode].push(detail);
+    });
+
+    const modalContent = `
+        <div class="modal-header">
+            <h5 class="modal-title">Detail Periode Pembayaran</h5>
+            <button type="button" class="btn-close" onclick="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+            <div class="alert alert-info">
+                <strong>Total Pembayaran:</strong> ${formatCurrency(totalNominal)}
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Periode</th>
+                            <th>Jenis</th>
+                            <th class="text-end">Nominal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${periodeData.details.map(detail => `
+                            <tr>
+                                <td><span class="badge bg-light text-dark">${detail.periode}</span></td>
+                                <td><span class="badge ${detail.type === 'IPL' ? 'bg-info' : 'bg-primary'}">${detail.type}</span></td>
+                                <td class="text-end">${formatCurrency(detail.nominal)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-primary">
+                            <th colspan="2">Total</th>
+                            <th class="text-end">${formatCurrency(totalNominal)}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Tutup</button>
+        </div>
+    `;
+
+    // Import and use modal functionality
+    import('../../ui.js').then(({ showModal }) => {
+        showModal('Detail Periode Pembayaran', modalContent);
+    }).catch(error => {
+        console.error('Error showing modal:', error);
+    });
+}
+
 // Refresh Pemasukan View
 function refreshViewPemasukan() {
     const yearSelect = document.getElementById('pemasukan-year-select');
@@ -484,7 +700,8 @@ export {
     loadViewPemasukan,
     refreshViewPemasukan,
     initializePemasukanYearSelector,
-    changePemasukanPage
+    changePemasukanPage,
+    showPemasukanPeriodeDetail
 };
 
 // Backward compatibility for global window functions
@@ -492,3 +709,4 @@ window.loadViewPemasukan = loadViewPemasukan;
 window.refreshViewPemasukan = refreshViewPemasukan;
 window.resetPemasukanFilters = resetPemasukanFilters;
 window.changePemasukanPage = changePemasukanPage;
+window.showPemasukanPeriodeDetail = showPemasukanPeriodeDetail;

@@ -28,7 +28,18 @@ async function getPeriodeData(pemasukanId) {
     try {
         // Validate pemasukanId
         if (!pemasukanId || pemasukanId === 'undefined') {
-            console.warn('Invalid pemasukanId:', pemasukanId);
+            return {
+                periodes: [],
+                details: [],
+                isMultiple: false,
+                count: 0
+            };
+        }
+
+        // UUID regex pattern - must be a valid UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(pemasukanId)) {
+            // Not a valid UUID format, skip the query
             return {
                 periodes: [],
                 details: [],
@@ -49,7 +60,7 @@ async function getPeriodeData(pemasukanId) {
             .eq('pemasukan_id', pemasukanId);
 
         if (iplError) {
-            console.error('Error fetching IPL allocations:', iplError);
+            // Silent fail - no valid periode data for this transaction
         }
 
         // Query consolidated Air billing allocations (corrected table name)
@@ -64,7 +75,7 @@ async function getPeriodeData(pemasukanId) {
             .eq('pemasukan_id', pemasukanId);
 
         if (meteranAirError) {
-            console.error('Error fetching Meteran Air allocations:', meteranAirError);
+            // Silent fail - no valid periode data for this transaction
         }
 
         // Collect all unique periode names
@@ -109,7 +120,7 @@ async function getPeriodeData(pemasukanId) {
         };
 
     } catch (error) {
-        console.error('Error getting periode data for ID', pemasukanId, ':', error);
+        // Silent fail - return empty periode data on error
         return {
             periodes: [],
             details: [],
@@ -121,7 +132,15 @@ async function getPeriodeData(pemasukanId) {
 
 // Render periode column with conditional display
 function renderPeriodeColumn(item) {
-    const periodeData = pemasukanPeriodeCache.get(item.id);
+    // Use id_transaksi as fallback if id is not available
+    const itemId = item.id || item.id_transaksi;
+
+    // Exit early if no valid ID to avoid unnecessary lookups
+    if (!itemId) {
+        return '<span class="text-muted">-</span>';
+    }
+
+    const periodeData = pemasukanPeriodeCache.get(itemId);
 
     if (!periodeData || periodeData.count === 0) {
         return '<span class="text-muted">-</span>';
@@ -129,10 +148,12 @@ function renderPeriodeColumn(item) {
 
     if (periodeData.count === 1) {
         // Single periode - display directly
+        console.log('Single periode found for itemId:', itemId, periodeData.periodes[0]);
         return `<span class="badge bg-light text-dark">${periodeData.periodes[0]}</span>`;
     } else {
         // Multiple periode - show "Multiple" with info icon
-        return `<span class="badge bg-warning text-dark" onclick="showPemasukanPeriodeDetail('${item.id}')" style="cursor: pointer;" title="Klik untuk detail periode">
+        console.log('Multiple periode found for itemId:', itemId, periodeData.count);
+        return `<span class="badge bg-warning text-dark" onclick="showPemasukanPeriodeDetail('${itemId}')" style="cursor: pointer;" title="Klik untuk detail periode">
             Multiple ⓘ
         </span>`;
     }
@@ -203,6 +224,7 @@ async function loadViewPemasukan(selectedYear = null) {
         let pemasukanQuery = supabase
             .from('pemasukan')
             .select(`
+                id,
                 id_transaksi,
                 tanggal,
                 nominal,
@@ -246,6 +268,8 @@ async function loadViewPemasukan(selectedYear = null) {
 
         // Store data globally for search/filter operations
         pemasukanViewDataGlobal = transactions;
+
+        console.log('Loaded pemasukan transactions:', transactions.slice(0, 3)); // Log first 3 items
 
         // Reset pagination when loading fresh data
         pemasukanCurrentPage = 1;
@@ -407,17 +431,25 @@ async function renderPemasukanTable(data) {
 
 // Load periode data for multiple items at once
 async function loadPeriodeDataForItems(items) {
-    const uncachedItems = items.filter(item => !pemasukanPeriodeCache.has(item.id));
+    // Only process items that have a valid ID and are not already cached
+    const uncachedItems = items.filter(item => {
+        const itemId = item.id || item.id_transaksi;
+        return itemId && !pemasukanPeriodeCache.has(itemId);
+    });
 
     if (uncachedItems.length === 0) return;
 
     // Load periode data for uncached items
-    const periodePromises = uncachedItems.map(item => getPeriodeData(item.id));
+    const periodePromises = uncachedItems.map(item => {
+        const itemId = item.id || item.id_transaksi;
+        return getPeriodeData(itemId);
+    });
     const periodeResults = await Promise.all(periodePromises);
 
     // Store results in cache
     uncachedItems.forEach((item, index) => {
-        pemasukanPeriodeCache.set(item.id, periodeResults[index]);
+        const itemId = item.id || item.id_transaksi;
+        pemasukanPeriodeCache.set(itemId, periodeResults[index]);
     });
 }
 
@@ -692,3 +724,4 @@ window.refreshViewPemasukan = refreshViewPemasukan;
 window.resetPemasukanFilters = resetPemasukanFilters;
 window.changePemasukanPage = changePemasukanPage;
 window.showPemasukanPeriodeDetail = showPemasukanPeriodeDetail;
+window.loadViewPemasukan = loadViewPemasukan;

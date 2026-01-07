@@ -41,7 +41,7 @@ async function convertDanaTitipanToPembayaran(danaTitipanId) {
         // Import required functions
         const { readRecords, updateRecord } = await import('../../crud.js');
         const { addPemasukan } = await import('./pemasukan-data.js');
-        const { generateTransactionId, getKategoriOptions } = await import('./pemasukan-data.js');
+        const { generateTransactionId } = await import('./pemasukan-data.js');
         const { showToast, showConfirm } = await import('../../utils.js');
         const { supabase } = await import('../../config.js');
 
@@ -56,7 +56,8 @@ async function convertDanaTitipanToPembayaran(danaTitipanId) {
                      penghuni:penghuni_id (nama_kepala_keluarga),
                      hunian:hunian_id (nomor_blok_rumah),
                      rekening:rekening_id (jenis_rekening),
-                     kategori_saldo:kategori_id (nama_kategori)`
+                     kategori_saldo:kategori_id (nama_kategori),
+                     periode:periode_id (nama_periode)`
         });
 
         if (!readSuccess || !data || data.length === 0) {
@@ -66,92 +67,74 @@ async function convertDanaTitipanToPembayaran(danaTitipanId) {
 
         const danaTitipan = data[0];
 
+        // Validate that dana titipan has required fields
+        if (!danaTitipan.kategori_id || !danaTitipan.periode_id) {
+            showToast('Dana titipan harus memiliki kategori dan periode yang valid', 'danger');
+            return;
+        }
+
         if (!danaTitipan.hunian_id) {
             showToast('Dana titipan tidak terkait dengan rumah tertentu, tidak bisa digunakan untuk pembayaran', 'danger');
             return;
         }
 
-        // Get outstanding bills for the household
-        const { data: iplBills, error: iplError } = await supabase
-            .from('tagihan_ipl')
+        // Find matching bills by category and period
+        let matchingBills = [];
+        let billType = '';
+        let billTable = '';
+
+        // Determine bill type based on category
+        const categoryName = danaTitipan.kategori_saldo?.nama_kategori || '';
+        if (categoryName.toLowerCase().includes('ipl')) {
+            billType = 'IPL';
+            billTable = 'tagihan_ipl';
+        } else if (categoryName.toLowerCase().includes('air')) {
+            billType = 'Air';
+            billTable = 'meteran_air_billing';
+        } else {
+            showToast(`Kategori ${categoryName} tidak didukung untuk pembayaran otomatis`, 'danger');
+            return;
+        }
+
+        // Query for matching bills
+        let query = supabase
+            .from(billTable)
             .select('id, sisa_tagihan, periode:periode_id (nama_periode)')
             .eq('hunian_id', danaTitipan.hunian_id)
-            .gt('sisa_tagihan', 0)
-            .order('tanggal_tagihan', { ascending: true });
+            .eq('periode_id', danaTitipan.periode_id)
+            .gt('sisa_tagihan', 0);
 
-        const { data: airBills, error: airError } = await supabase
-            .from('meteran_air_billing')
-            .select('id, sisa_tagihan, billing_type, periode:periode_id (nama_periode)')
-            .eq('hunian_id', danaTitipan.hunian_id)
-            .gt('sisa_tagihan', 0)
-            .neq('billing_type', 'inisiasi')
-            .neq('billing_type', 'baseline')
-            .order('tanggal_tagihan', { ascending: true });
+        if (billType === 'Air') {
+            query = query
+                .neq('billing_type', 'inisiasi')
+                .neq('billing_type', 'baseline');
+        }
 
-        if (iplError || airError) {
+        const { data: bills, error: billsError } = await query;
+
+        if (billsError) {
             showToast('Gagal memuat data tagihan', 'danger');
             return;
         }
 
-        const outstandingBills = [
-            ...(iplBills || []).map(bill => ({ ...bill, type: 'IPL' })),
-            ...(airBills || []).map(bill => ({ ...bill, type: 'Air' }))
-        ];
-
-        if (outstandingBills.length === 0) {
-            showToast('Tidak ada tagihan outstanding untuk rumah ini', 'warning');
+        if (!bills || bills.length === 0) {
+            const periodName = danaTitipan.periode?.nama_periode || 'periode tersebut';
+            showToast(`Tidak ada tagihan ${categoryName} ${periodName} yang outstanding untuk rumah ini`, 'warning');
             return;
         }
 
-        // Calculate how much can be allocated to full payments
-        let remainingDeposit = danaTitipan.nominal;
-        const billsToPay = [];
-        const kategoriOptions = await getKategoriOptions();
-
-        for (const bill of outstandingBills) {
-            if (remainingDeposit >= bill.sisa_tagihan) {
-                billsToPay.push(bill);
-                remainingDeposit -= bill.sisa_tagihan;
-            } else {
-                break; // Stop if we can't pay this bill fully
-            }
-        }
-
-        if (billsToPay.length === 0) {
-            showToast('Dana titipan tidak cukup untuk membayar tagihan penuh mana pun', 'warning');
-            return;
-        }
-
-        const totalToPay = billsToPay.reduce((sum, bill) => sum + bill.sisa_tagihan, 0);
-
-        // Determine category for payment
-        const hasIPL = billsToPay.some(bill => bill.type === 'IPL');
-        const hasAir = billsToPay.some(bill => bill.type === 'Air');
-        let paymentCategoryId;
-
-        if (hasIPL && hasAir) {
-            const iplCategory = kategoriOptions.find(cat => cat.text.includes('IPL'));
-            paymentCategoryId = iplCategory?.value;
-        } else if (hasIPL) {
-            const iplCategory = kategoriOptions.find(cat => cat.text.includes('IPL'));
-            paymentCategoryId = iplCategory?.value;
-        } else if (hasAir) {
-            const airCategory = kategoriOptions.find(cat => cat.text.includes('Air'));
-            paymentCategoryId = airCategory?.value;
-        }
-
-        if (!paymentCategoryId) {
-            showToast('Tidak dapat menentukan kategori pembayaran', 'danger');
-            return;
-        }
+        // For IPL, there should be only one bill per period per household
+        // For Air, there might be multiple but we take the first one
+        const billToPay = bills[0];
+        const amountToPay = Math.min(danaTitipan.nominal, billToPay.sisa_tagihan);
 
         // Create pemasukan record for payment
         const pemasukanData = {
             tanggal: danaTitipan.tanggal,
             penghuni_id: danaTitipan.penghuni_id || null,
             hunian_id: danaTitipan.hunian_id,
-            nominal: totalToPay,
-            kategori_id: paymentCategoryId,
+            nominal: amountToPay,
+            kategori_id: danaTitipan.kategori_id,
             rekening_id: danaTitipan.rekening_id,
             keterangan: `Pembayaran dari Dana Titipan: ${danaTitipan.keterangan || ''}`,
             id_transaksi: await generateTransactionId()
@@ -170,35 +153,36 @@ async function convertDanaTitipanToPembayaran(danaTitipanId) {
             return;
         }
 
-        // Allocate payment to bills
-        for (const bill of billsToPay) {
-            try {
-                if (bill.type === 'IPL') {
-                    const { allocatePaymentToTagihanIpl } = await import('./tagihan_ipl-data.js');
-                    await allocatePaymentToTagihanIpl(pemasukanRecord.id, bill.sisa_tagihan);
-                } else if (bill.type === 'Air') {
-                    await allocatePaymentToTagihanAir(pemasukanRecord.id, bill.sisa_tagihan, bill.id);
-                }
-            } catch (error) {
-                console.error(`Error allocating payment to ${bill.type} bill ${bill.id}:`, error);
+        // Allocate payment to the bill
+        try {
+            if (billType === 'IPL') {
+                const { allocatePaymentToTagihanIpl } = await import('./tagihan_ipl-data.js');
+                await allocatePaymentToTagihanIpl(pemasukanRecord.id, amountToPay);
+            } else if (billType === 'Air') {
+                await allocatePaymentToTagihanAir(pemasukanRecord.id, amountToPay, billToPay.id);
             }
+        } catch (error) {
+            console.error(`Error allocating payment to ${billType} bill ${billToPay.id}:`, error);
+            showToast('Gagal mengalokasikan pembayaran ke tagihan', 'danger');
+            return;
         }
 
         // Update or delete dana titipan
-        const newNominal = danaTitipan.nominal - totalToPay;
-        if (newNominal <= 0) {
+        const remainingDeposit = danaTitipan.nominal - amountToPay;
+        if (remainingDeposit <= 0) {
             const deleteResult = await deleteDanaTitipan(danaTitipanId);
             if (!deleteResult.success) {
                 showToast('Pembayaran berhasil, tapi gagal menghapus sisa dana titipan', 'warning');
             }
         } else {
-            const updateResult = await updateRecord('dana_titipan', danaTitipanId, { nominal: newNominal });
+            const updateResult = await updateRecord('dana_titipan', danaTitipanId, { nominal: remainingDeposit });
             if (!updateResult.success) {
                 showToast('Pembayaran berhasil, tapi gagal mengupdate sisa dana titipan', 'warning');
             }
         }
 
-        showToast('Dana titipan berhasil digunakan untuk pembayaran tagihan', 'success');
+        const paymentStatus = amountToPay >= billToPay.sisa_tagihan ? 'dilunasi penuh' : 'dibayar sebagian';
+        showToast(`Dana titipan berhasil digunakan untuk pembayaran tagihan (${paymentStatus})`, 'success');
 
         // Refresh dana titipan table
         await loadDanaTitipan();
@@ -283,3 +267,4 @@ window.convertDanaTitipanToPembayaran = convertDanaTitipanToPembayaran;
 // Expose add and reset functions for inline handlers in the UI
 window.showAddDanaTitipanForm = showAddDanaTitipanForm;
 window.resetDanaTitipanFilters = resetDanaTitipanFilters;
+

@@ -26,9 +26,10 @@ function filterAndDisplayPemasukan(isFilterChange = true) {
         filteredData = applySearchFilter(filteredData, state.pemasukanSearchTerm, [
             'id_transaksi',
             'keterangan',
-            'nama_pembayar',
+            'nominal',
             'penghuni.nama_kepala_keluarga',
-            'hunian.nomor_blok_rumah'
+            'hunian.nomor_blok_rumah',
+            'kategori_saldo.nama_kategori'
         ]);
     }
 

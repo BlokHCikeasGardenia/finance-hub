@@ -5,6 +5,10 @@ import { getPemasukanState, setPemasukanState } from './pemasukan-data.js';
 import { filterAndDisplayPemasukan } from './pemasukan-filters.js';
 import { paginateData } from '../../crud.js';
 import { formatCurrency } from '../../utils.js';
+import { supabase } from '../../config.js';
+
+// Cache for periode data
+let pemasukanPeriodeCache = new Map();
 
 // Table columns configuration - maximum compact for mobile (only essentials)
 const pemasukanTableColumns = [
@@ -13,6 +17,7 @@ const pemasukanTableColumns = [
     { key: 'penghuni', label: 'Penghuni', sortable: true, render: (item) => item.penghuni?.nama_kepala_keluarga || item.nama_pembayar || '-' },
     { key: 'kategori', label: 'Kategori', sortable: true, render: renderPemasukanCategory },
     { key: 'nominal', label: 'Nominal', sortable: true, render: (item) => formatCurrency(item.nominal) },
+    { key: 'periode', label: 'Periode', sortable: false, render: renderPeriodeColumn },
     { key: 'hunian', label: 'Rumah', sortable: true, render: (item) => item.hunian?.nomor_blok_rumah || '-', mobileClass: 'd-none-mobile' },
     { key: 'rekening', label: 'Rekening', sortable: true, render: (item) => item.rekening?.jenis_rekening || '-', mobileClass: 'd-none-mobile' },
     { key: 'keterangan', label: 'Keterangan', sortable: false, mobileClass: 'd-none-mobile' }
@@ -39,8 +44,168 @@ function renderPemasukanCategory(item) {
     return `<span class="badge ${getCategoryBadgeColor(categoryName)}">${categoryName}</span>`;
 }
 
+// Render periode column with conditional display
+function renderPeriodeColumn(item) {
+    const itemId = item.id;
+
+    // If there is no identifier, render an empty placeholder and avoid lookup
+    if (!itemId) {
+        return '<span class="text-muted">-</span>';
+    }
+
+    const periodeData = pemasukanPeriodeCache.get(itemId);
+
+    if (!periodeData || periodeData.count === 0) {
+        return '<span class="text-muted">-</span>';
+    }
+
+    if (periodeData.count === 1) {
+        // Single periode - display directly
+        return `<span class="badge bg-light text-dark">${periodeData.periodes[0]}</span>`;
+    } else {
+        // Multiple periode - show "Multiple" with info icon
+        return `<span class="badge bg-warning text-dark" onclick="showPemasukanPeriodeDetail('${itemId}')" style="cursor: pointer;" title="Klik untuk detail periode">
+            Multiple ⓘ
+        </span>`;
+    }
+}
+
+// Get periode data from payment allocations
+async function getPeriodeData(pemasukanId) {
+    try {
+        // Validate pemasukanId
+        if (!pemasukanId || pemasukanId === 'undefined') {
+            return {
+                periodes: [],
+                details: [],
+                isMultiple: false,
+                count: 0
+            };
+        }
+
+        // UUID regex pattern - must be a valid UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(pemasukanId)) {
+            // Not a valid UUID format, skip the query
+            return {
+                periodes: [],
+                details: [],
+                isMultiple: false,
+                count: 0
+            };
+        }
+
+        // Query IPL payment allocations
+        const { data: iplAllocations, error: iplError } = await supabase
+            .from('tagihan_ipl_pembayaran')
+            .select(`
+                nominal_dialokasikan,
+                tagihan_ipl:tagihan_ipl_id (
+                    periode:periode_id (nama_periode)
+                )
+            `)
+            .eq('pemasukan_id', pemasukanId);
+
+        if (iplError) {
+            // Silent fail - no valid periode data for this transaction
+        }
+
+        // Query consolidated Air billing allocations (corrected table name)
+        const { data: meteranAirAllocations, error: meteranAirError } = await supabase
+            .from('meteran_air_billing_pembayaran')
+            .select(`
+                nominal_dialokasikan,
+                meteran_air_billing:meteran_air_billing_id (
+                    periode:periode_id (nama_periode)
+                )
+            `)
+            .eq('pemasukan_id', pemasukanId);
+
+        if (meteranAirError) {
+            // Silent fail - no valid periode data for this transaction
+        }
+
+        // Collect all unique periode names
+        const periodeSet = new Set();
+        const periodeDetails = [];
+
+        // Process IPL allocations
+        if (iplAllocations && Array.isArray(iplAllocations)) {
+            iplAllocations.forEach(allocation => {
+                if (allocation.tagihan_ipl?.periode?.nama_periode) {
+                    periodeSet.add(allocation.tagihan_ipl.periode.nama_periode);
+                    periodeDetails.push({
+                        periode: allocation.tagihan_ipl.periode.nama_periode,
+                        nominal: allocation.nominal_dialokasikan,
+                        type: 'IPL'
+                    });
+                }
+            });
+        }
+
+        // Process Meteran Air allocations
+        if (meteranAirAllocations && Array.isArray(meteranAirAllocations)) {
+            meteranAirAllocations.forEach(allocation => {
+                if (allocation.meteran_air_billing?.periode?.nama_periode) {
+                    periodeSet.add(allocation.meteran_air_billing.periode.nama_periode);
+                    periodeDetails.push({
+                        periode: allocation.meteran_air_billing.periode.nama_periode,
+                        nominal: allocation.nominal_dialokasikan,
+                        type: 'Air'
+                    });
+                }
+            });
+        }
+
+        const uniquePeriodes = Array.from(periodeSet);
+
+        return {
+            periodes: uniquePeriodes,
+            details: periodeDetails,
+            isMultiple: uniquePeriodes.length > 1,
+            count: uniquePeriodes.length
+        };
+
+    } catch (error) {
+        // Silent fail - return empty periode data on error
+        return {
+            periodes: [],
+            details: [],
+            isMultiple: false,
+            count: 0
+        };
+    }
+}
+
+// Load periode data for multiple items at once
+async function loadPemasukanPeriodeData(items) {
+    // Only process items that have a valid ID and are not already cached
+    const uncachedItems = items.filter(item => {
+        const itemId = item.id;
+        return itemId && !pemasukanPeriodeCache.has(itemId);
+    });
+
+    if (uncachedItems.length === 0) return;
+
+    // Load periode data for uncached items
+    const periodePromises = uncachedItems.map(item => {
+        const itemId = item.id;
+        return getPeriodeData(itemId);
+    });
+    const periodeResults = await Promise.all(periodePromises);
+
+    // Store results in cache
+    uncachedItems.forEach((item, index) => {
+        const itemId = item.id;
+        pemasukanPeriodeCache.set(itemId, periodeResults[index]);
+    });
+}
+
 // Display pemasukan table with pagination support
-function displayPemasukanTable(data, pagination = null) {
+async function displayPemasukanTable(data, pagination = null) {
+    // Pre-load periode data for all items
+    await loadPemasukanPeriodeData(data);
+
     const tableHtml = createPemasukanTableHtml(data, pagination);
     const tableElement = document.getElementById('pemasukan-table');
     if (tableElement) {
@@ -311,6 +476,76 @@ if (typeof window !== 'undefined') {
     };
 }
 
+// Show periode detail modal for multiple periode transactions
+function showPemasukanPeriodeDetail(pemasukanId) {
+    const periodeData = pemasukanPeriodeCache.get(pemasukanId);
+
+    if (!periodeData || periodeData.count <= 1) {
+        return;
+    }
+
+    // Calculate total nominal from all periode details
+    const totalNominal = periodeData.details.reduce((sum, detail) => sum + detail.nominal, 0);
+
+    // Group details by periode for cleaner display
+    const periodeGroups = {};
+    periodeData.details.forEach(detail => {
+        if (!periodeGroups[detail.periode]) {
+            periodeGroups[detail.periode] = [];
+        }
+        periodeGroups[detail.periode].push(detail);
+    });
+
+    const modalContent = `
+        <div class="modal-header">
+            <h5 class="modal-title">Detail Periode Pembayaran</h5>
+            <button type="button" class="btn-close" onclick="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+            <div class="alert alert-info">
+                <strong>Total Pembayaran:</strong> ${formatCurrency(totalNominal)}
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Periode</th>
+                            <th>Jenis</th>
+                            <th class="text-end">Nominal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${periodeData.details.map(detail => `
+                            <tr>
+                                <td><span class="badge bg-light text-dark">${detail.periode}</span></td>
+                                <td><span class="badge ${detail.type === 'IPL' ? 'bg-info' : 'bg-primary'}">${detail.type}</span></td>
+                                <td class="text-end">${formatCurrency(detail.nominal)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-primary">
+                            <th colspan="2">Total</th>
+                            <th class="text-end">${formatCurrency(totalNominal)}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Tutup</button>
+        </div>
+    `;
+
+    // Import and use modal functionality
+    import('../../ui.js').then(({ showModal }) => {
+        showModal('Detail Periode Pembayaran', modalContent);
+    }).catch(error => {
+        console.error('Error showing modal:', error);
+    });
+}
+
 export {
     pemasukanTableColumns,
     renderPemasukanCategory,
@@ -318,5 +553,6 @@ export {
     createPemasukanTableHtml,
     renderPemasukanPagination,
     changePemasukanPage,
-    attachPemasukanSortListeners
+    attachPemasukanSortListeners,
+    showPemasukanPeriodeDetail
 };

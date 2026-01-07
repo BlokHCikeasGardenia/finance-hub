@@ -20,7 +20,8 @@ import {
 } from './pemasukan-filters.js';
 
 import {
-    changePemasukanPage
+    changePemasukanPage,
+    showPemasukanPeriodeDetail
 } from './pemasukan-table.js';
 
 // Export functions for global access
@@ -33,7 +34,8 @@ export {
     initializePemasukanSearchAndFilter,
     changePemasukanPage,
     resetPemasukanFilters,
-    sortPemasukanData
+    sortPemasukanData,
+    showPemasukanPeriodeDetail
 };
 
 // Backward compatibility for global functions
@@ -41,3 +43,4 @@ window.editPemasukan = showEditPemasukanForm;
 window.confirmCancelPemasukan = confirmCancelPemasukan;
 window.confirmDeletePemasukan = confirmDeletePemasukan;
 window.sortPemasukanData = sortPemasukanData;
+window.showPemasukanPeriodeDetail = showPemasukanPeriodeDetail;

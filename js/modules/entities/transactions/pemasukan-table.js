@@ -8,11 +8,13 @@ import { formatCurrency } from '../../utils.js';
 
 // Table columns configuration - maximum compact for mobile (only essentials)
 const pemasukanTableColumns = [
+    { key: 'id_transaksi', label: 'ID Transaksi', sortable: true },
     { key: 'tanggal', label: 'Tanggal', width: '100px', sortable: true, render: (item) => new Date(item.tanggal).toLocaleDateString('id-ID'), mobileClass: 'd-none-mobile' },
     { key: 'penghuni', label: 'Penghuni', sortable: true, render: (item) => item.penghuni?.nama_kepala_keluarga || item.nama_pembayar || '-' },
     { key: 'kategori', label: 'Kategori', sortable: true, render: renderPemasukanCategory },
     { key: 'nominal', label: 'Nominal', sortable: true, render: (item) => formatCurrency(item.nominal) },
     { key: 'hunian', label: 'Rumah', sortable: true, render: (item) => item.hunian?.nomor_blok_rumah || '-', mobileClass: 'd-none-mobile' },
+    { key: 'rekening', label: 'Rekening', sortable: true, render: (item) => item.rekening?.jenis_rekening || '-', mobileClass: 'd-none-mobile' },
     { key: 'keterangan', label: 'Keterangan', sortable: false, mobileClass: 'd-none-mobile' }
 ];
 

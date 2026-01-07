@@ -247,12 +247,10 @@ function renderPemasukanTable(data) {
                 <thead class="table-primary">
                     <tr>
                         <th style="width: 60px;">No.</th>
-                        <th class="sortable" data-column="id_transaksi">ID Transaksi <i class="bi bi-chevron-expand sort-icon"></i></th>
                         <th class="sortable" data-column="tanggal">Tanggal <i class="bi bi-chevron-expand sort-icon"></i></th>
                         <th class="sortable text-end" data-column="nominal">Nominal <i class="bi bi-chevron-expand sort-icon"></i></th>
                         <th class="sortable" data-column="nama_kepala_keluarga">Diterima Dari <i class="bi bi-chevron-expand sort-icon"></i></th>
                         <th class="sortable" data-column="nama_kategori">Kategori <i class="bi bi-chevron-expand sort-icon"></i></th>
-                        <th class="sortable" data-column="jenis_rekening">Dikredit Ke <i class="bi bi-chevron-expand sort-icon"></i></th>
                         <th>Keterangan</th>
                     </tr>
                 </thead>
@@ -260,12 +258,10 @@ function renderPemasukanTable(data) {
                     ${paginatedData.map((item, index) => `
                         <tr>
                             <td>${startIndex + index + 1}</td>
-                            <td>${item.id_transaksi}</td>
                             <td>${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
                             <td class="text-end text-success fw-bold">${formatCurrency(item.nominal)}</td>
                             <td>${item.penghuni?.nama_kepala_keluarga || 'Sumber External'}</td>
                             <td><span class="badge ${getCategoryBadgeColor(item.kategori?.nama_kategori)}">${item.kategori?.nama_kategori || '-'}</span></td>
-                            <td>${item.rekening?.jenis_rekening || '-'}</td>
                             <td>${item.keterangan || '-'}</td>
                         </tr>
                     `).join('')}
@@ -324,11 +320,9 @@ function applyPemasukanFilters(isFilterChange = true) {
     // Apply search filter
     if (searchTerm) {
         filteredData = filteredData.filter(item =>
-            item.id_transaksi.toLowerCase().includes(searchTerm) ||
             item.nominal.toString().includes(searchTerm) ||
             (item.penghuni?.nama_kepala_keluarga || '').toLowerCase().includes(searchTerm) ||
             (item.kategori?.nama_kategori || '').toLowerCase().includes(searchTerm) ||
-            (item.rekening?.jenis_rekening || '').toLowerCase().includes(searchTerm) ||
             (item.keterangan || '').toLowerCase().includes(searchTerm)
         );
     }
@@ -399,11 +393,9 @@ function sortPemasukanData(column, direction) {
 
     if (searchTerm) {
         filteredData = filteredData.filter(item =>
-            item.id_transaksi.toLowerCase().includes(searchTerm) ||
             item.nominal.toString().includes(searchTerm) ||
             (item.penghuni?.nama_kepala_keluarga || '').toLowerCase().includes(searchTerm) ||
             (item.kategori?.nama_kategori || '').toLowerCase().includes(searchTerm) ||
-            (item.rekening?.jenis_rekening || '').toLowerCase().includes(searchTerm) ||
             (item.keterangan || '').toLowerCase().includes(searchTerm)
         );
     }
@@ -425,9 +417,6 @@ function sortPemasukanData(column, direction) {
         } else if (column === 'nama_kategori') {
             aVal = a.kategori?.nama_kategori || '';
             bVal = b.kategori?.nama_kategori || '';
-        } else if (column === 'jenis_rekening') {
-            aVal = a.rekening?.jenis_rekening || '';
-            bVal = b.rekening?.jenis_rekening || '';
         }
 
         // Special handling for date columns

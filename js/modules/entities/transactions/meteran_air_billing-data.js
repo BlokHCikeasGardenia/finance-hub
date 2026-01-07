@@ -488,11 +488,13 @@ async function allocatePaymentToMeteranAirBilling(pemasukanId, nominalPembayaran
             remainingAmount -= amountToAllocate;
         }
 
-        // Insert allocation records
+        // Insert or update allocation records using upsert
         if (allocations.length > 0) {
             const { error: allocError } = await supabase
                 .from('meteran_air_billing_pembayaran')
-                .insert(allocations);
+                .upsert(allocations, { 
+                    onConflict: 'meteran_air_billing_id,pemasukan_id'
+                });
 
             if (allocError) throw allocError;
         }
@@ -501,7 +503,7 @@ async function allocatePaymentToMeteranAirBilling(pemasukanId, nominalPembayaran
             success: true,
             allocations: allocations,
             unallocated: remainingAmount,
-            message: `Rp ${formatCurrency(nominalPembayaran - remainingAmount)} berhasil dialokasikan ke ${allocations.length} tagihan`
+            message: `${formatCurrency(nominalPembayaran - remainingAmount)} berhasil dialokasikan ke ${allocations.length} tagihan`
         };
     } catch (error) {
         console.error('Error allocating payment to meteran air billing:', error);

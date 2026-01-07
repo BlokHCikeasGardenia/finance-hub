@@ -264,11 +264,13 @@ async function allocatePaymentToTagihanIpl(pemasukanId, nominalPembayaran) {
             remainingAmount -= amountToAllocate;
         }
 
-        // Insert allocation records
+        // Insert or update allocation records using upsert
         if (allocations.length > 0) {
             const { error: allocError } = await supabase
                 .from('tagihan_ipl_pembayaran')
-                .insert(allocations);
+                .upsert(allocations, { 
+                    onConflict: 'tagihan_ipl_id,pemasukan_id'
+                });
 
             if (allocError) throw allocError;
         }

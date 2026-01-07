@@ -22,6 +22,13 @@ function getCategoryBadgeColor(categoryName) {
     return 'bg-danger'; // Red for other categories
 }
 
+// Render periode column with conditional display
+function renderPeriodeColumn(item) {
+    // For now, show placeholder - will be enhanced with actual periode data
+    // TODO: Implement logic to get periode data from payment allocations
+    return '<span class="text-muted">-</span>';
+}
+
 // Load Pemasukan View
 async function loadViewPemasukan(selectedYear = null) {
     // Clear dashboard content when showing individual view
@@ -251,6 +258,7 @@ function renderPemasukanTable(data) {
                         <th class="sortable text-end" data-column="nominal">Nominal <i class="bi bi-chevron-expand sort-icon"></i></th>
                         <th class="sortable" data-column="nama_kepala_keluarga">Diterima Dari <i class="bi bi-chevron-expand sort-icon"></i></th>
                         <th class="sortable" data-column="nama_kategori">Kategori <i class="bi bi-chevron-expand sort-icon"></i></th>
+                        <th>Periode</th>
                         <th>Keterangan</th>
                     </tr>
                 </thead>
@@ -262,6 +270,7 @@ function renderPemasukanTable(data) {
                             <td class="text-end text-success fw-bold">${formatCurrency(item.nominal)}</td>
                             <td>${item.penghuni?.nama_kepala_keluarga || 'Sumber External'}</td>
                             <td><span class="badge ${getCategoryBadgeColor(item.kategori?.nama_kategori)}">${item.kategori?.nama_kategori || '-'}</span></td>
+                            <td>${renderPeriodeColumn(item)}</td>
                             <td>${item.keterangan || '-'}</td>
                         </tr>
                     `).join('')}

@@ -516,7 +516,7 @@ async function handlePaymentSubmission(e) {
         const paymentData = {
             tanggal: formData.get('tanggal'),
             rekening_id: formData.get('rekening_id'),
-            keterangan: formData.get('keterangan') || 'Pembayaran tagihan via form pembayaran'
+            keterangan: formData.get('keterangan') || ''
         };
 
         if (!paymentData.tanggal || !paymentData.rekening_id) {

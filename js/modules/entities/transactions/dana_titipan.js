@@ -136,7 +136,7 @@ async function convertDanaTitipanToPembayaran(danaTitipanId) {
             nominal: amountToPay,
             kategori_id: danaTitipan.kategori_id,
             rekening_id: danaTitipan.rekening_id,
-            keterangan: `Pembayaran dari Dana Titipan: ${danaTitipan.keterangan || ''}`,
+            keterangan: danaTitipan.keterangan || '',
             id_transaksi: await generateTransactionId()
         };
 

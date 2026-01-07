@@ -15,6 +15,7 @@ import {
 let selectedHousehold = null;
 let outstandingBills = [];
 let selectedBills = new Set();
+let householdSearchableSelect = null;
 
 // Load Payment View
 async function loadViewPayments() {
@@ -48,12 +49,7 @@ async function loadViewPayments() {
                     <div class="row">
                         <div class="col-md-8">
                             <label for="payment-household-select" class="form-label">Pilih Rumah:</label>
-                            <select class="form-select" id="payment-household-select">
-                                <option value="">Pilih rumah...</option>
-                                ${households.map(household =>
-                                    `<option value="${household.id}">${household.nomor_blok_rumah} - ${household.penghuni_saat_ini?.nama_kepala_keluarga || 'Tidak ada penghuni'}</option>`
-                                ).join('')}
-                            </select>
+                            <select class="form-select" id="payment-household-select"></select>
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
                             <button class="btn btn-primary" id="load-bills-btn" disabled>
@@ -91,6 +87,23 @@ async function loadViewPayments() {
         contentDiv.innerHTML = html;
         console.log('✅ Payment page UI rendered successfully');
 
+        // Initialize SearchableSelect for household dropdown
+        const selectElement = document.getElementById('payment-household-select');
+        if (selectElement) {
+            const householdOptions = households.map(household => ({
+                value: household.id,
+                text: `${household.nomor_blok_rumah} - ${household.penghuni_saat_ini?.nama_kepala_keluarga || 'Tidak ada penghuni'}`
+            }));
+
+            householdSearchableSelect = new SearchableSelect(selectElement, {
+                placeholder: 'Pilih rumah...',
+                searchPlaceholder: 'Cari nomor rumah atau nama penghuni...'
+            });
+
+            await householdSearchableSelect.loadData(async () => householdOptions);
+            console.log('✅ SearchableSelect initialized for household dropdown');
+        }
+
         // Set up event listeners
         setupPaymentEventListeners();
         console.log('✅ Event listeners set up');
@@ -113,14 +126,13 @@ async function loadViewPayments() {
 
 // Set up event listeners
 function setupPaymentEventListeners() {
-    const householdSelect = document.getElementById('payment-household-select');
     const loadBillsBtn = document.getElementById('load-bills-btn');
     const processPaymentBtn = document.getElementById('process-payment-btn');
 
-    // Set up regular select change event
-    if (householdSelect) {
-        householdSelect.addEventListener('change', function() {
-            const selectedValue = this.value;
+    // Set up SearchableSelect change event
+    if (householdSearchableSelect) {
+        householdSearchableSelect.selectElement.addEventListener('change', function() {
+            const selectedValue = householdSearchableSelect.getValue();
             loadBillsBtn.disabled = !selectedValue;
             selectedHousehold = selectedValue;
             console.log('🏠 Household selection changed:', selectedValue);
@@ -580,12 +592,21 @@ async function allocatePaymentToSelectedBills(pemasukanData, selectedBillsData) 
 // Allocate payment to Air bill using consolidated table
 async function allocatePaymentToTagihanAir(pemasukanId, nominalPembayaran, meteranAirBillingId) {
     try {
+        // Get payment date from pemasukan record
+        const { data: pemasukan, error: pemasukanError } = await supabase
+            .from('pemasukan')
+            .select('tanggal')
+            .eq('id', pemasukanId)
+            .single();
+
+        if (pemasukanError) throw pemasukanError;
+
         // Create allocation record for Air bill
         const allocationData = {
             meteran_air_billing_id: meteranAirBillingId,
             pemasukan_id: pemasukanId,
             nominal_dialokasikan: nominalPembayaran,
-            tanggal_alokasi: new Date().toISOString().split('T')[0]
+            tanggal_alokasi: pemasukan.tanggal
         };
 
         const { data, error } = await supabase
@@ -661,10 +682,9 @@ function resetPaymentForm() {
     selectedHousehold = null;
     outstandingBills = [];
 
-    // Reset select element
-    const householdSelect = document.getElementById('payment-household-select');
-    if (householdSelect) {
-        householdSelect.value = '';
+    // Reset SearchableSelect
+    if (householdSearchableSelect) {
+        householdSearchableSelect.setValue('');
     }
 
     document.getElementById('load-bills-btn').disabled = true;

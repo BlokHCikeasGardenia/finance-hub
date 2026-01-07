@@ -45,19 +45,46 @@ async function loadIplBillsData() {
     try {
         showToast('Memuat data tagihan IPL...', 'info');
 
+        // First get the bill data with payment information
         const { data, error } = await supabase
             .from('tagihan_ipl')
             .select(`
                 *,
                 periode:periode_id (nama_periode, tanggal_awal, tanggal_akhir),
                 hunian:hunian_id (nomor_blok_rumah),
-                penghuni:penghuni_id (nama_kepala_keluarga)
+                penghuni:penghuni_id (nama_kepala_keluarga),
+                tagihan_ipl_pembayaran (
+                    nominal_dialokasikan,
+                    pemasukan:pemasukan_id (
+                        tanggal
+                    )
+                )
             `)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
 
-        iplBillsData = data || [];
+        // Process the data to include earliest payment date
+        iplBillsData = (data || []).map(bill => {
+            // Find the earliest payment date from allocations
+            let earliestPaymentDate = null;
+            if (bill.tagihan_ipl_pembayaran && bill.tagihan_ipl_pembayaran.length > 0) {
+                const paymentDates = bill.tagihan_ipl_pembayaran
+                    .filter(allocation => allocation.pemasukan?.tanggal)
+                    .map(allocation => new Date(allocation.pemasukan.tanggal))
+                    .sort((a, b) => a - b); // Sort ascending
+
+                if (paymentDates.length > 0) {
+                    earliestPaymentDate = paymentDates[0];
+                }
+            }
+
+            return {
+                ...bill,
+                tanggal_bayar: earliestPaymentDate ? earliestPaymentDate.toISOString().split('T')[0] : null
+            };
+        });
+
         displayIplBillsTable();
 
         // Load periode options for filter
@@ -126,8 +153,8 @@ function createIplBillsTableHtml(data) {
             const globalIndex = startIndex + index + 1;
             const statusBadge = getStatusBadge(bill.status);
 
-            // Format payment date - assuming there's a tanggal_pembayaran field or similar
-            const paymentDate = bill.tanggal_pembayaran || bill.tanggal_bayar || (bill.status === 'lunas' ? bill.updated_at : null);
+            // Format payment date - use the earliest payment date from allocations
+            const paymentDate = bill.tanggal_bayar;
             const formattedPaymentDate = paymentDate ? new Date(paymentDate).toLocaleDateString('id-ID') : '-';
 
             html += `

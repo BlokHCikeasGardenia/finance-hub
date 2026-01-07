@@ -48,25 +48,79 @@ async function loadPemasukanCategories() {
     }
 }
 
-// Generate unique transaction ID
+// Generate unique transaction ID with auto-initialization
 async function generateTransactionId() {
+    const counterType = 'pemasukan';
+    const currentYear = new Date().getFullYear();
+
     try {
+        // First try the RPC function
         const { data, error } = await supabase.rpc('get_next_transaction_number', {
-            counter_type_param: 'pemasukan'
+            counter_type_param: counterType
         });
 
-        if (error) throw error;
+        if (!error && data !== null) {
+            // RPC succeeded, format the result
+            const year = currentYear.toString().slice(-2);
+            const transactionNumber = data.toString().padStart(4, '0');
+            return `inc${year}${transactionNumber}`;
+        }
 
-        // Format: inc{YY}{XXXX} (e.g., inc250001)
-        const year = new Date().getFullYear().toString().slice(-2);
-        const transactionNumber = data.toString().padStart(4, '0');
+        // If RPC failed, try to initialize the counter and retry
+        console.warn('RPC failed, attempting to initialize counter for', counterType, currentYear);
 
+        // Check if counter exists
+        const { data: existingCounter, error: checkError } = await supabase
+            .from('transaction_counters')
+            .select('id, current_number')
+            .eq('counter_type', counterType)
+            .eq('year', currentYear)
+            .single();
+
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = not found
+            console.error('Error checking counter:', checkError);
+            throw checkError;
+        }
+
+        if (!existingCounter) {
+            // Counter doesn't exist, create it
+            console.log('Initializing counter for', counterType, currentYear);
+            const { error: insertError } = await supabase
+                .from('transaction_counters')
+                .insert({
+                    counter_type: counterType,
+                    year: currentYear,
+                    current_number: 0
+                });
+
+            if (insertError) {
+                console.error('Error initializing counter:', insertError);
+                throw insertError;
+            }
+        }
+
+        // Now retry the RPC function
+        const { data: retryData, error: retryError } = await supabase.rpc('get_next_transaction_number', {
+            counter_type_param: counterType
+        });
+
+        if (retryError) {
+            console.error('RPC still failed after initialization:', retryError);
+            throw retryError;
+        }
+
+        // Format the result
+        const year = currentYear.toString().slice(-2);
+        const transactionNumber = retryData.toString().padStart(4, '0');
         return `inc${year}${transactionNumber}`;
+
     } catch (error) {
         console.error('Error generating transaction ID:', error);
-        // Fallback: generate based on timestamp
+        // Last resort fallback: generate based on timestamp with clear indication
         const timestamp = Date.now().toString().slice(-6);
-        return `inc${timestamp}`;
+        const fallbackId = `inc${timestamp}`;
+        console.warn('Using timestamp fallback ID:', fallbackId);
+        return fallbackId;
     }
 }
 

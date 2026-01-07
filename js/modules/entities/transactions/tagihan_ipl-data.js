@@ -192,6 +192,9 @@ async function allocatePaymentToTagihanIpl(pemasukanId, nominalPembayaran) {
 
         if (pemasukanError) throw pemasukanError;
 
+        // Use the payment date from the pemasukan record (selected in form)
+        const paymentDate = pemasukan.tanggal;
+
         // Get outstanding IPL bills for this household (oldest first)
         const { data: outstandingBills, error: billsError } = await supabase
             .from('tagihan_ipl')
@@ -234,7 +237,7 @@ async function allocatePaymentToTagihanIpl(pemasukanId, nominalPembayaran) {
                 tagihan_ipl_id: bill.id,
                 pemasukan_id: pemasukanId,
                 nominal_dialokasikan: amountToAllocate,
-                tanggal_alokasi: new Date().toISOString().split('T')[0]
+                tanggal_alokasi: paymentDate
             };
 
             allocations.push(allocationData);

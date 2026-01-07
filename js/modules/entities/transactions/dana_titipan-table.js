@@ -105,7 +105,7 @@ function createDanaTitipanTableHtml(data, pagination) {
                 }).join('')}
                 <td>
                     <button onclick="editDanaTitipan('${item.id}')" class="btn btn-sm btn-outline-primary me-1">Edit</button>
-                    <button onclick="convertDanaTitipanToPemasukan('${item.id}')" class="btn btn-sm btn-outline-success me-1" title="Konversi ke Pemasukan">Konversi</button>
+                    <button onclick="convertDanaTitipanToPembayaran('${item.id}')" class="btn btn-sm btn-outline-success me-1" title="Konversi ke Pembayaran">Konversi</button>
                     <button onclick="confirmDeleteDanaTitipan('${item.id}')" class="btn btn-sm btn-outline-danger">Hapus</button>
                 </td>
             </tr>`;

@@ -4,11 +4,11 @@
 import { getPemasukanState, setPemasukanState } from './pemasukan-data.js';
 import { filterAndDisplayPemasukan } from './pemasukan-filters.js';
 import { paginateData } from '../../crud.js';
-import { formatCurrency } from '../../utils.js';
+import { formatCurrency, globalPeriodeCache } from '../../utils.js';
 import { supabase } from '../../config.js';
 
-// Cache for periode data
-let pemasukanPeriodeCache = new Map();
+// Use global periode cache shared across modules
+const pemasukanPeriodeCache = globalPeriodeCache;
 
 // Table columns configuration - maximum compact for mobile (only essentials)
 const pemasukanTableColumns = [
@@ -46,9 +46,10 @@ function renderPemasukanCategory(item) {
 
 // Render periode column with conditional display
 function renderPeriodeColumn(item) {
-    const itemId = item.id;
+    // Use id_transaksi as fallback if id is not available
+    const itemId = item.id || item.id_transaksi;
 
-    // If there is no identifier, render an empty placeholder and avoid lookup
+    // Exit early if no valid ID to avoid unnecessary lookups
     if (!itemId) {
         return '<span class="text-muted">-</span>';
     }
@@ -181,7 +182,7 @@ async function getPeriodeData(pemasukanId) {
 async function loadPemasukanPeriodeData(items) {
     // Only process items that have a valid ID and are not already cached
     const uncachedItems = items.filter(item => {
-        const itemId = item.id;
+        const itemId = item.id || item.id_transaksi;
         return itemId && !pemasukanPeriodeCache.has(itemId);
     });
 
@@ -189,14 +190,14 @@ async function loadPemasukanPeriodeData(items) {
 
     // Load periode data for uncached items
     const periodePromises = uncachedItems.map(item => {
-        const itemId = item.id;
+        const itemId = item.id || item.id_transaksi;
         return getPeriodeData(itemId);
     });
     const periodeResults = await Promise.all(periodePromises);
 
     // Store results in cache
     uncachedItems.forEach((item, index) => {
-        const itemId = item.id;
+        const itemId = item.id || item.id_transaksi;
         pemasukanPeriodeCache.set(itemId, periodeResults[index]);
     });
 }
@@ -503,7 +504,7 @@ function showPemasukanPeriodeDetail(pemasukanId) {
         </div>
         <div class="modal-body">
             <div class="alert alert-info">
-                <strong>Total Pembayaran:</strong> ${window.formatCurrency(totalNominal)}
+                <strong>Total Pembayaran:</strong> ${formatCurrency(totalNominal)}
             </div>
 
             <div class="table-responsive">
@@ -520,14 +521,14 @@ function showPemasukanPeriodeDetail(pemasukanId) {
                             <tr>
                                 <td><span class="badge bg-light text-dark">${detail.periode}</span></td>
                                 <td><span class="badge ${detail.type === 'IPL' ? 'bg-info' : 'bg-primary'}">${detail.type}</span></td>
-                                <td class="text-end">${window.formatCurrency(detail.nominal)}</td>
+                                <td class="text-end">${formatCurrency(detail.nominal)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                     <tfoot>
                         <tr class="table-primary">
                             <th colspan="2">Total</th>
-                            <th class="text-end">${window.formatCurrency(totalNominal)}</th>
+                            <th class="text-end">${formatCurrency(totalNominal)}</th>
                         </tr>
                     </tfoot>
                 </table>

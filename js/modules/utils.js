@@ -208,6 +208,9 @@ function deepClone(obj) {
     return cloned;
 }
 
+// Global cache for periode data - shared across modules
+const globalPeriodeCache = new Map();
+
 // Generate unique ID
 function generateUniqueId(prefix = 'id') {
     const timestamp = Date.now().toString(36);
@@ -227,5 +230,6 @@ export {
     formatDate,
     formatDateTime,
     deepClone,
-    generateUniqueId
+    generateUniqueId,
+    globalPeriodeCache
 };

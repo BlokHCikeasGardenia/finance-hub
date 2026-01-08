@@ -2,13 +2,14 @@
 // All income transaction reports across categories with search, sort, pagination
 
 import { supabase } from '../../config.js';
-import { showToast, formatCurrency, renderPagination, debounce } from '../../utils.js';
+import { showToast, formatCurrency, renderPagination, debounce, globalPeriodeCache } from '../../utils.js';
 
 // Global states for Pemasukan view
 let pemasukanViewDataGlobal = [];
 let pemasukanCurrentPage = 1;
 let pemasukanItemsPerPage = 10;
-let pemasukanPeriodeCache = new Map(); // Cache for periode data
+// Use global periode cache shared across modules
+const pemasukanPeriodeCache = globalPeriodeCache;
 
 // Helper function to get badge color based on category
 function getCategoryBadgeColor(categoryName) {

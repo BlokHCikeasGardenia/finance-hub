@@ -892,7 +892,7 @@ async function handleEditBillFormSubmission(billId) {
 
         showToast('Menyimpan perubahan...', 'info');
 
-        const { updateRecord } = await import('/js/modules/crud.js');
+        const { updateRecord } = await import('../../crud.js');
         const result = await updateRecord('tagihan_ipl', billId, updateData, 'Tagihan IPL');
 
         if (result.success) {
@@ -946,7 +946,7 @@ async function deleteIplBill(billId) {
     try {
         showToast('Menghapus tagihan...', 'info');
 
-        const { deleteRecord } = await import('/js/modules/crud.js');
+        const { deleteRecord } = await import('../../crud.js');
         const result = await deleteRecord('tagihan_ipl', billId, 'Tagihan IPL');
 
         if (result.success) {

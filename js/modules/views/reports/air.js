@@ -649,8 +649,8 @@ async function loadViewRekapAir(selectedYear = null) {
 
         for (const period of periods || []) {
             // Sum pemasukan (income) for this period - use allocated payments to air bills
-            // Filter by actual payment date, not allocation date, to prevent wrong period reporting
-            const { data: airPaymentAllocations, error: airPaymentError } = await supabase
+            // Since Supabase doesn't support filtering on joined tables, we get all data and filter in JS
+            const { data: allAirPaymentAllocations, error: airPaymentError } = await supabase
                 .from('meteran_air_billing_pembayaran')
                 .select(`
                     nominal_dialokasikan,
@@ -664,17 +664,23 @@ async function loadViewRekapAir(selectedYear = null) {
                             penghuni_saat_ini:penghuni_saat_ini_id (nama_kepala_keluarga)
                         )
                     )
-                `)
-                .gte('pemasukan.tanggal', period.tanggal_awal)
-                .lte('pemasukan.tanggal', period.tanggal_akhir);
+                `);
 
             if (airPaymentError) {
-                console.error('Error fetching air payment allocations for period:', airPaymentError);
+                console.error('Error fetching air payment allocations:', airPaymentError);
                 continue;
             }
 
-            const pemasukan = (airPaymentAllocations || []).reduce((sum, allocation) => sum + (allocation.nominal_dialokasikan || 0), 0);
-            const pemasukanData = (airPaymentAllocations || []).map(allocation => ({
+            // Filter allocations by actual payment date (not allocation date)
+            const airPaymentAllocations = (allAirPaymentAllocations || []).filter(allocation => {
+                const paymentDate = new Date(allocation.pemasukan?.tanggal);
+                const periodStart = new Date(period.tanggal_awal);
+                const periodEnd = new Date(period.tanggal_akhir);
+                return paymentDate >= periodStart && paymentDate <= periodEnd;
+            });
+
+            const pemasukan = airPaymentAllocations.reduce((sum, allocation) => sum + (allocation.nominal_dialokasikan || 0), 0);
+            const pemasukanData = airPaymentAllocations.map(allocation => ({
                 tanggal: allocation.pemasukan?.tanggal,
                 nominal: allocation.nominal_dialokasikan,
                 hunian: allocation.pemasukan?.hunian,

@@ -420,11 +420,16 @@ async function renderPemasukanTable(data) {
             <div class="text-muted">
                 Menampilkan ${paginatedData.length > 0 ? startIndex + 1 : 0}-${startIndex + paginatedData.length} dari ${data.length} data
             </div>
-            ${renderPagination('pemasukan', pemasukanCurrentPage, totalPages)}
+            ${renderPemasukanViewPagination(pemasukanCurrentPage, totalPages)}
         </div>
     `;
 
-    document.getElementById('pemasukan-table-container').innerHTML = tableHtml;
+    const tableContainer = document.getElementById('pemasukan-table-container');
+    if (tableContainer) {
+        tableContainer.innerHTML = tableHtml;
+    } else {
+        console.warn('pemasukan-table-container element not found, skipping render');
+    }
 
     // Re-attach sort event listeners
     attachPemasukanSortListeners();
@@ -617,8 +622,59 @@ function sortPemasukanData(column, direction) {
     renderPemasukanTable(filteredData);
 }
 
+// Render pagination for view pemasukan (direct call to avoid routing conflicts)
+function renderPemasukanViewPagination(currentPage, totalPages) {
+    if (totalPages <= 1) return '';
+
+    let paginationHtml = '<nav><ul class="pagination pagination-sm mb-0 justify-content-center mt-3">';
+
+    // Previous button
+    paginationHtml += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="changePemasukanPage(${currentPage - 1})">Previous</a>
+    </li>`;
+
+    // Page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="changePemasukanPage(1)">1</a></li>`;
+        if (startPage > 2) {
+            paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="changePemasukanPage(${i})">${i}</a>
+        </li>`;
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="changePemasukanPage(${totalPages})">${totalPages}</a></li>`;
+    }
+
+    // Next button
+    paginationHtml += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="changePemasukanPage(${currentPage + 1})">Next</a>
+    </li>`;
+
+    paginationHtml += '</ul></nav>';
+    return paginationHtml;
+}
+
 // Change Pemasukan Page
 function changePemasukanPage(page) {
+    // Check if we're still on the pemasukan view page
+    const tableContainer = document.getElementById('pemasukan-table-container');
+    if (!tableContainer) {
+        console.warn('changePemasukanPage called but not on pemasukan view page, ignoring');
+        return;
+    }
+
     pemasukanCurrentPage = page;
     applyPemasukanFilters(false); // false = not a filter change, just pagination
 }
@@ -723,5 +779,5 @@ export {
 window.loadViewPemasukan = loadViewPemasukan;
 window.refreshViewPemasukan = refreshViewPemasukan;
 window.resetPemasukanFilters = resetPemasukanFilters;
-window.changePemasukanPageView = changePemasukanPage; // Rename to avoid conflict with admin
-window.showPemasukanPeriodeDetailView = showPemasukanPeriodeDetail; // Rename to avoid conflict
+window.changePemasukanPage = changePemasukanPage; // View pemasukan pagination
+window.showPemasukanPeriodeDetail = showPemasukanPeriodeDetail; // View pemasukan detail

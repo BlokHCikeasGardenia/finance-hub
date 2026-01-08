@@ -14,10 +14,21 @@ import { loadViewRekapIPL } from './reports/rekap-ipl.js';
 
 // Load Views Section
 async function loadViewsSection() {
-    // Show dashboard when displaying view cards
-    const dashboardSection = document.getElementById('dashboard');
-    if (dashboardSection) {
-        dashboardSection.classList.add('active');
+    // Set current section for navigation context (used by pagination)
+    if (typeof window !== 'undefined' && window.getCurrentSection) {
+        // Import ui module to update current section
+        const { showMultipleSections } = await import('../ui.js');
+        showMultipleSections(['dashboard', 'views']);
+    } else {
+        // Fallback: manually show sections
+        const dashboardSection = document.getElementById('dashboard');
+        const viewsSection = document.getElementById('views');
+        if (dashboardSection) {
+            dashboardSection.classList.add('active');
+        }
+        if (viewsSection) {
+            viewsSection.classList.add('active');
+        }
     }
 
     // Reload dashboard content if it's empty (cleared when loading individual views)

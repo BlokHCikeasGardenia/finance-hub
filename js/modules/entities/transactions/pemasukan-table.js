@@ -372,15 +372,11 @@ function changePemasukanPage(page) {
 
     if (page < 1 || page > totalPages) return;
 
+    // Update page in state
     setPemasukanState({ pemasukanCurrentPage: page });
 
-    // Re-render table with applied state and pagination info
-    const pagination = {
-        currentPage: state.pemasukanCurrentPage,
-        totalPages: totalPages,
-        itemsPerPage: state.pemasukanItemsPerPage
-    };
-    displayPemasukanTable(state.pemasukanData, pagination);
+    // Re-apply filters and display with new page (this will use existing filters and pagination)
+    filterAndDisplayPemasukan(false);
 }
 
 // Attach sort listeners to table headers

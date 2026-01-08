@@ -13,6 +13,7 @@ import {
 
 // Global state for payment form
 let selectedHousehold = null;
+let selectedCategory = null;
 let outstandingBills = [];
 let selectedBills = new Set();
 let householdSearchableSelect = null;
@@ -43,15 +44,23 @@ async function loadViewPayments() {
 
         // Render the main UI
         const html = `
-            <!-- Household Selection -->
+            <!-- Household and Category Selection -->
             <div class="card mb-3">
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
+                    <div class="row g-3">
+                        <div class="col-md-6">
                             <label for="payment-household-select" class="form-label">Pilih Rumah:</label>
                             <select class="form-select" id="payment-household-select"></select>
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
+                        <div class="col-md-4">
+                            <label for="payment-category-select" class="form-label">Jenis Tagihan:</label>
+                            <select class="form-select" id="payment-category-select">
+                                <option value="">Pilih Jenis Tagihan</option>
+                                <option value="IPL">💡 IPL (Listrik)</option>
+                                <option value="Air">💧 Air</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
                             <button class="btn btn-primary" id="load-bills-btn" disabled>
                                 <i class="bi bi-search"></i> Lihat Tagihan
                             </button>
@@ -128,19 +137,44 @@ async function loadViewPayments() {
 function setupPaymentEventListeners() {
     const loadBillsBtn = document.getElementById('load-bills-btn');
     const processPaymentBtn = document.getElementById('process-payment-btn');
+    const categorySelect = document.getElementById('payment-category-select');
 
     // Set up SearchableSelect change event
     if (householdSearchableSelect) {
         householdSearchableSelect.selectElement.addEventListener('change', function() {
-            const selectedValue = householdSearchableSelect.getValue();
-            loadBillsBtn.disabled = !selectedValue;
-            selectedHousehold = selectedValue;
-            console.log('🏠 Household selection changed:', selectedValue);
+            checkLoadBillsButtonState();
+        });
+    }
+
+    // Set up category selection change event
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            checkLoadBillsButtonState();
         });
     }
 
     loadBillsBtn.addEventListener('click', () => loadOutstandingBills());
     processPaymentBtn.addEventListener('click', () => showPaymentForm());
+}
+
+// Check and update load bills button state
+function checkLoadBillsButtonState() {
+    const loadBillsBtn = document.getElementById('load-bills-btn');
+    const householdValue = householdSearchableSelect?.getValue();
+    const categoryValue = document.getElementById('payment-category-select')?.value;
+
+    // Store selected values globally
+    selectedHousehold = householdValue;
+    selectedCategory = categoryValue;
+
+    const isEnabled = selectedHousehold && selectedCategory;
+    loadBillsBtn.disabled = !isEnabled;
+
+    console.log('🔘 Load bills button state updated:', {
+        household: selectedHousehold,
+        category: selectedCategory,
+        enabled: isEnabled
+    });
 }
 
 // Load outstanding bills for selected household
@@ -153,8 +187,8 @@ async function loadOutstandingBills() {
 
     try {
         // Show loading state
-        console.log('🔄 Starting to load outstanding bills for household:', selectedHousehold);
-        showToast('Memuat tagihan IPL & Air...', 'info');
+        console.log('🔄 Starting to load outstanding bills for household:', selectedHousehold, 'category:', selectedCategory);
+        showToast(`Memuat tagihan ${selectedCategory}...`, 'info');
 
         // Disable button and show loading
         if (loadBillsBtn) {
@@ -175,58 +209,62 @@ async function loadOutstandingBills() {
         }
         billsDisplayArea.classList.remove('d-none');
 
-        // Load IPL bills
-        console.log('📄 Loading IPL bills...');
-        const { data: iplBills, error: iplError } = await supabase
-            .from('tagihan_ipl')
-            .select(`
-                id,
-                nominal_tagihan,
-                sisa_tagihan,
-                status,
-                periode:periode_id (nama_periode),
-                tanggal_tagihan
-            `)
-            .eq('hunian_id', selectedHousehold)
-            .gt('sisa_tagihan', 0)
-            .order('tanggal_tagihan', { ascending: false });
+        let billsData = [];
 
-        if (iplError) {
-            console.error('❌ IPL bills query error:', iplError);
-            throw new Error(`Error loading IPL bills: ${iplError.message}`);
+        if (selectedCategory === 'IPL') {
+            // Load only IPL bills
+            console.log('📄 Loading IPL bills...');
+            const { data: iplBills, error: iplError } = await supabase
+                .from('tagihan_ipl')
+                .select(`
+                    id,
+                    nominal_tagihan,
+                    sisa_tagihan,
+                    status,
+                    periode:periode_id (nama_periode),
+                    tanggal_tagihan
+                `)
+                .eq('hunian_id', selectedHousehold)
+                .gt('sisa_tagihan', 0)
+                .order('tanggal_tagihan', { ascending: false });
+
+            if (iplError) {
+                console.error('❌ IPL bills query error:', iplError);
+                throw new Error(`Error loading IPL bills: ${iplError.message}`);
+            }
+            console.log('✅ IPL bills loaded:', iplBills?.length || 0, 'bills');
+            billsData = (iplBills || []).map(bill => ({ ...bill, type: 'IPL' }));
+
+        } else if (selectedCategory === 'Air') {
+            // Load only Air bills
+            console.log('💧 Loading Air bills...');
+            const { data: airBills, error: airError } = await supabase
+                .from('meteran_air_billing')
+                .select(`
+                    id,
+                    nominal_tagihan,
+                    sisa_tagihan,
+                    status,
+                    billing_type,
+                    periode:periode_id (nama_periode),
+                    tanggal_tagihan
+                `)
+                .eq('hunian_id', selectedHousehold)
+                .gt('sisa_tagihan', 0)
+                .neq('billing_type', 'inisiasi')  // Exclude baseline records
+                .neq('billing_type', 'baseline')  // Exclude baseline records
+                .order('tanggal_tagihan', { ascending: false });
+
+            if (airError) {
+                console.error('❌ Air bills query error:', airError);
+                throw new Error(`Error loading Air bills: ${airError.message}`);
+            }
+            console.log('✅ Air bills loaded:', airBills?.length || 0, 'bills');
+            billsData = (airBills || []).map(bill => ({ ...bill, type: 'Air' }));
         }
-        console.log('✅ IPL bills loaded:', iplBills?.length || 0, 'bills');
 
-        // Load Air bills from consolidated table
-        console.log('💧 Loading Air bills...');
-        const { data: airBills, error: airError } = await supabase
-            .from('meteran_air_billing')
-            .select(`
-                id,
-                nominal_tagihan,
-                sisa_tagihan,
-                status,
-                billing_type,
-                periode:periode_id (nama_periode),
-                tanggal_tagihan
-            `)
-            .eq('hunian_id', selectedHousehold)
-            .gt('sisa_tagihan', 0)
-            .neq('billing_type', 'inisiasi')  // Exclude baseline records
-            .neq('billing_type', 'baseline')  // Exclude baseline records
-            .order('tanggal_tagihan', { ascending: false });
-
-        if (airError) {
-            console.error('❌ Air bills query error:', airError);
-            throw new Error(`Error loading Air bills: ${airError.message}`);
-        }
-        console.log('✅ Air bills loaded:', airBills?.length || 0, 'bills');
-
-        // Combine and organize bills
-        outstandingBills = [
-            ...(iplBills || []).map(bill => ({ ...bill, type: 'IPL' })),
-            ...(airBills || []).map(bill => ({ ...bill, type: 'Air' }))
-        ];
+        // Set outstanding bills for selected category only
+        outstandingBills = billsData;
 
         console.log('📋 Total outstanding bills:', outstandingBills.length);
 
@@ -516,23 +554,12 @@ async function handlePaymentSubmission(e) {
         // Generate transaction ID and set category
         paymentData.id_transaksi = await generateTransactionId();
 
-        // Determine appropriate category based on bill types
-        const hasIPL = selectedBillsData.some(bill => bill.type === 'IPL');
-        const hasAir = selectedBillsData.some(bill => bill.type === 'Air');
-
-        if (hasIPL && hasAir) {
-            // Mixed payment - use a general payment category or create separate transactions
-            // For now, we'll use IPL category as primary
+        // Set category based on selected category (simplified since we only load one category at a time)
+        if (selectedCategory === 'IPL') {
             const kategoriOptions = await getKategoriOptions();
             const iplCategory = kategoriOptions.find(cat => cat.text.includes('IPL'));
             paymentData.kategori_id = iplCategory?.value;
-        } else if (hasIPL) {
-            // Find IPL category ID
-            const kategoriOptions = await getKategoriOptions();
-            const iplCategory = kategoriOptions.find(cat => cat.text.includes('IPL'));
-            paymentData.kategori_id = iplCategory?.value;
-        } else if (hasAir) {
-            // Find Air category ID
+        } else if (selectedCategory === 'Air') {
             const kategoriOptions = await getKategoriOptions();
             const airCategory = kategoriOptions.find(cat => cat.text.includes('Air'));
             paymentData.kategori_id = airCategory?.value;
@@ -698,3 +725,4 @@ export {
 
 // Backward compatibility
 window.loadViewPayments = loadViewPayments;
+    document.getElementById('load-bills-btn').disabled = true;

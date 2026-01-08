@@ -648,44 +648,74 @@ async function loadViewRekapAir(selectedYear = null) {
         let totalPengeluaran = 0;
 
         for (const period of periods || []) {
-            // Sum pemasukan (income) for this period - use allocated payments to air bills
-            // Since Supabase doesn't support filtering on joined tables, we get all data and filter in JS
-            const { data: allAirPaymentAllocations, error: airPaymentError } = await supabase
-                .from('meteran_air_billing_pembayaran')
-                .select(`
-                    nominal_dialokasikan,
-                    tanggal_alokasi,
-                    pemasukan:pemasukan_id (
-                        tanggal,
-                        nominal,
-                        keterangan,
-                        hunian:hunian_id (
-                            nomor_blok_rumah,
-                            penghuni_saat_ini:penghuni_saat_ini_id (nama_kepala_keluarga)
-                        )
-                    )
-                `);
+            // Optimized approach: Get payments for the period first, then get their allocations
+            // This avoids loading ALL historical allocations and filtering in JS
 
-            if (airPaymentError) {
-                console.error('Error fetching air payment allocations:', airPaymentError);
+            // 1. Get air category payments for this period
+            const airCategoryResult = await supabase
+                .from('kategori_saldo')
+                .select('id')
+                .eq('nama_kategori', 'Air')
+                .single();
+
+            if (airCategoryResult.error) {
+                console.error('Error fetching air category:', airCategoryResult.error);
                 continue;
             }
 
-            // Filter allocations by actual payment date (not allocation date)
-            const airPaymentAllocations = (allAirPaymentAllocations || []).filter(allocation => {
-                const paymentDate = new Date(allocation.pemasukan?.tanggal);
-                const periodStart = new Date(period.tanggal_awal);
-                const periodEnd = new Date(period.tanggal_akhir);
-                return paymentDate >= periodStart && paymentDate <= periodEnd;
-            });
+            const { data: periodPayments, error: paymentsError } = await supabase
+                .from('pemasukan')
+                .select(`
+                    id,
+                    tanggal,
+                    nominal,
+                    keterangan,
+                    hunian:hunian_id (
+                        nomor_blok_rumah,
+                        penghuni_saat_ini:penghuni_saat_ini_id (nama_kepala_keluarga)
+                    )
+                `)
+                .eq('kategori_id', airCategoryResult.data.id)
+                .gte('tanggal', period.tanggal_awal)
+                .lte('tanggal', period.tanggal_akhir);
 
+            if (paymentsError) {
+                console.error('Error fetching air payments for period:', paymentsError);
+                continue;
+            }
+
+            // 2. Get allocations for these specific payments
+            const paymentIds = (periodPayments || []).map(p => p.id);
+            let airPaymentAllocations = [];
+
+            if (paymentIds.length > 0) {
+                const { data: allocations, error: allocError } = await supabase
+                    .from('meteran_air_billing_pembayaran')
+                    .select('nominal_dialokasikan, pemasukan_id')
+                    .in('pemasukan_id', paymentIds);
+
+                if (allocError) {
+                    console.error('Error fetching allocations:', allocError);
+                } else {
+                    airPaymentAllocations = allocations || [];
+                }
+            }
+
+            // 3. Calculate totals and prepare data
             const pemasukan = airPaymentAllocations.reduce((sum, allocation) => sum + (allocation.nominal_dialokasikan || 0), 0);
-            const pemasukanData = airPaymentAllocations.map(allocation => ({
-                tanggal: allocation.pemasukan?.tanggal,
-                nominal: allocation.nominal_dialokasikan,
-                hunian: allocation.pemasukan?.hunian,
-                keterangan: allocation.pemasukan?.keterangan || `Pembayaran Air: ${allocation.nominal_dialokasikan}`
-            }));
+
+            const pemasukanData = (periodPayments || []).map(payment => {
+                // Find allocations for this payment
+                const paymentAllocations = airPaymentAllocations.filter(a => a.pemasukan_id === payment.id);
+                const totalAllocated = paymentAllocations.reduce((sum, a) => sum + (a.nominal_dialokasikan || 0), 0);
+
+                return {
+                    tanggal: payment.tanggal,
+                    nominal: totalAllocated,
+                    hunian: payment.hunian,
+                    keterangan: payment.keterangan || `Pembayaran Air: ${totalAllocated}`
+                };
+            }).filter(item => item.nominal > 0); // Only include payments that were actually allocated to air bills
 
             // Sum pengeluaran (expenses) for this period and category
             // Filter by expense date falling within the period's date range

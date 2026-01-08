@@ -630,7 +630,7 @@ function renderPemasukanViewPagination(currentPage, totalPages) {
 
     // Previous button
     paginationHtml += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-        <a class="page-link" href="#" onclick="changePemasukanPage(${currentPage - 1})">Previous</a>
+        <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${currentPage - 1})">Previous</a>
     </li>`;
 
     // Page numbers
@@ -638,7 +638,7 @@ function renderPemasukanViewPagination(currentPage, totalPages) {
     const endPage = Math.min(totalPages, currentPage + 2);
 
     if (startPage > 1) {
-        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="changePemasukanPage(1)">1</a></li>`;
+        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(1)">1</a></li>`;
         if (startPage > 2) {
             paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
         }
@@ -646,7 +646,7 @@ function renderPemasukanViewPagination(currentPage, totalPages) {
 
     for (let i = startPage; i <= endPage; i++) {
         paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-            <a class="page-link" href="#" onclick="changePemasukanPage(${i})">${i}</a>
+            <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${i})">${i}</a>
         </li>`;
     }
 
@@ -654,12 +654,12 @@ function renderPemasukanViewPagination(currentPage, totalPages) {
         if (endPage < totalPages - 1) {
             paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
         }
-        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="changePemasukanPage(${totalPages})">${totalPages}</a></li>`;
+        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${totalPages})">${totalPages}</a></li>`;
     }
 
     // Next button
     paginationHtml += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-        <a class="page-link" href="#" onclick="changePemasukanPage(${currentPage + 1})">Next</a>
+        <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${currentPage + 1})">Next</a>
     </li>`;
 
     paginationHtml += '</ul></nav>';
@@ -668,6 +668,8 @@ function renderPemasukanViewPagination(currentPage, totalPages) {
 
 // Change Pemasukan Page
 function changePemasukanPage(page) {
+    console.log('changePemasukanPage called with page:', page, 'current page:', pemasukanCurrentPage);
+
     // Check if we're still on the pemasukan view page
     const tableContainer = document.getElementById('pemasukan-table-container');
     if (!tableContainer) {
@@ -676,6 +678,7 @@ function changePemasukanPage(page) {
     }
 
     pemasukanCurrentPage = page;
+    console.log('Set pemasukanCurrentPage to:', pemasukanCurrentPage);
     applyPemasukanFilters(false); // false = not a filter change, just pagination
 }
 

@@ -648,21 +648,38 @@ async function loadViewRekapAir(selectedYear = null) {
         let totalPengeluaran = 0;
 
         for (const period of periods || []) {
-            // Sum pemasukan (income) for this period and category
-            // Filter by payment date falling within the period's date range
-            const { data: pemasukanData, error: pemasukanError } = await supabase
-                .from('pemasukan')
-                .select('tanggal, nominal, hunian:hunian_id(nomor_blok_rumah, penghuni_saat_ini:penghuni_saat_ini_id(nama_kepala_keluarga)), keterangan')
-                .eq('kategori_id', airCategory.id)
-                .gte('tanggal', period.tanggal_awal)
-                .lte('tanggal', period.tanggal_akhir);
+            // Sum pemasukan (income) for this period - use allocated payments to air bills
+            // This ensures mixed payments (IPL+Air) are properly counted for air income
+            const { data: airPaymentAllocations, error: airPaymentError } = await supabase
+                .from('meteran_air_billing_pembayaran')
+                .select(`
+                    nominal_dialokasikan,
+                    tanggal_alokasi,
+                    pemasukan:pemasukan_id (
+                        tanggal,
+                        nominal,
+                        keterangan,
+                        hunian:hunian_id (
+                            nomor_blok_rumah,
+                            penghuni_saat_ini:penghuni_saat_ini_id (nama_kepala_keluarga)
+                        )
+                    )
+                `)
+                .gte('tanggal_alokasi', period.tanggal_awal)
+                .lte('tanggal_alokasi', period.tanggal_akhir);
 
-            if (pemasukanError) {
-                console.error('Error fetching pemasukan for period:', pemasukanError);
+            if (airPaymentError) {
+                console.error('Error fetching air payment allocations for period:', airPaymentError);
                 continue;
             }
 
-            const pemasukan = (pemasukanData || []).reduce((sum, item) => sum + (item.nominal || 0), 0);
+            const pemasukan = (airPaymentAllocations || []).reduce((sum, allocation) => sum + (allocation.nominal_dialokasikan || 0), 0);
+            const pemasukanData = (airPaymentAllocations || []).map(allocation => ({
+                tanggal: allocation.pemasukan?.tanggal,
+                nominal: allocation.nominal_dialokasikan,
+                hunian: allocation.pemasukan?.hunian,
+                keterangan: allocation.pemasukan?.keterangan || `Pembayaran Air: ${allocation.nominal_dialokasikan}`
+            }));
 
             // Sum pengeluaran (expenses) for this period and category
             // Filter by expense date falling within the period's date range

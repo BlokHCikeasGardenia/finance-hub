@@ -649,7 +649,7 @@ async function loadViewRekapAir(selectedYear = null) {
 
         for (const period of periods || []) {
             // Sum pemasukan (income) for this period - use allocated payments to air bills
-            // This ensures mixed payments (IPL+Air) are properly counted for air income
+            // Filter by actual payment date, not allocation date, to prevent wrong period reporting
             const { data: airPaymentAllocations, error: airPaymentError } = await supabase
                 .from('meteran_air_billing_pembayaran')
                 .select(`
@@ -665,8 +665,8 @@ async function loadViewRekapAir(selectedYear = null) {
                         )
                     )
                 `)
-                .gte('tanggal_alokasi', period.tanggal_awal)
-                .lte('tanggal_alokasi', period.tanggal_akhir);
+                .gte('pemasukan.tanggal', period.tanggal_awal)
+                .lte('pemasukan.tanggal', period.tanggal_akhir);
 
             if (airPaymentError) {
                 console.error('Error fetching air payment allocations for period:', airPaymentError);

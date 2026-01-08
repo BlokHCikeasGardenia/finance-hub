@@ -5,12 +5,42 @@ import { formatCurrency } from '../../../utils.js';
 
 // Global XLSX instance
 let XLSX = null;
+let xlsxLoadPromise = null; // Cache the loading promise
 
-// Initialize XLSX library
-function initXLSX() {
-    if (!XLSX) {
-        XLSX = window.XLSX;
+// Initialize XLSX library with lazy loading
+async function initXLSX() {
+    if (XLSX) {
+        return XLSX; // Already loaded
     }
+
+    if (xlsxLoadPromise) {
+        return xlsxLoadPromise; // Already loading, return cached promise
+    }
+
+    // Load XLSX library lazily (only when needed)
+    xlsxLoadPromise = new Promise((resolve, reject) => {
+        // Check if XLSX is already in window (loaded by other means)
+        if (window.XLSX) {
+            XLSX = window.XLSX;
+            resolve(XLSX);
+            return;
+        }
+
+        // Dynamically load XLSX library
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        script.async = true;
+        script.onload = () => {
+            XLSX = window.XLSX;
+            resolve(XLSX);
+        };
+        script.onerror = () => {
+            reject(new Error('Failed to load XLSX library'));
+        };
+        document.head.appendChild(script);
+    });
+
+    return xlsxLoadPromise;
 }
 
 // ============================
@@ -21,8 +51,8 @@ function initXLSX() {
  * Create workbook with standard formatting
  * @returns {Object} XLSX workbook
  */
-function createWorkbook() {
-    initXLSX();
+async function createWorkbook() {
+    await initXLSX();
     const wb = XLSX.utils.book_new();
 
     // Add metadata
@@ -100,8 +130,8 @@ function formatHeaderCell(text) {
  * @param {Object} data - Report data
  * @param {string} dateRange - Date range string
  */
-export function generateRekapSaldoExcel(data, dateRange) {
-    const wb = createWorkbook();
+export async function generateRekapSaldoExcel(data, dateRange) {
+    const wb = await createWorkbook();
     const ws_data = [];
     let rowIndex = 0;
 
@@ -187,7 +217,7 @@ export function generateRekapSaldoExcel(data, dateRange) {
  * @param {Array} data - Transaction data
  * @param {string} dateRange - Date range string
  */
-export function generateRincianPemasukanGlobalExcel(data, dateRange) {
+export async function generateRincianPemasukanGlobalExcel(data, dateRange) {
     const wb = createWorkbook();
     const ws_data = [];
     let rowIndex = 0;
@@ -257,7 +287,7 @@ export function generateRincianPemasukanGlobalExcel(data, dateRange) {
  * @param {Object} data - Grouped transaction data
  * @param {string} dateRange - Date range string
  */
-export function generateRincianPemasukanPerKategoriExcel(data, dateRange) {
+export async function generateRincianPemasukanPerKategoriExcel(data, dateRange) {
     const wb = createWorkbook();
 
     if (!data.grouped || data.grouped.length === 0) {
@@ -781,7 +811,7 @@ export function generateCollectionEffectivenessPDF(data) {
 // OPERATIONAL REPORTS - PHASE 3
 // ============================
 
-export function generateDanaTitipanExcel(data) {
+export async function generateDanaTitipanExcel(data) {
     const wb = createWorkbook();
     const ws_data = [];
     let rowIndex = 0;
@@ -899,7 +929,7 @@ export function generatePemindahbukuanExcel(data) {
     XLSX.writeFile(wb, fileName);
 }
 
-export function generateNeracaExcel(data) {
+export async function generateNeracaExcel(data) {
     const wb = createWorkbook();
     const ws_data = [];
     let rowIndex = 0;

@@ -14,7 +14,8 @@
     <!-- Report Generation Libraries (loaded asynchronously to prevent blocking) -->
     <script async src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script async src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script async src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- XLSX: Lazy loaded on demand to avoid blocking startup (202KB library) -->
+    <!-- Load only when user actually tries to export to Excel -->
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">

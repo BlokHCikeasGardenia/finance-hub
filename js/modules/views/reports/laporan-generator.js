@@ -678,13 +678,13 @@ async function generateExcelReport(reportType, data, dateRange) {
     switch (reportType) {
         // Fase 1: Core Financial Reports
         case 'rekap_saldo':
-            generateRekapSaldoExcel(data, dateRange);
+            await generateRekapSaldoExcel(data, dateRange);
             break;
         case 'pemasukan_global':
-            generateRincianPemasukanGlobalExcel(data, dateRange);
+            await generateRincianPemasukanGlobalExcel(data, dateRange);
             break;
         case 'pemasukan_kategori':
-            generateRincianPemasukanPerKategoriExcel(data, dateRange);
+            await generateRincianPemasukanPerKategoriExcel(data, dateRange);
             break;
         case 'pengeluaran_global':
             generateRincianPengeluaranGlobalExcel(data, dateRange);
@@ -709,13 +709,13 @@ async function generateExcelReport(reportType, data, dateRange) {
 
         // Fase 3: Operational Reports
         case 'dana_titipan':
-            generateDanaTitipanExcel(data);
+            await generateDanaTitipanExcel(data);
             break;
         case 'pemindahbukuan':
             generatePemindahbukuanExcel(data);
             break;
         case 'neraca':
-            generateNeracaExcel(data);
+            await generateNeracaExcel(data);
             break;
         case 'arus_kas':
             generateArusKasExcel(data);

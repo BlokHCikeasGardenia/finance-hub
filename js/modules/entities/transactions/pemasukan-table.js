@@ -71,8 +71,8 @@ function renderPeriodeColumn(item) {
     }
 }
 
-// Get periode data from payment allocations
-async function getPeriodeData(pemasukanId) {
+// Get periode data from payment allocations or periode_list
+async function getPeriodeData(pemasukanId, pemasukanRecord = null) {
     try {
         // Validate pemasukanId
         if (!pemasukanId || pemasukanId === 'undefined') {
@@ -96,6 +96,33 @@ async function getPeriodeData(pemasukanId) {
             };
         }
 
+        // NEW: If periode_list is provided in record, use it directly
+        if (pemasukanRecord && pemasukanRecord.periode_list && Array.isArray(pemasukanRecord.periode_list)) {
+            // Load periode names from periode IDs
+            const periodeIds = pemasukanRecord.periode_list;
+            
+            if (periodeIds.length > 0) {
+                const { data: periodes, error: periodeError } = await supabase
+                    .from('periode')
+                    .select('id, nama_periode')
+                    .in('id', periodeIds);
+
+                if (!periodeError && periodes) {
+                    const periodeNames = periodes.map(p => p.nama_periode);
+                    return {
+                        periodes: periodeNames,
+                        details: periodes.map(p => ({
+                            periode: p.nama_periode,
+                            type: 'Multiple'
+                        })),
+                        isMultiple: periodeNames.length > 1,
+                        count: periodeNames.length
+                    };
+                }
+            }
+        }
+
+        // FALLBACK: Use old method - query allocations
         // Query IPL payment allocations
         const { data: iplAllocations, error: iplError } = await supabase
             .from('tagihan_ipl_pembayaran')
@@ -189,9 +216,10 @@ async function loadPemasukanPeriodeData(items) {
     if (uncachedItems.length === 0) return;
 
     // Load periode data for uncached items
+    // Pass the record itself to getPeriodeData so it can use periode_list if available
     const periodePromises = uncachedItems.map(item => {
         const itemId = item.id || item.id_transaksi;
-        return getPeriodeData(itemId);
+        return getPeriodeData(itemId, item);
     });
     const periodeResults = await Promise.all(periodePromises);
 

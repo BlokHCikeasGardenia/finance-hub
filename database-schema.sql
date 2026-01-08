@@ -73,6 +73,7 @@ CREATE TABLE pemasukan (
     nominal NUMERIC(15,2) NOT NULL,
     kategori_id UUID NOT NULL REFERENCES kategori_saldo(id),
     periode_id UUID REFERENCES periode(id),
+    periode_list UUID[] DEFAULT ARRAY[]::UUID[],
     rekening_id UUID NOT NULL REFERENCES rekening(id),
     keterangan TEXT
 );

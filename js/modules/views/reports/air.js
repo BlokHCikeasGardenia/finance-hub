@@ -647,23 +647,56 @@ async function loadViewRekapAir(selectedYear = null) {
         let totalPemasukan = 0;
         let totalPengeluaran = 0;
 
+        // OPTIMIZATION: Fetch air category once at the beginning
+        const airCategoryResult = await supabase
+            .from('kategori_saldo')
+            .select('id')
+            .eq('nama_kategori', 'Air')
+            .single();
+
+        if (airCategoryResult.error || !airCategoryResult.data) {
+            console.error('Air category not found:', airCategoryResult.error);
+            contentDiv.innerHTML = '<p class="text-danger">Kategori Air tidak ditemukan</p>';
+            return;
+        }
+
+        const airCategoryId = airCategoryResult.data.id;
+
+        // OPTIMIZATION: Batch fetch all new format payments in one query instead of per-period
+        const { data: allNewFormatPayments, error: newFormatError } = await supabase
+            .from('pemasukan')
+            .select(`
+                id,
+                tanggal,
+                nominal,
+                keterangan,
+                periode_list,
+                hunian:hunian_id (
+                    nomor_blok_rumah,
+                    penghuni_saat_ini:penghuni_saat_ini_id (nama_kepala_keluarga)
+                )
+            `)
+            .eq('kategori_id', airCategoryId)
+            .not('periode_list', 'is', null);
+
+        const newFormatPaymentsCache = new Map();
+        if (!newFormatError && allNewFormatPayments) {
+            // Cache for quick lookup by period
+            (periods || []).forEach(period => {
+                const paymentsForPeriod = (allNewFormatPayments || []).filter(payment => 
+                    payment.periode_list && Array.isArray(payment.periode_list) && 
+                    payment.periode_list.includes(period.id)
+                );
+                newFormatPaymentsCache.set(period.id, paymentsForPeriod);
+            });
+        }
+
         for (const period of periods || []) {
-            // Optimized approach: Get payments for the period first, then get their allocations
-            // This avoids loading ALL historical allocations and filtering in JS
-
-            // 1. Get air category payments for this period
-            const airCategoryResult = await supabase
-                .from('kategori_saldo')
-                .select('id')
-                .eq('nama_kategori', 'Air')
-                .single();
-
-            if (airCategoryResult.error) {
-                console.error('Error fetching air category:', airCategoryResult.error);
-                continue;
-            }
-
-            const { data: periodPayments, error: paymentsError } = await supabase
+            // OPTIMIZATION: Already fetched air category above
+            
+            // Get payments with two approaches:
+            // Approach A: Single period payments (old format with periode_id)
+            const { data: periodPaymentsOld, error: paymentsErrorOld } = await supabase
                 .from('pemasukan')
                 .select(`
                     id,
@@ -675,17 +708,32 @@ async function loadViewRekapAir(selectedYear = null) {
                         penghuni_saat_ini:penghuni_saat_ini_id (nama_kepala_keluarga)
                     )
                 `)
-                .eq('kategori_id', airCategoryResult.data.id)
+                .eq('kategori_id', airCategoryId)
+                .eq('periode_id', period.id)
                 .gte('tanggal', period.tanggal_awal)
                 .lte('tanggal', period.tanggal_akhir);
 
-            if (paymentsError) {
-                console.error('Error fetching air payments for period:', paymentsError);
+            if (paymentsErrorOld) {
+                console.error('Error fetching air payments (old format) for period:', paymentsErrorOld);
+            }
+
+            // Approach B: Multiple periode payments (already fetched above, use cache)
+            const periodPaymentsNew = newFormatPaymentsCache.get(period.id) || [];
+
+            // Combine both approaches (remove duplicates if any)
+            const combinedPayments = [...(periodPaymentsOld || []), ...periodPaymentsNew];
+            const uniquePaymentIds = new Set(combinedPayments.map(p => p.id));
+            const periodPayments = Array.from(uniquePaymentIds).map(id => 
+                combinedPayments.find(p => p.id === id)
+            );
+
+            if (paymentsErrorOld && newFormatError) {
+                console.error('Error fetching air payments for period:', paymentsErrorOld);
                 continue;
             }
 
             // 2. Get allocations for these specific payments
-            const paymentIds = (periodPayments || []).map(p => p.id);
+            const paymentIds = periodPayments.map(p => p.id);
             let airPaymentAllocations = [];
 
             if (paymentIds.length > 0) {
@@ -704,7 +752,7 @@ async function loadViewRekapAir(selectedYear = null) {
             // 3. Calculate totals and prepare data
             const pemasukan = airPaymentAllocations.reduce((sum, allocation) => sum + (allocation.nominal_dialokasikan || 0), 0);
 
-            const pemasukanData = (periodPayments || []).map(payment => {
+            const pemasukanData = periodPayments.map(payment => {
                 // Find allocations for this payment
                 const paymentAllocations = airPaymentAllocations.filter(a => a.pemasukan_id === payment.id);
                 const totalAllocated = paymentAllocations.reduce((sum, a) => sum + (a.nominal_dialokasikan || 0), 0);

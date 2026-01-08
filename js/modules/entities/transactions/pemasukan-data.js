@@ -141,6 +141,7 @@ async function loadPemasukan(refreshUI = true) {
             penghuni_id,
             hunian_id,
             periode_id,
+            periode_list,
             rekening_id,
             keterangan,
             penghuni:penghuni_id (nama_kepala_keluarga),

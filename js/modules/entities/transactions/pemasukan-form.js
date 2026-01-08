@@ -16,6 +16,74 @@ import {
     getPeriodeOptions
 } from './pemasukan-data.js';
 
+// ============================
+// PERIODE MULTI-SELECT COMPONENT
+// ============================
+class PeriodeMultiSelect {
+    constructor(container, options = {}) {
+        this.container = container;
+        this.options = options;
+        this.selectedValues = [];
+        this.init();
+    }
+
+    init() {
+        this.render();
+    }
+
+    render() {
+        this.container.innerHTML = '';
+        
+        if (!this.options.options || this.options.options.length === 0) {
+            this.container.innerHTML = '<p class="text-muted">Tidak ada periode tersedia</p>';
+            return;
+        }
+
+        const checkboxesHtml = this.options.options.map(opt => `
+            <div class="form-check">
+                <input class="form-check-input periode-checkbox" 
+                       type="checkbox" 
+                       value="${opt.value}" 
+                       id="periode_${opt.value}"
+                       data-periode-name="${opt.text}"
+                       ${this.selectedValues.includes(opt.value) ? 'checked' : ''}>
+                <label class="form-check-label" for="periode_${opt.value}">
+                    ${opt.text}
+                </label>
+            </div>
+        `).join('');
+
+        this.container.innerHTML = checkboxesHtml;
+
+        // Attach change event listeners
+        this.container.querySelectorAll('.periode-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    if (!this.selectedValues.includes(e.target.value)) {
+                        this.selectedValues.push(e.target.value);
+                    }
+                } else {
+                    this.selectedValues = this.selectedValues.filter(v => v !== e.target.value);
+                }
+            });
+        });
+    }
+
+    setValues(values) {
+        this.selectedValues = values || [];
+        this.render();
+    }
+
+    getValues() {
+        return this.selectedValues;
+    }
+
+    getSelectedText() {
+        const checkboxes = this.container.querySelectorAll('.periode-checkbox:checked');
+        return Array.from(checkboxes).map(cb => cb.dataset.periodeName).join(', ');
+    }
+}
+
 // Show add form for pemasukan
 function showAddPemasukanForm() {
     const formHtml = createPemasukanFormHtml();
@@ -111,10 +179,9 @@ function createPemasukanFormHtml(pemasukan = null) {
                         </select>
                     </div>
                     <div class="col-6">
-                        <label for="periode_id" class="form-label">Periode:</label>
-                        <select class="form-select" id="periode_id" name="periode_id">
-                            <option value="">Pilih</option>
-                        </select>
+                        <label for="periode_list" class="form-label">Periode (Multiple):</label>
+                        <div id="periode_list_container"></div>
+                        <small class="form-text text-muted d-block mt-1">Pilih satu atau lebih periode yang sama kategori</small>
                     </div>
                 </div>
                 <div class="mt-2">
@@ -161,7 +228,8 @@ function updateFormCategories(categories, selectedValue = '') {
 }
 
 // Initialize searchable selects in form with advanced features
-let penghuniSearchable, hunianSearchable, kategoriSearchable, rekeningSearchable, periodeSearchable;
+let penghuniSearchable, hunianSearchable, kategoriSearchable, rekeningSearchable;
+let periodeMultiSelect; // For multiple periode selection
 
 async function initializePemasukanFormSelects() {
     try {
@@ -173,11 +241,24 @@ async function initializePemasukanFormSelects() {
         const hunianSelect = document.getElementById('hunian_id');
         const kategoriSelect = document.getElementById('kategori_id');
         const rekeningSelect = document.getElementById('rekening_id');
-        const periodeSelect = document.getElementById('periode_id');
+
+        // OPTIMIZATION: Load all dropdown data in parallel instead of sequential
+        const [
+            penghuniOptions,
+            hunianOptions,
+            kategoriOptions,
+            rekeningOptions,
+            periodeOptions
+        ] = await Promise.all([
+            penghuniSelect ? getPenghuniOptions() : Promise.resolve([]),
+            hunianSelect ? getHunianOptions() : Promise.resolve([]),
+            kategoriSelect ? getKategoriOptions() : Promise.resolve([]),
+            rekeningSelect ? getRekeningOptions() : Promise.resolve([]),
+            document.getElementById('periode_list_container') ? getPeriodeOptions() : Promise.resolve([])
+        ]);
 
         // Load penghuni searchable dropdown
-        if (penghuniSelect) {
-            const penghuniOptions = await getPenghuniOptions();
+        if (penghuniSelect && penghuniOptions.length > 0) {
             penghuniSearchable = new SearchableSelect(penghuniSelect, {
                 placeholder: 'Pilih Penghuni',
                 searchPlaceholder: 'Cari nama penghuni...'
@@ -189,8 +270,7 @@ async function initializePemasukanFormSelects() {
         }
 
         // Load hunian searchable dropdown
-        if (hunianSelect) {
-            const hunianOptions = await getHunianOptions();
+        if (hunianSelect && hunianOptions.length > 0) {
             hunianSearchable = new SearchableSelect(hunianSelect, {
                 placeholder: 'Pilih Rumah',
                 searchPlaceholder: 'Cari nomor rumah...'
@@ -202,8 +282,7 @@ async function initializePemasukanFormSelects() {
         }
 
         // Load kategori searchable dropdown
-        if (kategoriSelect) {
-            const kategoriOptions = await getKategoriOptions();
+        if (kategoriSelect && kategoriOptions.length > 0) {
             kategoriSearchable = new SearchableSelect(kategoriSelect, {
                 placeholder: 'Pilih Kategori',
                 searchPlaceholder: 'Cari kategori...'
@@ -211,6 +290,41 @@ async function initializePemasukanFormSelects() {
             await kategoriSearchable.loadData(async () => kategoriOptions.map(opt => ({
                 value: opt.value,
                 text: opt.text
+            })));
+        }
+
+        // Load rekening searchable dropdown
+        if (rekeningSelect && rekeningOptions.length > 0) {
+            rekeningSearchable = new SearchableSelect(rekeningSelect, {
+                placeholder: 'Pilih Rekening',
+                searchPlaceholder: 'Cari nama rekening...'
+            });
+            await rekeningSearchable.loadData(async () => rekeningOptions.map(opt => ({
+                value: opt.value,
+                text: opt.text
+            })));
+        }
+
+        // Load periode as multi-select checkboxes
+        const periodeContainer = document.getElementById('periode_list_container');
+        if (periodeContainer && periodeOptions.length > 0) {
+            periodeMultiSelect = new PeriodeMultiSelect(periodeContainer, {
+                options: periodeOptions,
+                placeholder: 'Pilih satu atau lebih periode'
+            });
+        }
+
+        // Initialize number formatting for nominal input
+        initializeNumberFormatting();
+
+        // Setup smart auto-fill functionality
+        setupSmartAutoFill();
+
+    } catch (error) {
+        console.error('Error initializing form selects:', error);
+        showToast('Error loading form data', 'danger');
+    }
+}
             })));
         }
 
@@ -227,17 +341,14 @@ async function initializePemasukanFormSelects() {
             })));
         }
 
-        // Load periode searchable dropdown
-        if (periodeSelect) {
+        // Load periode as multi-select checkboxes
+        const periodeContainer = document.getElementById('periode_list_container');
+        if (periodeContainer) {
             const periodeOptions = await getPeriodeOptions();
-            periodeSearchable = new SearchableSelect(periodeSelect, {
-                placeholder: 'Pilih Periode',
-                searchPlaceholder: 'Cari periode...'
+            periodeMultiSelect = new PeriodeMultiSelect(periodeContainer, {
+                options: periodeOptions,
+                placeholder: 'Pilih satu atau lebih periode'
             });
-            await periodeSearchable.loadData(async () => periodeOptions.map(opt => ({
-                value: opt.value,
-                text: opt.text
-            })));
         }
 
         // Initialize number formatting for nominal input
@@ -292,8 +403,11 @@ function populatePemasukanFormValues(pemasukan) {
             rekeningSearchable.setValue(pemasukan.rekening_id.toString());
         }
 
-        if (periodeSearchable && pemasukan.periode_id) {
-            periodeSearchable.setValue(pemasukan.periode_id.toString());
+        // Set multiple periode selection
+        if (periodeMultiSelect && (pemasukan.periode_list || pemasukan.periode_id)) {
+            // Support both new periode_list and old periode_id format
+            const periodeIds = pemasukan.periode_list || (pemasukan.periode_id ? [pemasukan.periode_id] : []);
+            periodeMultiSelect.setValues(periodeIds);
         }
     }, 500); // Small delay to ensure SearchableSelect are fully loaded
 }
@@ -396,6 +510,9 @@ async function collectPemasukanFormData(isEdit) {
             return null;
         }
 
+        // Get periode_list from multi-select
+        const periodeList = periodeMultiSelect ? periodeMultiSelect.getValues() : [];
+
         // Required fields
         const formData = {
             tanggal,
@@ -413,7 +530,8 @@ async function collectPemasukanFormData(isEdit) {
         // Optional fields
         if (penghuniId) formData.penghuni_id = penghuniId;
         if (hunianId) formData.hunian_id = hunianId;
-        if (periodeId) formData.periode_id = periodeId;
+        if (periodeList.length > 0) formData.periode_list = periodeList;
+        if (periodeId) formData.periode_id = periodeId; // Keep for backward compatibility
         if (namaPembayar) formData.nama_pembayar = namaPembayar;
 
         return formData;

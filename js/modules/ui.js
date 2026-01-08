@@ -620,9 +620,17 @@ window.changePage = async (tableType, page) => {
                 break;
 
             case 'pemasukan':
-                // Import and call pemasukan page change function
-                const { changePemasukanPage } = await import('./views/reports/pemasukan.js');
-                changePemasukanPage(page);
+                // Check if we're in views section (reports) or admin section (CRUD)
+                const currentSectionForPemasukan = getCurrentSection();
+                if (currentSectionForPemasukan === 'views') {
+                    // Views pemasukan (reports)
+                    const { changePemasukanPage } = await import('./views/reports/pemasukan.js');
+                    changePemasukanPage(page);
+                } else {
+                    // Admin pemasukan (CRUD)
+                    const { changePemasukanPage } = await import('./entities/transactions/pemasukan-table.js');
+                    changePemasukanPage(page);
+                }
                 break;
 
             case 'pengeluaran':

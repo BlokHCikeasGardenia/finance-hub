@@ -10,7 +10,7 @@ let iplCurrentPage = 1;
 let iplItemsPerPage = 10;
 
 // Load Rekap IPL View - Main comprehensive IPL recap
-async function loadViewRekapIPL() {
+async function loadViewRekapIPL(selectedYear = null) {
     // Clear dashboard content when showing individual view
     const dashboardContent = document.getElementById('dashboard-content');
     if (dashboardContent) {
@@ -48,6 +48,7 @@ async function loadViewRekapIPL() {
             return today >= startDate && today <= endDate;
         });
 
+        // Determine default year from active period
         let defaultYear;
         if (activePeriod) {
             const yearMatch = activePeriod.nama_periode.match(/(\d{4})$/);
@@ -56,15 +57,13 @@ async function loadViewRekapIPL() {
             defaultYear = new Date().getFullYear().toString();
         }
 
-        // Normalize selectedYear: null/undefined means current active period year
-        if (defaultYear == null) {
-            defaultYear = defaultYear; // Already set above
-        }
+        // Use selectedYear if provided, otherwise use default year from active period
+        const yearToUse = selectedYear || defaultYear;
 
         // Filter periods by selected year
         let periodsToShow = allPeriods;
-        if (defaultYear !== 'all') {
-            periodsToShow = allPeriods.filter(p => p.nama_periode.includes(defaultYear));
+        if (yearToUse !== 'all') {
+            periodsToShow = allPeriods.filter(p => p.nama_periode.includes(yearToUse));
         }
 
         // Process each period to calculate all required metrics
@@ -79,9 +78,9 @@ async function loadViewRekapIPL() {
         rekapIplDataGlobal = rekapData;
 
         // Create dynamic title and info text based on selected year
-        const isAllYearsMode = defaultYear === 'all';
+        const isAllYearsMode = yearToUse === 'all';
 
-        const displayYear = isAllYearsMode ? null : defaultYear;
+        const displayYear = isAllYearsMode ? null : yearToUse;
 
         const dynamicTitle = 'Rekap IPL';
 
@@ -93,7 +92,7 @@ async function loadViewRekapIPL() {
             ? 'Rekap komprehensif IPL dari semua periode'
             : `Rekap IPL tahun ${displayYear} per periode dengan detail pembayaran, DAU, dan status warga`;
 
-        const selectorClass = defaultYear === 'all'
+        const selectorClass = yearToUse === 'all'
             ? 'form-select form-select-sm'
             : 'form-select form-select-sm border-primary';
 
@@ -109,7 +108,7 @@ async function loadViewRekapIPL() {
                                 <label for="rekap-ipl-year-select" class="form-label mb-0 fw-bold">Filter Tahun:</label>
                                 <select class="${selectorClass}" id="rekap-ipl-year-select" style="width: auto;">
                                     <option value="all">📊 Semua Periode</option>
-                                    ${availableYears.map(year => `<option value="${year}" ${year === defaultYear ? 'selected' : ''}>📅 ${year}</option>`).join('')}
+                                    ${availableYears.map(year => `<option value="${year}" ${year === yearToUse ? 'selected' : ''}>📅 ${year}</option>`).join('')}
                                 </select>
                             </div>
                             <button class="btn btn-warning text-dark" onclick="loadViewsSection()">

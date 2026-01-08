@@ -204,10 +204,20 @@ async function loadPemasukanPeriodeData(items) {
 
 // Display pemasukan table with pagination support
 async function displayPemasukanTable(data, pagination = null) {
-    // Pre-load periode data for all items
-    await loadPemasukanPeriodeData(data);
+    let displayData = data;
+    let finalPagination = pagination;
 
-    const tableHtml = createPemasukanTableHtml(data, pagination);
+    // If pagination is provided, slice the data for display
+    if (pagination) {
+        const startIndex = (pagination.currentPage - 1) * pagination.itemsPerPage;
+        const endIndex = startIndex + pagination.itemsPerPage;
+        displayData = data.slice(startIndex, endIndex);
+    }
+
+    // Pre-load periode data for displayed items only
+    await loadPemasukanPeriodeData(displayData);
+
+    const tableHtml = createPemasukanTableHtml(displayData, finalPagination);
     const tableElement = document.getElementById('pemasukan-table');
     if (tableElement) {
         tableElement.innerHTML = tableHtml;
@@ -277,19 +287,30 @@ function createPemasukanTableHtml(data, pagination = null) {
                 </td>
             </tr>`;
         });
-
-        // Add pagination controls if pagination is provided
-        if (pagination) {
-            const paginationHtml = renderPemasukanPagination(pagination.currentPage,
-                Math.ceil(data.length / pagination.itemsPerPage));
-            html += paginationHtml;
-        }
     } else {
         const colspan = pemasukanTableColumns.length + 2;
         html += `<tr><td colspan="${colspan}" class="text-center text-muted">Tidak ada data pemasukan</td></tr>`;
     }
 
     html += `</tbody></table></div>`;
+
+    // Add pagination controls if pagination is provided (below the table, like in view pemasukan)
+    if (pagination && pagination.totalPages > 1) {
+        const totalData = pagination.totalPages * pagination.itemsPerPage; // Approximate total
+        const startIndex = (pagination.currentPage - 1) * pagination.itemsPerPage;
+        const endIndex = startIndex + data.length;
+
+        html += `
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted">
+                    Menampilkan ${data.length > 0 ? startIndex + 1 : 0}-${endIndex} dari ${totalData} data
+                </div>
+                ${renderPemasukanPagination(pagination.currentPage, pagination.totalPages)}
+            </div>
+        `;
+    }
+
     return html;
 }
 
@@ -353,8 +374,13 @@ function changePemasukanPage(page) {
 
     setPemasukanState({ pemasukanCurrentPage: page });
 
-    // Re-render table with applied state
-    displayPemasukanTable(state.pemasukanData);
+    // Re-render table with applied state and pagination info
+    const pagination = {
+        currentPage: state.pemasukanCurrentPage,
+        totalPages: totalPages,
+        itemsPerPage: state.pemasukanItemsPerPage
+    };
+    displayPemasukanTable(state.pemasukanData, pagination);
 }
 
 // Attach sort listeners to table headers

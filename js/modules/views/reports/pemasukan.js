@@ -719,10 +719,9 @@ export {
     showPemasukanPeriodeDetail
 };
 
-// Backward compatibility for global window functions
+// Backward compatibility for global window functions (view-specific)
 window.loadViewPemasukan = loadViewPemasukan;
 window.refreshViewPemasukan = refreshViewPemasukan;
 window.resetPemasukanFilters = resetPemasukanFilters;
-window.changePemasukanPage = changePemasukanPage;
-window.showPemasukanPeriodeDetail = showPemasukanPeriodeDetail;
-window.loadViewPemasukan = loadViewPemasukan;
+window.changePemasukanPageView = changePemasukanPage; // Rename to avoid conflict with admin
+window.showPemasukanPeriodeDetailView = showPemasukanPeriodeDetail; // Rename to avoid conflict

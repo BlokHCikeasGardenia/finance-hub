@@ -725,4 +725,3 @@ export {
 
 // Backward compatibility
 window.loadViewPayments = loadViewPayments;
-    document.getElementById('load-bills-btn').disabled = true;

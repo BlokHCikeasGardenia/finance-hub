@@ -515,36 +515,19 @@ async function confirmCancelPemasukan(id) {
 // Cancel pemasukan with reverse allocation
 async function cancelPemasukanWithReverseAllocation(pemasukanId) {
     try {
-        // First, get the pemasukan details
-        const { readRecords } = await import('../../crud.js');
-        const { success: pemasukanSuccess, data: pemasukanData } = await readRecords('pemasukan', {
-            filters: { id: pemasukanId },
-            select: '*, kategori_saldo:kategori_id(nama_kategori)'
-        });
+        // Always reverse all payment allocations regardless of category to prevent foreign key violations
+        // This ensures all references to this pemasukan are removed before deletion
 
-        if (!pemasukanSuccess || !pemasukanData || pemasukanData.length === 0) {
-            return { success: false, message: 'Transaksi pemasukan tidak ditemukan' };
+        // Reverse IPL payment allocations if any exist
+        const iplReverseResult = await reverseIplPaymentAllocation(pemasukanId);
+        if (!iplReverseResult.success && iplReverseResult.message !== 'Tidak ada alokasi IPL yang perlu dibatalkan') {
+            return iplReverseResult;
         }
 
-        const pemasukan = pemasukanData[0];
-        const categoryName = pemasukan.kategori_saldo?.nama_kategori;
-
-        // Check if this is an IPL or Air payment that needs reverse allocation
-        const isIplPayment = categoryName && (categoryName.includes('IPL') || categoryName === 'DAU');
-        const isAirPayment = categoryName && categoryName.includes('Air');
-
-        if (isIplPayment) {
-            // Reverse IPL payment allocation
-            const reverseResult = await reverseIplPaymentAllocation(pemasukanId);
-            if (!reverseResult.success) {
-                return reverseResult;
-            }
-        } else if (isAirPayment) {
-            // Reverse Air payment allocation
-            const reverseResult = await reverseAirPaymentAllocation(pemasukanId);
-            if (!reverseResult.success) {
-                return reverseResult;
-            }
+        // Reverse Air payment allocations if any exist
+        const airReverseResult = await reverseAirPaymentAllocation(pemasukanId);
+        if (!airReverseResult.success && airReverseResult.message !== 'Tidak ada alokasi Air yang perlu dibatalkan') {
+            return airReverseResult;
         }
 
         // Finally, delete the pemasukan record

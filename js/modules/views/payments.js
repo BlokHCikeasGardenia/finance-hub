@@ -577,8 +577,9 @@ async function allocatePaymentToSelectedBills(pemasukanData, selectedBillsData) 
     for (const bill of selectedBillsData) {
         try {
             if (bill.type === 'IPL') {
-        const { allocatePaymentToTagihanIpl } = await import('../entities/transactions/tagihan_ipl-data.js');
-                await allocatePaymentToTagihanIpl(pemasukanRecord.id, bill.sisa_tagihan);
+                // Allocate payment to specific IPL bill
+                const { allocatePaymentToSpecificTagihanIpl } = await import('../entities/transactions/tagihan_ipl-data.js');
+                await allocatePaymentToSpecificTagihanIpl(pemasukanRecord.id, bill.id, bill.sisa_tagihan);
             } else if (bill.type === 'Air') {
                 // Allocate payment to Air bill
                 await allocatePaymentToTagihanAir(pemasukanRecord.id, bill.sisa_tagihan, bill.id);

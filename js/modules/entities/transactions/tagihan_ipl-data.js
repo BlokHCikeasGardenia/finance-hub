@@ -180,6 +180,91 @@ async function checkExistingBill(hunianId, periodeId) {
     }
 }
 
+// Allocate payment to a specific IPL bill
+async function allocatePaymentToSpecificTagihanIpl(pemasukanId, tagihanIplId, nominalPembayaran) {
+    try {
+        const supabase = (await import('../../config.js')).supabase;
+
+        // Get payment details
+        const { data: pemasukan, error: pemasukanError } = await supabase
+            .from('pemasukan')
+            .select('tanggal')
+            .eq('id', pemasukanId)
+            .single();
+
+        if (pemasukanError) throw pemasukanError;
+
+        // Get the specific bill
+        const { data: bill, error: billError } = await supabase
+            .from('tagihan_ipl')
+            .select('*')
+            .eq('id', tagihanIplId)
+            .single();
+
+        if (billError) throw billError;
+
+        if (!bill) {
+            throw new Error('Tagihan IPL tidak ditemukan');
+        }
+
+        // Calculate amount to allocate (don't exceed remaining balance)
+        const amountToAllocate = Math.min(nominalPembayaran, bill.sisa_tagihan);
+
+        // Determine category based on bill type (from tariff relation)
+        let billCategory = 'IPL'; // default
+        if (bill.nominal_tagihan === 30000) {
+            billCategory = 'IPL_RUMAH_KOSONG';
+        } else if (bill.nominal_tagihan === 5000) {
+            billCategory = 'DAU';
+        }
+
+        // Create allocation record
+        const allocationData = {
+            tagihan_ipl_id: tagihanIplId,
+            pemasukan_id: pemasukanId,
+            nominal_dialokasikan: amountToAllocate,
+            tanggal_alokasi: pemasukan.tanggal,
+            kategori_ipl: billCategory
+        };
+
+        // Insert allocation record
+        const { data: allocResult, error: allocError } = await supabase
+            .from('tagihan_ipl_pembayaran')
+            .insert([allocationData]);
+
+        if (allocError) throw allocError;
+
+        // Update bill payment tracking
+        const newTotalPayment = (bill.total_pembayaran || 0) + amountToAllocate;
+        const newRemaining = (bill.nominal_tagihan || 0) - newTotalPayment;
+
+        // Determine new status
+        let newStatus = 'sebagian';
+        if (newRemaining <= 0) {
+            newStatus = 'lunas';
+        } else if (newTotalPayment === 0) {
+            newStatus = 'belum_bayar';
+        }
+
+        await updateRecord('tagihan_ipl', tagihanIplId, {
+            total_pembayaran: newTotalPayment,
+            sisa_tagihan: newRemaining,
+            status: newStatus
+        });
+
+        return {
+            success: true,
+            allocated: amountToAllocate,
+            unallocated: nominalPembayaran - amountToAllocate,
+            message: `Pembayaran IPL berhasil dialokasikan ke tagihan ${tagihanIplId}`
+        };
+
+    } catch (error) {
+        console.error('Error allocating payment to specific IPL bill:', error);
+        return { success: false, message: error.message };
+    }
+}
+
 // Allocate payment to outstanding IPL bills with automatic category assignment
 async function allocatePaymentToTagihanIpl(pemasukanId, nominalPembayaran) {
     try {
@@ -237,7 +322,8 @@ async function allocatePaymentToTagihanIpl(pemasukanId, nominalPembayaran) {
                 tagihan_ipl_id: bill.id,
                 pemasukan_id: pemasukanId,
                 nominal_dialokasikan: amountToAllocate,
-                tanggal_alokasi: paymentDate
+                tanggal_alokasi: paymentDate,
+                kategori_ipl: billCategory
             };
 
             allocations.push(allocationData);
@@ -440,6 +526,7 @@ export {
     loadTagihanIpl,
     generateTagihanIplForPeriod,
     allocatePaymentToTagihanIpl,
+    allocatePaymentToSpecificTagihanIpl,
     getOutstandingTagihanIplByHunian,
     getTagihanIplForPeriod,
     getIplRevenueByCategory,

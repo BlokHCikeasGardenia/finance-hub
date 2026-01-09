@@ -11,6 +11,7 @@ import { loadViewPengeluaran } from './reports/pengeluaran.js';
 import { loadViewRingkasan } from './reports/ringkasan.js';
 import { loadViewRekap } from './reports/rekap.js';
 import { loadViewRekapIPL } from './reports/rekap-ipl.js';
+import { loadViewHunianAdministrasi } from './hunian-administrasi.js';
 
 // Load Views Section
 async function loadViewsSection() {
@@ -105,6 +106,18 @@ async function loadViewsSection() {
                 <!-- Rekap -->
                 <h4 class="mb-3 text-warning"><i class="bi bi-bar-chart"></i> Rekap</h4>
                 <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
+                                <i class="bi bi-house-door fs-2 text-dark mb-2 mb-md-3"></i>
+                                <h5 class="card-title fs-6 fs-md-5">Administrasi Hunian</h5>
+                                <p class="card-text small mb-2">Riwayat Tagihan per Rumah</p>
+                                <button class="btn btn-dark btn-sm" onclick="loadViewHunianAdministrasi()">
+                                    <i class="bi bi-eye"></i> Lihat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-md-4">
                         <div class="card h-100">
                             <div class="card-body text-center py-2 px-2 py-md-3 px-md-3">
@@ -231,4 +244,5 @@ window.loadViewPengeluaran = loadViewPengeluaran;
 window.loadViewRingkasan = loadViewRingkasan;
 window.loadViewRekap = loadViewRekap;
 window.loadViewRekapIPL = loadViewRekapIPL;
+window.loadViewHunianAdministrasi = loadViewHunianAdministrasi;
 

@@ -100,7 +100,7 @@ async function getPeriodeData(pemasukanId, pemasukanRecord = null) {
         if (pemasukanRecord && pemasukanRecord.periode_list && Array.isArray(pemasukanRecord.periode_list)) {
             // Load periode names from periode IDs
             const periodeIds = pemasukanRecord.periode_list;
-            
+
             if (periodeIds.length > 0) {
                 const { data: periodes, error: periodeError } = await supabase
                     .from('periode')
@@ -109,11 +109,17 @@ async function getPeriodeData(pemasukanId, pemasukanRecord = null) {
 
                 if (!periodeError && periodes) {
                     const periodeNames = periodes.map(p => p.nama_periode);
+                    // Distribute total nominal equally across periodes
+                    const nominalPerPeriode = pemasukanRecord.nominal / periodeNames.length;
+                    // Get actual category name instead of "Multiple"
+                    const categoryName = pemasukanRecord.kategori_saldo?.nama_kategori || 'Lain-lain';
+
                     return {
                         periodes: periodeNames,
                         details: periodes.map(p => ({
                             periode: p.nama_periode,
-                            type: 'Multiple'
+                            nominal: nominalPerPeriode,
+                            type: categoryName
                         })),
                         isMultiple: periodeNames.length > 1,
                         count: periodeNames.length
@@ -341,7 +347,7 @@ function showPemasukanPeriodeDetail(pemasukanId) {
                         ${periodeData.details.map(detail => `
                             <tr>
                                 <td><span class="badge bg-light text-dark">${detail.periode}</span></td>
-                                <td><span class="badge ${detail.type === 'IPL' ? 'bg-info' : 'bg-primary'}">${detail.type}</span></td>
+                                <td><span class="badge ${getCategoryBadgeColor(detail.type)}">${detail.type}</span></td>
                                 <td class="text-end">${formatCurrency(detail.nominal)}</td>
                             </tr>
                         `).join('')}

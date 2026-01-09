@@ -92,6 +92,11 @@ function showAddPemasukanForm() {
     setTimeout(() => {
         initializePemasukanFormSelects();
         attachPemasukanFormEventListeners(false);
+        
+        // Initialize search and filter functionality for the form
+        if (typeof window.initializePemasukanSearchAndFilter === 'function') {
+            window.initializePemasukanSearchAndFilter();
+        }
     }, 100);
 }
 
@@ -118,6 +123,11 @@ async function showEditPemasukanForm(id) {
             initializePemasukanFormSelects();
             populatePemasukanFormValues(pemasukan);
             attachPemasukanFormEventListeners(true, pemasukan.id);
+            
+            // Initialize search and filter functionality for the form
+            if (typeof window.initializePemasukanSearchAndFilter === 'function') {
+                window.initializePemasukanSearchAndFilter();
+            }
         }, 100);
 
     } catch (error) {

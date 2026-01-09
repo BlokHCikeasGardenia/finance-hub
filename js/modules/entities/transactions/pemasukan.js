@@ -14,8 +14,14 @@ import {
 } from './pemasukan-form.js';
 
 import {
-    showPemasukanPeriodeDetail
+    showPemasukanPeriodeDetail,
+    changePemasukanPage
 } from './pemasukan-table.js';
+
+import {
+    initializePemasukanSearchAndFilter,
+    resetPemasukanFilters
+} from './pemasukan-filters.js';
 
 // Export functions for global access
 export {
@@ -24,7 +30,9 @@ export {
     showEditPemasukanForm,
     confirmCancelPemasukan,
     confirmDeletePemasukan,
-    showPemasukanPeriodeDetail
+    showPemasukanPeriodeDetail,
+    initializePemasukanSearchAndFilter,
+    resetPemasukanFilters
 };
 
 // Backward compatibility for global functions
@@ -32,3 +40,6 @@ window.editPemasukan = showEditPemasukanForm;
 window.confirmCancelPemasukan = confirmCancelPemasukan;
 window.confirmDeletePemasukan = confirmDeletePemasukan;
 window.showPemasukanPeriodeDetail = showPemasukanPeriodeDetail;
+window.changePemasukanPage = changePemasukanPage;
+window.initializePemasukanSearchAndFilter = initializePemasukanSearchAndFilter;
+window.resetPemasukanFilters = resetPemasukanFilters;

@@ -291,17 +291,17 @@ function renderPengeluaranTable(data) {
             <nav aria-label="Pengeluaran pagination">
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item ${pengeluaranCurrentPage === 1 ? 'disabled' : ''}">
-                        <a class="page-link" href="#" onclick="changePengeluaranPage(${pengeluaranCurrentPage - 1}); return false;" aria-label="Previous">
+                        <a class="page-link" href="#" onclick="changePengeluaranViewPage(${pengeluaranCurrentPage - 1}); return false;" aria-label="Previous">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
                     ${Array.from({length: totalPages}, (_, i) => i + 1).map(page => `
                         <li class="page-item ${page === pengeluaranCurrentPage ? 'active' : ''}">
-                            <a class="page-link" href="#" onclick="changePengeluaranPage(${page}); return false;">${page}</a>
+                            <a class="page-link" href="#" onclick="changePengeluaranViewPage(${page}); return false;">${page}</a>
                         </li>
                     `).join('')}
                     <li class="page-item ${pengeluaranCurrentPage === totalPages ? 'disabled' : ''}">
-                        <a class="page-link" href="#" onclick="changePengeluaranPage(${pengeluaranCurrentPage + 1}); return false;" aria-label="Next">
+                        <a class="page-link" href="#" onclick="changePengeluaranViewPage(${pengeluaranCurrentPage + 1}); return false;" aria-label="Next">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
                     </li>
@@ -486,8 +486,8 @@ function sortPengeluaranData(column, direction) {
     renderPengeluaranTable(filteredData);
 }
 
-// Change Pengeluaran Page
-function changePengeluaranPage(page) {
+// Change Pengeluaran View Page
+function changePengeluaranViewPage(page) {
     pengeluaranCurrentPage = page;
     // Re-filter data and render
     const searchTerm = document.getElementById('pengeluaran-search')?.value.toLowerCase() || '';
@@ -529,7 +529,7 @@ export {
     loadViewPengeluaran,
     refreshViewPengeluaran,
     initializePengeluaranYearSelector,
-    changePengeluaranPage
+    changePengeluaranViewPage
 };
 
 // Toggle detailed columns visibility on mobile
@@ -563,5 +563,5 @@ function togglePengeluaranDetails() {
 window.loadViewPengeluaran = loadViewPengeluaran;
 window.refreshViewPengeluaran = refreshViewPengeluaran;
 window.resetPengeluaranFilters = resetPengeluaranFilters;
-window.changePengeluaranPage = changePengeluaranPage;
+window.changePengeluaranViewPage = changePengeluaranViewPage;
 window.togglePengeluaranDetails = togglePengeluaranDetails;

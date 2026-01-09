@@ -286,6 +286,18 @@ async function getKategoriOptions() {
     return pemasukanCategories;
 }
 
+// Reset filters
+function resetPemasukanFilters() {
+    pemasukanSearchTerm = '';
+    pemasukanFilterCategory = '';
+    pemasukanFilterAccount = '';
+    pemasukanFilterDateFrom = '';
+    pemasukanFilterDateTo = '';
+    pemasukanSortColumn = '';
+    pemasukanSortDirection = 'none';
+    pemasukanCurrentPage = 1;
+}
+
 // State management getters and setters
 function getPemasukanData() {
     return pemasukanData;
@@ -342,7 +354,8 @@ export {
     getPemasukanData,
     getPemasukanCategories,
     getPemasukanState,
-    setPemasukanState
+    setPemasukanState,
+    resetPemasukanFilters
 };
 
 // Import UI-related functions dynamically

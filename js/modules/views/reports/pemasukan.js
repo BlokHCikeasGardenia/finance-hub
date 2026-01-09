@@ -630,7 +630,7 @@ function renderPemasukanViewPagination(currentPage, totalPages) {
 
     // Previous button
     paginationHtml += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-        <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${currentPage - 1})">Previous</a>
+        <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanViewPage(${currentPage - 1})">Previous</a>
     </li>`;
 
     // Page numbers
@@ -638,7 +638,7 @@ function renderPemasukanViewPagination(currentPage, totalPages) {
     const endPage = Math.min(totalPages, currentPage + 2);
 
     if (startPage > 1) {
-        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(1)">1</a></li>`;
+        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanViewPage(1)">1</a></li>`;
         if (startPage > 2) {
             paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
         }
@@ -646,7 +646,7 @@ function renderPemasukanViewPagination(currentPage, totalPages) {
 
     for (let i = startPage; i <= endPage; i++) {
         paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-            <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${i})">${i}</a>
+            <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanViewPage(${i})">${i}</a>
         </li>`;
     }
 
@@ -654,26 +654,26 @@ function renderPemasukanViewPagination(currentPage, totalPages) {
         if (endPage < totalPages - 1) {
             paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
         }
-        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${totalPages})">${totalPages}</a></li>`;
+        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanViewPage(${totalPages})">${totalPages}</a></li>`;
     }
 
     // Next button
     paginationHtml += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-        <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${currentPage + 1})">Next</a>
+        <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanViewPage(${currentPage + 1})">Next</a>
     </li>`;
 
     paginationHtml += '</ul></nav>';
     return paginationHtml;
 }
 
-// Change Pemasukan Page
-function changePemasukanPage(page) {
-    console.log('changePemasukanPage called with page:', page, 'current page:', pemasukanCurrentPage);
+// Change Pemasukan View Page
+function changePemasukanViewPage(page) {
+    console.log('changePemasukanViewPage called with page:', page, 'current page:', pemasukanCurrentPage);
 
     // Check if we're still on the pemasukan view page
     const tableContainer = document.getElementById('pemasukan-table-container');
     if (!tableContainer) {
-        console.warn('changePemasukanPage called but not on pemasukan view page, ignoring');
+        console.warn('changePemasukanViewPage called but not on pemasukan view page, ignoring');
         return;
     }
 
@@ -774,7 +774,7 @@ export {
     loadViewPemasukan,
     refreshViewPemasukan,
     initializePemasukanYearSelector,
-    changePemasukanPage,
+    changePemasukanViewPage,
     showPemasukanPeriodeDetail
 };
 
@@ -782,5 +782,5 @@ export {
 window.loadViewPemasukan = loadViewPemasukan;
 window.refreshViewPemasukan = refreshViewPemasukan;
 window.resetPemasukanFilters = resetPemasukanFilters;
-window.changePemasukanPage = changePemasukanPage; // View pemasukan pagination
+window.changePemasukanViewPage = changePemasukanViewPage; // View pemasukan pagination
 window.showPemasukanPeriodeDetail = showPemasukanPeriodeDetail; // View pemasukan detail

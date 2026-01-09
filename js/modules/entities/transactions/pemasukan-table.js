@@ -12,14 +12,14 @@ const pemasukanPeriodeCache = globalPeriodeCache;
 
 // Table columns configuration - maximum compact for mobile (only essentials)
 const pemasukanTableColumns = [
-    { key: 'id_transaksi', label: 'ID Transaksi' },
-    { key: 'tanggal', label: 'Tanggal', width: '100px', render: (item) => new Date(item.tanggal).toLocaleDateString('id-ID'), mobileClass: 'd-none-mobile' },
-    { key: 'penghuni', label: 'Penghuni', render: (item) => item.penghuni?.nama_kepala_keluarga || item.nama_pembayar || '-' },
-    { key: 'kategori', label: 'Kategori', render: renderPemasukanCategory },
-    { key: 'nominal', label: 'Nominal', render: (item) => formatCurrency(item.nominal) },
+    { key: 'id_transaksi', label: 'ID Transaksi', sortable: true },
+    { key: 'tanggal', label: 'Tanggal', width: '100px', sortable: true, render: (item) => new Date(item.tanggal).toLocaleDateString('id-ID'), mobileClass: 'd-none-mobile' },
+    { key: 'penghuni', label: 'Penghuni', sortable: true, render: (item) => item.penghuni?.nama_kepala_keluarga || item.nama_pembayar || '-' },
+    { key: 'kategori', label: 'Kategori', sortable: true, render: renderPemasukanCategory },
+    { key: 'nominal', label: 'Nominal', sortable: true, render: (item) => formatCurrency(item.nominal) },
     { key: 'periode', label: 'Periode', render: renderPeriodeColumn },
-    { key: 'hunian', label: 'Rumah', render: (item) => item.hunian?.nomor_blok_rumah || '-', mobileClass: 'd-none-mobile' },
-    { key: 'rekening', label: 'Rekening', render: (item) => item.rekening?.jenis_rekening || '-', mobileClass: 'd-none-mobile' },
+    { key: 'hunian', label: 'Rumah', sortable: true, render: (item) => item.hunian?.nomor_blok_rumah || '-', mobileClass: 'd-none-mobile' },
+    { key: 'rekening', label: 'Rekening', sortable: true, render: (item) => item.rekening?.jenis_rekening || '-', mobileClass: 'd-none-mobile' },
     { key: 'keterangan', label: 'Keterangan', mobileClass: 'd-none-mobile' }
 ];
 
@@ -236,20 +236,45 @@ async function loadPemasukanPeriodeData(items) {
     });
 }
 
-// Display pemasukan table (no pagination - show all data)
+// Display pemasukan table with pagination
 async function displayPemasukanTable(data) {
-    // Pre-load periode data for all items
-    await loadPemasukanPeriodeData(data);
+    const state = getPemasukanState();
+    // Calculate pagination info
+    const totalPages = Math.ceil(data.length / state.pemasukanItemsPerPage);
 
-    const tableHtml = createPemasukanTableHtml(data);
+    // Handle case where current page is beyond available pages (e.g., after filtering)
+    let currentPage = state.pemasukanCurrentPage;
+    if (currentPage > totalPages && totalPages > 0) {
+        currentPage = totalPages;
+        setPemasukanState({ pemasukanCurrentPage: currentPage });
+    } else if (totalPages === 0) {
+        currentPage = 1;
+    }
+
+    const startIndex = (currentPage - 1) * state.pemasukanItemsPerPage;
+    const endIndex = startIndex + state.pemasukanItemsPerPage;
+    const paginatedData = data.slice(startIndex, endIndex);
+
+    // Pre-load periode data for current page items
+    await loadPemasukanPeriodeData(paginatedData);
+
+    const tableHtml = createPemasukanTableHtml(paginatedData, {
+        currentPage,
+        totalPages,
+        itemsPerPage: state.pemasukanItemsPerPage,
+        totalItems: data.length
+    });
+
     const tableElement = document.getElementById('pemasukan-table');
     if (tableElement) {
         tableElement.innerHTML = tableHtml;
+        // Re-attach sort event listeners
+        attachPemasukanSortListeners();
     }
 }
 
-// Create HTML for pemasukan table (no pagination)
-function createPemasukanTableHtml(data) {
+// Create HTML for pemasukan table with pagination
+function createPemasukanTableHtml(data, pagination) {
     let html = `
         <div class="table-responsive">
             <table class="table table-striped table-hover">
@@ -258,7 +283,9 @@ function createPemasukanTableHtml(data) {
                         <th>No</th>
                         ${pemasukanTableColumns.map(col => {
                             const mobileClass = col.mobileClass || '';
-                            return `<th class="${mobileClass}">${col.label}</th>`;
+                            const sortableClass = col.sortable ? 'sortable' : '';
+                            const sortIcon = col.sortable ? ' <i class="bi bi-chevron-expand sort-icon"></i>' : '';
+                            return `<th class="${sortableClass} ${mobileClass}" data-column="${col.key}">${col.label}${sortIcon}</th>`;
                         }).join('')}
                         <th width="150px">Aksi</th>
                     </tr>
@@ -268,10 +295,10 @@ function createPemasukanTableHtml(data) {
 
     if (data.length > 0) {
         data.forEach((item, index) => {
-            const displayIndex = index + 1;
+            const globalIndex = (pagination.currentPage - 1) * pagination.itemsPerPage + index + 1;
 
             html += `<tr>
-                <td>${displayIndex}</td>
+                <td>${globalIndex}</td>
                 ${pemasukanTableColumns.map(col => {
                     const value = col.render ? col.render(item, col.key) : getNestedValue(item, col.key) || '-';
                     return `<td>${value}</td>`;
@@ -290,7 +317,11 @@ function createPemasukanTableHtml(data) {
         html += `<tr><td colspan="${colspan}" class="text-center text-muted">Tidak ada data pemasukan</td></tr>`;
     }
 
-    html += `</tbody></table></div>`;
+    html += `</tbody></table>`;
+
+    // Add pagination controls
+    const paginationHtml = renderPemasukanPagination(pagination.currentPage, pagination.totalPages, pagination.totalItems);
+    html += paginationHtml;
 
     return html;
 }
@@ -374,10 +405,139 @@ function showPemasukanPeriodeDetail(pemasukanId) {
     });
 }
 
+// Render pagination for pemasukan table
+function renderPemasukanPagination(currentPage, totalPages, totalItems) {
+    if (totalPages <= 1) return '';
+
+    let paginationHtml = '<nav><ul class="pagination pagination-sm mb-0 justify-content-center mt-3">';
+
+    // Previous button
+    paginationHtml += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${currentPage - 1})">Previous</a>
+    </li>`;
+
+    // Page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(1)">1</a></li>`;
+        if (startPage > 2) {
+            paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${i})">${i}</a>
+        </li>`;
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+        paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${totalPages})">${totalPages}</a></li>`;
+    }
+
+    // Next button
+    paginationHtml += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="event.preventDefault(); changePemasukanPage(${currentPage + 1})">Next</a>
+    </li>`;
+
+    paginationHtml += '</ul>';
+
+    // Add info text
+    const startItem = (currentPage - 1) * 10 + 1;
+    const endItem = Math.min(currentPage * 10, totalItems);
+    paginationHtml += `<div class="text-muted text-center mt-2">Menampilkan ${startItem}-${endItem} dari ${totalItems} data</div>`;
+
+    paginationHtml += '</nav>';
+    return paginationHtml;
+}
+
+// Change page
+function changePemasukanPage(page) {
+    // Check if we're still on the pemasukan view page
+    const tableContainer = document.getElementById('pemasukan-table');
+    if (!tableContainer) {
+        // Check if we're on the pemasukan form page instead
+        const formContainer = document.getElementById('pemasukan-form');
+        if (formContainer) {
+            console.warn('changePemasukanPage called from form page, ignoring');
+            return;
+        }
+        
+        // Check if we're on the pemasukan view reports page
+        const viewContainer = document.getElementById('pemasukan-table-container');
+        if (viewContainer) {
+            console.warn('changePemasukanPage called from view page, ignoring');
+            return;
+        }
+        
+        console.warn('changePemasukanPage called but not on pemasukan page, ignoring');
+        return;
+    }
+
+    // Set the page (validation will be handled by the display function)
+    setPemasukanState({ pemasukanCurrentPage: page });
+
+    // Re-render table with filters applied
+    import('./pemasukan-filters.js').then(({ filterAndDisplayPemasukan }) => {
+        filterAndDisplayPemasukan(false); // false = not a filter change, just pagination
+    });
+}
+
+// Attach sort listeners
+function attachPemasukanSortListeners() {
+    const sortableHeaders = document.querySelectorAll('#pemasukan-table .sortable');
+
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const column = header.dataset.column;
+            const currentSort = header.dataset.sort || 'none';
+
+            // Reset all sort indicators
+            sortableHeaders.forEach(h => {
+                h.dataset.sort = 'none';
+                const icon = h.querySelector('.sort-icon');
+                if (icon) icon.className = 'bi bi-chevron-expand sort-icon';
+            });
+
+            // Determine new sort direction
+            let newSort = 'asc';
+            if (currentSort === 'asc') newSort = 'desc';
+            else if (currentSort === 'desc') newSort = 'none';
+
+            header.dataset.sort = newSort;
+
+            // Update icon
+            const icon = header.querySelector('.sort-icon');
+            if (icon) {
+                if (newSort === 'asc') icon.className = 'bi bi-chevron-up sort-icon';
+                else if (newSort === 'desc') icon.className = 'bi bi-chevron-down sort-icon';
+                else icon.className = 'bi bi-chevron-expand sort-icon';
+            }
+
+            // Apply sorting
+            import('./pemasukan-filters.js').then(({ sortPemasukanData }) => {
+                if (typeof sortPemasukanData === 'function') {
+                    sortPemasukanData(column, newSort);
+                }
+            });
+        });
+    });
+}
+
 export {
     pemasukanTableColumns,
     renderPemasukanCategory,
     displayPemasukanTable,
     createPemasukanTableHtml,
-    showPemasukanPeriodeDetail
+    showPemasukanPeriodeDetail,
+    changePemasukanPage,
+    attachPemasukanSortListeners
 };
+
+// Make changePemasukanPage globally available for pagination
+window.changePemasukanPage = changePemasukanPage;

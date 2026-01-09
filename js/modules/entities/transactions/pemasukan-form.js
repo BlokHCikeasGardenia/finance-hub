@@ -325,43 +325,6 @@ async function initializePemasukanFormSelects() {
         showToast('Error loading form data', 'danger');
     }
 }
-            })));
-        }
-
-        // Load rekening searchable dropdown
-        if (rekeningSelect) {
-            const rekeningOptions = await getRekeningOptions();
-            rekeningSearchable = new SearchableSelect(rekeningSelect, {
-                placeholder: 'Pilih Rekening',
-                searchPlaceholder: 'Cari nama rekening...'
-            });
-            await rekeningSearchable.loadData(async () => rekeningOptions.map(opt => ({
-                value: opt.value,
-                text: opt.text
-            })));
-        }
-
-        // Load periode as multi-select checkboxes
-        const periodeContainer = document.getElementById('periode_list_container');
-        if (periodeContainer) {
-            const periodeOptions = await getPeriodeOptions();
-            periodeMultiSelect = new PeriodeMultiSelect(periodeContainer, {
-                options: periodeOptions,
-                placeholder: 'Pilih satu atau lebih periode'
-            });
-        }
-
-        // Initialize number formatting for nominal input
-        initializeNumberFormatting();
-
-        // Setup smart auto-fill functionality
-        setupSmartAutoFill();
-
-    } catch (error) {
-        console.error('Error initializing form selects:', error);
-        showToast('Error loading form data', 'danger');
-    }
-}
 
 // Populate form values for editing
 function populatePemasukanFormValues(pemasukan) {

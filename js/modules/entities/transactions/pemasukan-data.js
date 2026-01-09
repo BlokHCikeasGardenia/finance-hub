@@ -21,6 +21,7 @@ let pemasukanFilterDateFrom = '';
 let pemasukanFilterDateTo = '';
 let pemasukanSortColumn = '';
 let pemasukanSortDirection = 'none'; // 'asc', 'desc', 'none'
+let pemasukanFilteredCount = 0;
 
 // Categories loaded from kategori_saldo table
 let pemasukanCategories = [];
@@ -159,6 +160,7 @@ async function loadPemasukan(refreshUI = true) {
         if (!success) throw new Error('Failed to load pemasukan data');
 
         pemasukanData = data || [];
+        pemasukanFilteredCount = pemasukanData.length;
 
         if (refreshUI) {
             // This will be imported and called from the table module
@@ -304,7 +306,8 @@ function getPemasukanState() {
         pemasukanFilterDateFrom,
         pemasukanFilterDateTo,
         pemasukanSortColumn,
-        pemasukanSortDirection
+        pemasukanSortDirection,
+        pemasukanFilteredCount
     };
 }
 
@@ -320,6 +323,7 @@ function setPemasukanState(state) {
     // Persist sort state when provided
     pemasukanSortColumn = state.pemasukanSortColumn !== undefined ? state.pemasukanSortColumn : pemasukanSortColumn;
     pemasukanSortDirection = state.pemasukanSortDirection !== undefined ? state.pemasukanSortDirection : pemasukanSortDirection;
+    pemasukanFilteredCount = state.pemasukanFilteredCount !== undefined ? state.pemasukanFilteredCount : pemasukanFilteredCount;
 }
 
 export {

@@ -14,13 +14,6 @@ import {
 } from './pemasukan-form.js';
 
 import {
-    initializePemasukanSearchAndFilter,
-    resetPemasukanFilters,
-    sortPemasukanData
-} from './pemasukan-filters.js';
-
-import {
-    changePemasukanPage,
     showPemasukanPeriodeDetail
 } from './pemasukan-table.js';
 
@@ -31,10 +24,6 @@ export {
     showEditPemasukanForm,
     confirmCancelPemasukan,
     confirmDeletePemasukan,
-    initializePemasukanSearchAndFilter,
-    changePemasukanPage,
-    resetPemasukanFilters,
-    sortPemasukanData,
     showPemasukanPeriodeDetail
 };
 
@@ -42,5 +31,4 @@ export {
 window.editPemasukan = showEditPemasukanForm;
 window.confirmCancelPemasukan = confirmCancelPemasukan;
 window.confirmDeletePemasukan = confirmDeletePemasukan;
-window.sortPemasukanData = sortPemasukanData;
 window.showPemasukanPeriodeDetail = showPemasukanPeriodeDetail;

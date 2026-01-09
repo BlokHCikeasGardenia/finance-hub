@@ -231,3 +231,4 @@ window.loadViewPengeluaran = loadViewPengeluaran;
 window.loadViewRingkasan = loadViewRingkasan;
 window.loadViewRekap = loadViewRekap;
 window.loadViewRekapIPL = loadViewRekapIPL;
+

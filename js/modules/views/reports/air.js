@@ -662,77 +662,46 @@ async function loadViewRekapAir(selectedYear = null) {
 
         const airCategoryId = airCategoryResult.data.id;
 
-        // OPTIMIZATION: Batch fetch all new format payments in one query instead of per-period
-        const { data: allNewFormatPayments, error: newFormatError } = await supabase
+        // OPTIMIZATION: Batch fetch BOTH old and new format payments for all periods
+        // Old format (periode_id): single periode per record
+        // New format (periode_list): multiple periode per record
+        const { data: allPayments, error: allPaymentsError } = await supabase
             .from('pemasukan')
             .select(`
                 id,
                 tanggal,
                 nominal,
                 keterangan,
+                periode_id,
                 periode_list,
                 hunian:hunian_id (
                     nomor_blok_rumah,
                     penghuni_saat_ini:penghuni_saat_ini_id (nama_kepala_keluarga)
                 )
             `)
-            .eq('kategori_id', airCategoryId)
-            .not('periode_list', 'is', null);
+            .eq('kategori_id', airCategoryId);
 
-        const newFormatPaymentsCache = new Map();
-        if (!newFormatError && allNewFormatPayments) {
-            // Cache for quick lookup by period
+        const paymentsByPeriod = new Map();
+        if (!allPaymentsError && allPayments) {
+            // Organize payments by period based on PAYMENT DATE (when payment was made)
+            // instead of billing period (which period the payment belongs to)
             (periods || []).forEach(period => {
-                const paymentsForPeriod = (allNewFormatPayments || []).filter(payment => 
-                    payment.periode_list && Array.isArray(payment.periode_list) && 
-                    payment.periode_list.includes(period.id)
-                );
-                newFormatPaymentsCache.set(period.id, paymentsForPeriod);
+                const paymentsForPeriod = (allPayments || []).filter(payment => {
+                    // Filter payments by payment date falling within period's date range
+                    const paymentDate = new Date(payment.tanggal);
+                    const periodStart = new Date(period.tanggal_awal);
+                    const periodEnd = new Date(period.tanggal_akhir);
+                    return paymentDate >= periodStart && paymentDate <= periodEnd;
+                });
+                paymentsByPeriod.set(period.id, paymentsForPeriod);
             });
         }
 
         for (const period of periods || []) {
-            // OPTIMIZATION: Already fetched air category above
-            
-            // Get payments with two approaches:
-            // Approach A: Single period payments (old format with periode_id)
-            const { data: periodPaymentsOld, error: paymentsErrorOld } = await supabase
-                .from('pemasukan')
-                .select(`
-                    id,
-                    tanggal,
-                    nominal,
-                    keterangan,
-                    hunian:hunian_id (
-                        nomor_blok_rumah,
-                        penghuni_saat_ini:penghuni_saat_ini_id (nama_kepala_keluarga)
-                    )
-                `)
-                .eq('kategori_id', airCategoryId)
-                .eq('periode_id', period.id)
-                .gte('tanggal', period.tanggal_awal)
-                .lte('tanggal', period.tanggal_akhir);
+            // Get payments for this period from the batch-fetched data
+            const periodPayments = paymentsByPeriod.get(period.id) || [];
 
-            if (paymentsErrorOld) {
-                console.error('Error fetching air payments (old format) for period:', paymentsErrorOld);
-            }
-
-            // Approach B: Multiple periode payments (already fetched above, use cache)
-            const periodPaymentsNew = newFormatPaymentsCache.get(period.id) || [];
-
-            // Combine both approaches (remove duplicates if any)
-            const combinedPayments = [...(periodPaymentsOld || []), ...periodPaymentsNew];
-            const uniquePaymentIds = new Set(combinedPayments.map(p => p.id));
-            const periodPayments = Array.from(uniquePaymentIds).map(id => 
-                combinedPayments.find(p => p.id === id)
-            );
-
-            if (paymentsErrorOld && newFormatError) {
-                console.error('Error fetching air payments for period:', paymentsErrorOld);
-                continue;
-            }
-
-            // 2. Get allocations for these specific payments
+            // Get allocations for these specific payments
             const paymentIds = periodPayments.map(p => p.id);
             let airPaymentAllocations = [];
 
@@ -750,7 +719,7 @@ async function loadViewRekapAir(selectedYear = null) {
             }
 
             // 3. Calculate totals and prepare data
-            const pemasukan = airPaymentAllocations.reduce((sum, allocation) => sum + (allocation.nominal_dialokasikan || 0), 0);
+            const pemasukan = periodPayments.reduce((sum, payment) => sum + (payment.nominal || 0), 0);
 
             const pemasukanData = periodPayments.map(payment => {
                 // Find allocations for this payment
@@ -759,11 +728,11 @@ async function loadViewRekapAir(selectedYear = null) {
 
                 return {
                     tanggal: payment.tanggal,
-                    nominal: totalAllocated,
+                    nominal: payment.nominal,
                     hunian: payment.hunian,
-                    keterangan: payment.keterangan || `Pembayaran Air: ${totalAllocated}`
+                    keterangan: payment.keterangan || `Pembayaran Air: ${payment.nominal}`
                 };
-            }).filter(item => item.nominal > 0); // Only include payments that were actually allocated to air bills
+            }).filter(item => item.nominal > 0); // Include all payments with nominal > 0
 
             // Sum pengeluaran (expenses) for this period and category
             // Filter by expense date falling within the period's date range

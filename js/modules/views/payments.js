@@ -247,11 +247,7 @@ async function loadOutstandingBills() {
         }
         billsDisplayArea.classList.remove('d-none');
 
-        // Reset button state
-        if (loadBillsBtn) {
-            loadBillsBtn.disabled = false;
-            loadBillsBtn.innerHTML = '<i class="bi bi-search"></i> Lihat Tagihan';
-        }
+        // Note: Button state reset not needed since bills are loaded automatically
 
         showToast('Gagal memuat tagihan', 'danger');
     }
@@ -539,7 +535,7 @@ async function handlePaymentSubmission(e) {
                 kategori_id: iplCategory?.value,
                 nominal: iplAmount,
                 periode_list: iplPeriodes, // Multiple periode for IPL
-                keterangan: `Pembayaran IPL ${iplPeriodes.length > 1 ? `(${iplPeriodes.length} periode)` : ''}` + (paymentData.keterangan ? ` - ${paymentData.keterangan}` : '')
+                keterangan: paymentData.keterangan
             };
             iplPaymentData.id_transaksi = await generateTransactionId();
 
@@ -569,7 +565,7 @@ async function handlePaymentSubmission(e) {
                 kategori_id: airCategory?.value,
                 nominal: airAmount,
                 periode_list: airPeriodes, // Multiple periode for Air
-                keterangan: `Pembayaran Air ${airPeriodes.length > 1 ? `(${airPeriodes.length} periode)` : ''}` + (paymentData.keterangan ? ` - ${paymentData.keterangan}` : '')
+                keterangan: paymentData.keterangan
             };
             airPaymentData.id_transaksi = await generateTransactionId();
 
@@ -737,7 +733,7 @@ function resetPaymentForm() {
         householdSearchableSelect.setValue('');
     }
 
-    document.getElementById('load-bills-btn').disabled = true;
+    // Hide bills display area (auto-load functionality doesn't use load-bills-btn anymore)
     document.getElementById('bills-display-area').classList.add('d-none');
 }
 
@@ -747,3 +743,4 @@ export {
 
 // Backward compatibility
 window.loadViewPayments = loadViewPayments;
+

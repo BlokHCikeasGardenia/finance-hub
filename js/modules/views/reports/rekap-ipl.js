@@ -74,7 +74,7 @@ async function loadViewRekapIPL(selectedYear = null) {
             rekapData.push(periodData);
         }
 
-        // Store data globally for potential reuse
+        // Store data globally for detail views
         rekapIplDataGlobal = rekapData;
 
         // Create dynamic title and info text based on selected year
@@ -153,11 +153,19 @@ async function loadViewRekapIPL(selectedYear = null) {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${rekapData.map(item => `
+                                ${rekapData.map((item, index) => `
                                     <tr>
                                         <td class="text-center fw-bold">${item.periode}</td>
-                                        <td class="text-end text-success">${formatCurrency(item.pemasukan)}</td>
-                                        <td class="text-end text-danger">${formatCurrency(item.pengeluaran)}</td>
+                                        <td class="text-end">
+                                            ${item.pemasukan > 0 ?
+                                                `<button class="btn btn-link text-success fw-bold p-0" onclick="showRekapIplPemasukanDetails(${index})">${formatCurrency(item.pemasukan)}</button>` :
+                                                formatCurrency(item.pemasukan)}
+                                        </td>
+                                        <td class="text-end">
+                                            ${item.pengeluaran > 0 ?
+                                                `<button class="btn btn-link text-danger fw-bold p-0" onclick="showRekapIplPengeluaranDetails(${index})">${formatCurrency(item.pengeluaran)}</button>` :
+                                                formatCurrency(item.pengeluaran)}
+                                        </td>
                                         <td class="text-end ${item.selisih_kas >= 0 ? 'text-success' : 'text-danger'}">${formatCurrency(item.selisih_kas)}</td>
                                         <td class="text-center"><span class="badge bg-primary">${item.jumlah_warga_bayar}</span></td>
                                         <td class="text-center"><span class="badge bg-secondary">${item.jumlah_periode_dibayar}</span></td>
@@ -278,7 +286,9 @@ async function calculatePeriodData(period) {
             warga_lunas_ipl: wargaStatus.lunas,
             warga_belum_lunas_ipl: wargaStatus.belum_lunas,
             total_warga: wargaStatus.total,
-            rumah_kosong
+            rumah_kosong,
+            pemasukan_details: pemasukan.details,
+            pengeluaran_details: pengeluaran.details
         };
 
     } catch (error) {
@@ -305,7 +315,16 @@ async function calculatePeriodIncome(period, iplCategoryId, dauCategoryId) {
 
     const { data, error } = await supabase
         .from('pemasukan')
-        .select('nominal, hunian_id')
+        .select(`
+            nominal,
+            hunian_id,
+            tanggal,
+            keterangan,
+            hunian:hunian_id (
+                nomor_blok_rumah,
+                penghuni_saat_ini:penghuni_saat_ini_id (nama_kepala_keluarga)
+            )
+        `)
         .in('kategori_id', categoryIds)
         .gte('tanggal', period.tanggal_awal)
         .lte('tanggal', period.tanggal_akhir);
@@ -316,7 +335,15 @@ async function calculatePeriodIncome(period, iplCategoryId, dauCategoryId) {
     const unique_households = new Set(data.map(item => item.hunian_id)).size;
     const transaction_count = data.length;
 
-    return { total, unique_households, transaction_count };
+    // Prepare detail data for modal
+    const details = data.map(item => ({
+        tanggal: item.tanggal,
+        nominal: item.nominal,
+        hunian: item.hunian,
+        keterangan: item.keterangan || `Pembayaran IPL/DAU`
+    }));
+
+    return { total, unique_households, transaction_count, details };
 }
 
 // Calculate period expenses (IPL + DAU)
@@ -325,7 +352,7 @@ async function calculatePeriodExpenses(period, iplCategoryId, dauCategoryId) {
 
     const { data, error } = await supabase
         .from('pengeluaran')
-        .select('nominal')
+        .select('nominal, tanggal, keterangan')
         .in('kategori_id', categoryIds)
         .gte('tanggal', period.tanggal_awal)
         .lte('tanggal', period.tanggal_akhir);
@@ -333,7 +360,15 @@ async function calculatePeriodExpenses(period, iplCategoryId, dauCategoryId) {
     if (error) throw error;
 
     const total = data.reduce((sum, item) => sum + (item.nominal || 0), 0);
-    return { total };
+
+    // Prepare detail data for modal
+    const details = data.map(item => ({
+        tanggal: item.tanggal,
+        nominal: item.nominal,
+        keterangan: item.keterangan || 'Pengeluaran IPL/DAU'
+    }));
+
+    return { total, details };
 }
 
 // Calculate warga status for period
@@ -494,6 +529,144 @@ export {
     refreshViewRekapIPL
 };
 
+// Show Rekap IPL Pemasukan Details
+function showRekapIplPemasukanDetails(periodIndex) {
+    const periodData = rekapIplDataGlobal[periodIndex];
+    if (!periodData || !periodData.pemasukan_details || periodData.pemasukan_details.length === 0) {
+        showToast('Tidak ada detail pemasukan untuk periode ini', 'info');
+        return;
+    }
+
+    const detailsHtml = `
+        <div class="modal fade" id="rekapIplPemasukanModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Detail Pemasukan IPL/DAU - ${periodData.periode}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th class="text-end">Nominal</th>
+                                        <th>Rumah</th>
+                                        <th>Penghuni</th>
+                                        <th>Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${periodData.pemasukan_details.map(item => `
+                                        <tr>
+                                            <td>${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
+                                            <td class="text-end text-success fw-bold">${formatCurrency(item.nominal)}</td>
+                                            <td>${item.hunian?.nomor_blok_rumah || '-'}</td>
+                                            <td>${item.hunian?.penghuni_saat_ini?.nama_kepala_keluarga || '-'}</td>
+                                            <td>${item.keterangan || '-'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-active fw-bold">
+                                        <td colspan="4">TOTAL PEMASUKAN</td>
+                                        <td class="text-end text-success">${formatCurrency(periodData.pemasukan)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('rekapIplPemasukanModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', detailsHtml);
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('rekapIplPemasukanModal'));
+    modal.show();
+}
+
+// Show Rekap IPL Pengeluaran Details
+function showRekapIplPengeluaranDetails(periodIndex) {
+    const periodData = rekapIplDataGlobal[periodIndex];
+    if (!periodData || !periodData.pengeluaran_details || periodData.pengeluaran_details.length === 0) {
+        showToast('Tidak ada detail pengeluaran untuk periode ini', 'info');
+        return;
+    }
+
+    const detailsHtml = `
+        <div class="modal fade" id="rekapIplPengeluaranModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Detail Pengeluaran IPL/DAU - ${periodData.periode}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th class="text-end">Nominal</th>
+                                        <th>Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${periodData.pengeluaran_details.map(item => `
+                                        <tr>
+                                            <td>${new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
+                                            <td class="text-end text-danger fw-bold">${formatCurrency(item.nominal)}</td>
+                                            <td>${item.keterangan || '-'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-active fw-bold">
+                                        <td colspan="2">TOTAL PENGELUARAN</td>
+                                        <td class="text-end text-danger">${formatCurrency(periodData.pengeluaran)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('rekapIplPengeluaranModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', detailsHtml);
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('rekapIplPengeluaranModal'));
+    modal.show();
+}
+
 // Backward compatibility for global window functions
 window.loadViewRekapIPL = loadViewRekapIPL;
 window.refreshViewRekapIPL = refreshViewRekapIPL;
+window.showRekapIplPemasukanDetails = showRekapIplPemasukanDetails;
+window.showRekapIplPengeluaranDetails = showRekapIplPengeluaranDetails;

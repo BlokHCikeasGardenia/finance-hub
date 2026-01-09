@@ -515,6 +515,51 @@ async function loadSectionContent(sectionId) {
                             <button class="btn btn-success" onclick="showAddPemasukanForm()">Tambah Pemasukan</button>
                         </div>
 
+                        <!-- Search and Filter Section - Pemasukan -->
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="pemasukan-search" class="form-label">Cari Pemasukan:</label>
+                                        <input type="text" class="form-control" id="pemasukan-search" placeholder="Ketik ID, nominal, penghuni, kategori...">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="pemasukan-filter-category" class="form-label">Filter Kategori:</label>
+                                        <select class="form-select" id="pemasukan-filter-category">
+                                            <option value="">Semua Kategori</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="pemasukan-filter-account" class="form-label">Filter Rekening:</label>
+                                        <select class="form-select" id="pemasukan-filter-account">
+                                            <option value="">Semua Rekening</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="pemasukan-date-from" class="form-label">Tanggal Dari:</label>
+                                        <input type="date" class="form-control" id="pemasukan-date-from">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="pemasukan-date-to" class="form-label">Sampai:</label>
+                                        <input type="date" class="form-control" id="pemasukan-date-to">
+                                    </div>
+                                    <div class="col-md-1">
+                                        <label for="pemasukan-items-per-page" class="form-label">Per Halaman:</label>
+                                        <select class="form-select" id="pemasukan-items-per-page">
+                                            <option value="5">5</option>
+                                            <option value="10" selected>10</option>
+                                            <option value="25">25</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-1 d-flex align-items-end">
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="resetPemasukanFilters()">Reset</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="pemasukan-table"><div class="text-center"><div class="spinner-border" role="status"></div></div></div>
                         <div id="pemasukan-total-count" class="mt-2 text-muted">Memuat data...</div>
                         <div id="pemasukan-total-nominal" class="mt-1 text-success fw-bold"></div>
@@ -522,6 +567,7 @@ async function loadSectionContent(sectionId) {
                 </div>
             `;
             await loadPemasukan();
+            initializePemasukanSearchAndFilter();
             break;
 
         case 'tagihan_ipl':

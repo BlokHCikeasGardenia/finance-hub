@@ -112,6 +112,7 @@ function generateTagihanAirInputTableHtml(hunianData, periode) {
                         <th>Meteran Bulan Ini</th>
                         <th>Pemakaian (m³)</th>
                         <th>Tagihan</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -139,6 +140,11 @@ function generateTagihanAirInputTableHtml(hunianData, periode) {
                             </td>
                             <td>
                                 <span class="billing-preview" data-hunian-id="${hunian.id}">0</span>
+                            </td>
+                            <td>
+                                <span class="status-indicator" data-hunian-id="${hunian.id}">
+                                    <small class="text-muted">-</small>
+                                </span>
                             </td>
                         </tr>
                     `).join('')}
@@ -315,8 +321,9 @@ async function generateTagihanAirForCurrentPeriode() {
     // Force commit any pending input values before collecting data
     forceCommitInputValues();
 
-    // Collect meter readings for each household
+    // Collect meter readings for each household (process all with input > 0)
     const billingData = [];
+    const inputMapping = []; // Track which hunian corresponds to which input
     const inputs = document.querySelectorAll('.current-reading-input');
 
     inputs.forEach(input => {
@@ -331,12 +338,13 @@ async function generateTagihanAirForCurrentPeriode() {
                     ...hunian,
                     currentReading: currentReading
                 });
+                inputMapping.push({ hunianId, index: billingData.length - 1 });
             }
         }
     });
 
     if (billingData.length === 0) {
-        showToast('Masukkan minimal 1 pembacaan meter', 'warning');
+        showToast('Masukkan minimal 1 pembacaan meter untuk rumah yang ingin digenerate', 'warning');
         return;
     }
 
@@ -352,16 +360,35 @@ async function generateTagihanAirForCurrentPeriode() {
         });
 
         if (result.success) {
-            showToast(`Berhasil generate ${result.count} tagihan air`, 'success');
+            // Analyze results to provide detailed feedback
+            const successCount = result.data.filter(r => r.type === 'bill' || r.type === 'baseline').length;
+            const skippedCount = result.data.filter(r => r.type === 'skipped').length;
+            const errorCount = result.data.filter(r => r.type === 'error').length;
 
-            // Refresh the page or show results
-            setTimeout(() => {
-                showToast('Tagihan air berhasil dibuat!', 'success');
-                // Refresh related views to show new data
-                if (window.refreshViewAir) {
-                    window.refreshViewAir();
-                }
-            }, 1000);
+            let message = `Generate selesai: ${successCount} berhasil`;
+            if (skippedCount > 0) message += `, ${skippedCount} di-skip (sudah ada tagihan)`;
+            if (errorCount > 0) message += `, ${errorCount} error`;
+
+            // Show detailed results for debugging
+            console.log('Generate results:', result.data);
+
+            // Update status indicators on the table
+            updateStatusIndicators(result.data, inputMapping);
+
+            if (successCount > 0) {
+                showToast(message, 'success');
+
+                // Refresh related views after successful generation
+                setTimeout(() => {
+                    if (window.refreshViewAir) {
+                        window.refreshViewAir();
+                    }
+                    // Reload current view to show updated status
+                    loadTagihanAirInput(currentPeriodeId);
+                }, 1000);
+            } else {
+                showToast(message + '. Tidak ada tagihan baru yang berhasil dibuat.', 'warning');
+            }
         } else {
             showToast(result.message || 'Gagal generate tagihan', 'danger');
         }
@@ -423,6 +450,59 @@ function handleInputEvent(event) {
     inputTimeout = setTimeout(() => {
         updateAirUsagePreview(event.target);
     }, 300); // Debounce for 300ms
+}
+
+// Update status indicators based on generate results
+function updateStatusIndicators(results, inputMapping) {
+    results.forEach((result, resultIndex) => {
+        // Find the corresponding hunian from inputMapping
+        const mapping = inputMapping.find(m => m.index === resultIndex);
+        if (!mapping) return;
+
+        const hunianId = mapping.hunianId;
+
+        // Find the status indicator element
+        const statusElement = document.querySelector(`.status-indicator[data-hunian-id="${hunianId}"]`);
+        if (!statusElement) return;
+
+        let statusHtml = '';
+        let rowClass = '';
+
+        switch (result.type) {
+            case 'bill':
+                statusHtml = '<small class="text-success"><i class="bi bi-check-circle"></i> Berhasil</small>';
+                rowClass = 'table-success';
+                break;
+            case 'baseline':
+                statusHtml = '<small class="text-info"><i class="bi bi-info-circle"></i> Baseline</small>';
+                rowClass = 'table-info';
+                break;
+            case 'skipped':
+                statusHtml = '<small class="text-warning"><i class="bi bi-dash-circle"></i> Sudah ada</small>';
+                rowClass = 'table-warning';
+                break;
+            case 'error':
+                statusHtml = '<small class="text-danger"><i class="bi bi-x-circle"></i> Error</small>';
+                rowClass = 'table-danger';
+                break;
+            default:
+                statusHtml = '<small class="text-muted">-</small>';
+        }
+
+        // Update status text
+        statusElement.innerHTML = statusHtml;
+
+        // Update row background color
+        const row = statusElement.closest('tr');
+        if (row) {
+            // Remove existing table-* classes
+            row.classList.remove('table-success', 'table-info', 'table-warning', 'table-danger');
+            // Add new class
+            if (rowClass) {
+                row.classList.add(rowClass);
+            }
+        }
+    });
 }
 
 // Global functions for HTML onclick

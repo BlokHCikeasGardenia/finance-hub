@@ -332,10 +332,10 @@ function renderAirTable(data) {
                         <th style="width: 60px;">No.</th>
                         <th class="sortable" data-column="nomor_blok_rumah">No. Rumah <i class="bi bi-chevron-expand sort-icon"></i></th>
                         <th class="sortable" data-column="nama_kepala_keluarga">Penghuni <i class="bi bi-chevron-expand sort-icon"></i></th>
-                        <th class="sortable" data-column="area">Area <i class="bi bi-chevron-expand sort-icon"></i></th>
-                        <th class="sortable" data-column="ketua_lorong">Ketua Lorong <i class="bi bi-chevron-expand sort-icon"></i></th>
                         <th>Detail Pemakaian & Pembayaran</th>
                         <th>Kewajiban s/d Bulan Berjalan</th>
+                        <th class="sortable" data-column="area">Area <i class="bi bi-chevron-expand sort-icon"></i></th>
+                        <th class="sortable" data-column="ketua_lorong">Ketua Lorong <i class="bi bi-chevron-expand sort-icon"></i></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -344,8 +344,6 @@ function renderAirTable(data) {
                             <td>${startIndex + index + 1}</td>
                             <td>${item.nomor_blok_rumah}</td>
                             <td>${item.nama_kepala_keluarga}</td>
-                            <td>${item.area}</td>
-                            <td>${item.ketua_lorong}</td>
                             <td>
                                 <details>
                                     <summary class="text-primary" style="cursor: pointer;">
@@ -355,12 +353,9 @@ function renderAirTable(data) {
                                         ${Object.entries(item.detail).map(([periode, detail]) => `
                                             <div class="mb-2 p-2 border rounded ${detail.is_inisiasi ? 'bg-light' : ''}">
                                                 <strong>${periode}</strong> ${detail.is_inisiasi ? '<small class="text-muted">(Inisiasi)</small>' : ''}<br>
-                                                Meteran Bulan Ini: ${detail.meteran_bulan_ini}<br>
-                                                Meteran Sebelumnya: ${detail.meteran_bulan_sebelumnya}<br>
-                                                Pemakaian: ${detail.pemakaian_air} m³<br>
-                                                Tagihan: ${formatCurrency(detail.tagihan)}<br>
-                                                Nominal Bayar: ${formatCurrency(detail.nominal_bayar)}<br>
-                                                Tanggal Bayar: ${detail.tanggal_bayar.join(', ')}
+                                                <span class="compact-air-info">
+                                                    📊 ${detail.meteran_bulan_sebelumnya}→${detail.meteran_bulan_ini} (${detail.pemakaian_air}m³) | 💰 ${formatCurrency(detail.tagihan)} | 💸 ${formatCurrency(detail.nominal_bayar)}
+                                                </span>
                                             </div>
                                         `).join('')}
                                     </div>
@@ -372,6 +367,8 @@ function renderAirTable(data) {
                                     <span class="text-danger">${formatCurrency(item.kewajiban_pembayaran.nominal)}</span>
                                 </div>
                             </td>
+                            <td>${item.area}</td>
+                            <td>${item.ketua_lorong}</td>
                         </tr>
                     `).join('')}
                 </tbody>

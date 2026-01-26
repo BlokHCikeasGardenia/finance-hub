@@ -59,9 +59,10 @@ async function loadViewIPL() {
                 periode:periode_id (
                     nama_periode,
                     tanggal_awal,
-                    tanggal_akhir
+                    tanggal_akhir,
+                    nomor_urut
                 )
-            `).order('tanggal_tagihan', { ascending: false }),
+            `),
 
             // Get ALL IPL payments (from allocation table)
             supabase.from('tagihan_ipl_pembayaran').select(`
@@ -108,7 +109,14 @@ async function loadViewIPL() {
             let totalOutstanding = 0;
             let outstandingBillsCount = 0;
 
-            bills.forEach(bill => {
+            // Sort billing records by period sequence (newest first for display)
+            const sortedBillingRecords = bills.sort((a, b) => {
+                const seqA = a.periode?.nomor_urut || 0;
+                const seqB = b.periode?.nomor_urut || 0;
+                return seqB - seqA; // Descending: newest first
+            });
+
+            sortedBillingRecords.forEach(bill => {
                 const periodeName = bill.periode?.nama_periode || 'Unknown';
                 const billPayments = paymentsMap.get(bill.id) || [];
 
@@ -238,12 +246,12 @@ function renderIPLTable(data) {
                     <tr>
                         <th style="width: 60px;">No.</th>
                         <th class="sortable" data-column="nomor_blok_rumah">No. Rumah <i class="bi bi-chevron-expand sort-icon"></i></th>
-                        <th class="sortable" data-column="status">Status <i class="bi bi-chevron-expand sort-icon"></i></th>
-                        <th class="sortable" data-column="nama_kepala_keluarga">Penghuni/Pemilik <i class="bi bi-chevron-expand sort-icon"></i></th>
-                        <th class="sortable" data-column="area">Area <i class="bi bi-chevron-expand sort-icon"></i></th>
-                        <th class="sortable" data-column="ketua_lorong">Ketua Lorong <i class="bi bi-chevron-expand sort-icon"></i></th>
+                        <th class="sortable" data-column="nama_kepala_keluarga">Penghuni <i class="bi bi-chevron-expand sort-icon"></i></th>
                         <th>Detail Tagihan</th>
                         <th>Kewajiban s/d Bulan Berjalan</th>
+                        <th class="sortable" data-column="status">Status <i class="bi bi-chevron-expand sort-icon"></i></th>
+                        <th class="sortable" data-column="area">Area <i class="bi bi-chevron-expand sort-icon"></i></th>
+                        <th class="sortable" data-column="ketua_lorong">Ketua Lorong <i class="bi bi-chevron-expand sort-icon"></i></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -251,10 +259,7 @@ function renderIPLTable(data) {
                         <tr>
                             <td>${startIndex + index + 1}</td>
                             <td>${item.nomor_blok_rumah}</td>
-                            <td><span class="badge bg-${item.status === 'berpenghuni' ? 'success' : 'secondary'}">${item.status}</span></td>
                             <td>${item.nama_kepala_keluarga}</td>
-                            <td>${item.area}</td>
-                            <td>${item.ketua_lorong}</td>
                             <td>
                                 <details>
                                     <summary class="text-primary" style="cursor: pointer;">
@@ -263,17 +268,9 @@ function renderIPLTable(data) {
                                     <div class="mt-2">
                                         ${Object.entries(item.detail).map(([periode, detail]) => `
                                             <div class="mb-2 p-2 border rounded">
-                                                <strong>${periode}</strong><br>
-                                                <span class="fw-bold">Tagihan: ${formatCurrency(detail.nominal_tagihan)}</span><br>
-                                                ${detail.nominal_bayar > 0 ?
-                                                    `<span class="text-success">✓ Dibayar: ${formatCurrency(detail.nominal_bayar)}</span><br>
-                                                     <small class="text-muted">Tanggal: ${detail.tanggal_bayar?.join(', ') || 'N/A'}</small>` :
-                                                    `<span class="text-danger">Belum dibayar</span>`
-                                                }
-                                                ${detail.sisa_tagihan > 0 && detail.nominal_bayar > 0 ?
-                                                    `<br><small class="text-warning">Sisa: ${formatCurrency(detail.sisa_tagihan)}</small>` :
-                                                    ''
-                                                }
+                                                <span class="compact-ipl-info">
+                                                    📅 ${periode} | 💰 ${formatCurrency(detail.nominal_tagihan)}${detail.nominal_bayar > 0 ? ` | ✅ (${detail.tanggal_bayar?.join(', ') || 'N/A'})` : ` | ⏳`}
+                                                </span>
                                             </div>
                                         `).join('')}
                                     </div>
@@ -285,6 +282,9 @@ function renderIPLTable(data) {
                                     <span class="text-danger">${formatCurrency(item.kewajiban_pembayaran.nominal)}</span>
                                 </div>
                             </td>
+                            <td><span class="badge bg-${item.status === 'berpenghuni' ? 'success' : 'secondary'}">${item.status}</span></td>
+                            <td>${item.area}</td>
+                            <td>${item.ketua_lorong}</td>
                         </tr>
                     `).join('')}
                 </tbody>

@@ -354,7 +354,7 @@ function renderAirTable(data) {
                                             <div class="mb-2 p-2 border rounded ${detail.is_inisiasi ? 'bg-light' : ''}">
                                                 <strong>${periode}</strong> ${detail.is_inisiasi ? '<small class="text-muted">(Inisiasi)</small>' : ''}<br>
                                                 <span class="compact-air-info">
-                                                    📊 ${detail.meteran_bulan_sebelumnya}→${detail.meteran_bulan_ini} (${detail.pemakaian_air}m³) | 💰 ${formatCurrency(detail.tagihan)} | 💸 ${formatCurrency(detail.nominal_bayar)}
+                                                    📊 ${detail.meteran_bulan_sebelumnya}→${detail.meteran_bulan_ini} (${detail.pemakaian_air}m³) | 💰 ${formatCurrency(detail.tagihan)} | 💸 ${formatCurrency(detail.nominal_bayar)}${detail.nominal_bayar > 0 ? ` | 📅 (${detail.tanggal_bayar?.join(', ') || 'N/A'})` : ` | ⏳`}
                                                 </span>
                                             </div>
                                         `).join('')}

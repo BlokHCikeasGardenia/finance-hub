@@ -89,13 +89,13 @@ function generateTagihanIplInputTableHtml(hunianData) {
                                         onchange="updateIplTypePreview(this)">
                                     <option value="">Pilih Type</option>
                                     <option value="IPL" ${getDefaultType(hunian) === 'IPL' ? 'selected' : ''}>
-                                        IPL Normal (Rp 60,000)
+                                        IPL Normal
                                     </option>
                                     <option value="IPL_RUMAH_KOSONG" ${getDefaultType(hunian) === 'IPL_RUMAH_KOSONG' ? 'selected' : ''}>
-                                        IPL Rumah Kosong (Rp 30,000)
+                                        IPL Rumah Kosong
                                     </option>
                                     <option value="DAU" ${getDefaultType(hunian) === 'DAU' ? 'selected' : ''}>
-                                        DAU (Rp 5,000)
+                                        DAU
                                     </option>
                                 </select>
                             </td>
@@ -147,7 +147,7 @@ function getDefaultType(hunian) {
 // Get preview amount for type
 function getPreviewAmount(type) {
     switch (type) {
-        case 'IPL': return '60,000';
+        case 'IPL': return '70,000'; // Updated from 60,000 to 70,000
         case 'IPL_RUMAH_KOSONG': return '30,000';
         case 'DAU': return '5,000';
         default: return '0';
@@ -176,7 +176,7 @@ function updateTotalPreview() {
     selects.forEach(select => {
         const type = select.value;
         switch (type) {
-            case 'IPL': total += 60000; normal++; break;
+            case 'IPL': total += 70000; normal++; break; // Updated from 60,000 to 70,000
             case 'IPL_RUMAH_KOSONG': total += 30000; kosong++; break;
             case 'DAU': total += 5000; dau++; break;
         }

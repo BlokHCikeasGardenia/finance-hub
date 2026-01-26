@@ -57,23 +57,34 @@ async function generateTagihanIplForPeriod(hunianData, periodeId, options = {}) 
 
         if (!periode) throw new Error('Periode tidak ditemukan');
 
-        // Get all active IPL tariffs by type
-        const { data: tariffs, error } = await supabase
-            .from('tarif_ipl')
-            .select('*')
-            .eq('aktif', true);
+        // Use period start date to find appropriate tariffs
+        const periodDate = periode.tanggal_awal;
 
-        if (error) throw error;
+        // Get active tariffs for each type that were effective on the period date
+        const tariffTypes = ['IPL', 'IPL_RUMAH_KOSONG', 'DAU'];
+        const tariffMap = {};
 
-        if (!tariffs || tariffs.length === 0) {
-            throw new Error('Tidak ada tarif IPL yang aktif');
+        for (const type of tariffTypes) {
+            const { data: tariff, error } = await supabase
+                .from('tarif_ipl')
+                .select('*')
+                .eq('type_tarif', type)
+                .eq('aktif', true)
+                .lte('tanggal_mulai_berlaku', periodDate)
+                .order('tanggal_mulai_berlaku', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            if (tariff && tariff.length > 0) {
+                tariffMap[type] = tariff[0];
+            }
         }
 
-        // Create tariff lookup map by type
-        const tariffMap = {};
-        tariffs.forEach(tariff => {
-            tariffMap[tariff.type_tarif] = tariff;
-        });
+        // Check if we have at least the basic IPL tariff
+        if (!tariffMap['IPL']) {
+            throw new Error('Tidak ada tarif IPL yang aktif untuk periode ini');
+        }
 
         for (const hunian of hunianData) {
             // Determine IPL type based on household conditions

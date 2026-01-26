@@ -346,15 +346,26 @@ async function initializePeriodRowSelects(rowId) {
         });
 
         tarifSearchable.loadData(async () => {
-            const { data, error } = await supabase
-                .from('tarif_ipl')
-                .select('id, type_tarif, nominal')
-                .eq('aktif', true)
-                .order('type_tarif');
+            // Get the most recent active tariff for each type (excluding 60,000)
+            const tariffTypes = ['IPL', 'IPL_RUMAH_KOSONG', 'DAU'];
+            const tariffs = [];
 
-            if (error) return [];
+            for (const type of tariffTypes) {
+                const { data, error } = await supabase
+                    .from('tarif_ipl')
+                    .select('id, type_tarif, nominal')
+                    .eq('type_tarif', type)
+                    .eq('aktif', true)
+                    .neq('nominal', 60000) // Exclude 60,000 tariff
+                    .order('tanggal_mulai_berlaku', { ascending: false })
+                    .limit(1);
 
-            return data.map(item => ({
+                if (!error && data && data.length > 0) {
+                    tariffs.push(data[0]);
+                }
+            }
+
+            return tariffs.map(item => ({
                 value: item.id,
                 text: `${getTypeDisplayName(item.type_tarif)} - ${formatCurrency(item.nominal)}`
             }));

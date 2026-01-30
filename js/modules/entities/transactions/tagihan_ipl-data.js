@@ -59,12 +59,16 @@ async function generateTagihanIplForPeriod(hunianData, periodeId, options = {}) 
 
         // Use period start date to find appropriate tariffs
         const periodDate = periode.tanggal_awal;
+        console.log(`🔍 Generating IPL bills for period ${periode.nama_periode} (${periodDate})`);
 
         // Get active tariffs for each type that were effective on the period date
         const tariffTypes = ['IPL', 'IPL_RUMAH_KOSONG', 'DAU'];
         const tariffMap = {};
 
         for (const type of tariffTypes) {
+            console.log(`   Checking ${type} tariffs for date ${periodDate}`);
+            
+            // Primary lookup: tariffs effective on or before period date
             const { data: tariff, error } = await supabase
                 .from('tarif_ipl')
                 .select('*')
@@ -74,17 +78,74 @@ async function generateTagihanIplForPeriod(hunianData, periodeId, options = {}) 
                 .order('tanggal_mulai_berlaku', { ascending: false })
                 .limit(1);
 
-            if (error) throw error;
+            if (error) {
+                console.error(`❌ Error fetching ${type} tariff:`, error);
+                continue;
+            }
 
             if (tariff && tariff.length > 0) {
                 tariffMap[type] = tariff[0];
+                console.log(`   ✅ Found ${type}: ${formatCurrency(tariff[0].nominal)} (since ${tariff[0].tanggal_mulai_berlaku})`);
+            } else {
+                console.log(`   ⚠️  No ${type} tariff found for date ${periodDate}`);
+                
+                // Fallback: get any active tariff regardless of date
+                const { data: fallbackTariff, error: fallbackError } = await supabase
+                    .from('tarif_ipl')
+                    .select('*')
+                    .eq('type_tarif', type)
+                    .eq('aktif', true)
+                    .order('tanggal_mulai_berlaku', { ascending: false })
+                    .limit(1);
+
+                if (!fallbackError && fallbackTariff && fallbackTariff.length > 0) {
+                    tariffMap[type] = fallbackTariff[0];
+                    console.warn(`   🔄 Using fallback ${type}: ${formatCurrency(fallbackTariff[0].nominal)} (since ${fallbackTariff[0].tanggal_mulai_berlaku})`);
+                }
             }
         }
 
         // Check if we have at least the basic IPL tariff
         if (!tariffMap['IPL']) {
-            throw new Error('Tidak ada tarif IPL yang aktif untuk periode ini');
+            console.log('   ❌ No IPL tariff found, trying global fallback...');
+
+            // First, let's log all tariffs to debug
+            const { data: allTariffs, error: allError } = await supabase
+                .from('tarif_ipl')
+                .select('*')
+                .order('tanggal_mulai_berlaku', { ascending: false });
+
+            if (allError) {
+                console.error('❌ Error fetching all tariffs for debugging:', allError);
+            } else {
+                console.log(`   📊 DEBUG: Found ${allTariffs.length} total tariffs in database:`);
+                allTariffs.forEach(t => {
+                    console.log(`     - ${t.type_tarif}: ${t.aktif ? 'ACTIVE' : 'INACTIVE'} - ${formatCurrency(t.nominal)} (${t.tanggal_mulai_berlaku})`);
+                });
+            }
+
+            // Global fallback: get any active tariff
+            const { data: fallbackTariff, error: fallbackError } = await supabase
+                .from('tarif_ipl')
+                .select('*')
+                .eq('aktif', true)
+                .order('tanggal_mulai_berlaku', { ascending: false })
+                .limit(1);
+
+            if (fallbackError) {
+                console.error('❌ Error fetching global fallback tariff:', fallbackError);
+            }
+
+            if (fallbackTariff && fallbackTariff.length > 0) {
+                tariffMap['IPL'] = fallbackTariff[0];
+                console.warn(`   🔄 Using global fallback IPL: ${formatCurrency(fallbackTariff[0].nominal)} (since ${fallbackTariff[0].tanggal_mulai_berlaku})`);
+            } else {
+                console.error('❌ No active tariffs found in database at all!');
+                throw new Error('Tidak ada tarif IPL yang aktif untuk periode ini. Silakan tambahkan tarif IPL terlebih dahulu di menu Master > Tarif IPL.');
+            }
         }
+
+        console.log(`   📊 Tariff summary: ${Object.keys(tariffMap).join(', ')}`);
 
         for (const hunian of hunianData) {
             // Determine IPL type based on household conditions

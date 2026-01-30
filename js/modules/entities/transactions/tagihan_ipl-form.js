@@ -870,6 +870,13 @@ async function handleIplInputFormSubmit() {
             return;
         }
 
+        // Check tariff availability before proceeding
+        const tariffCheck = await checkTariffAvailability();
+        if (!tariffCheck.success) {
+            showIplInlineFormError(tariffCheck.message);
+            return;
+        }
+
         // Collect all period-tarif combinations
         const billRequests = [];
         const periodIds = new Set(); // For duplicate validation
@@ -1108,6 +1115,186 @@ async function getHunianData(hunianId) {
     } catch (error) {
         console.error('Error getting hunian data:', error);
         return null;
+    }
+}
+
+// Check tariff availability for all required types
+async function checkTariffAvailability() {
+    try {
+        const requiredTypes = ['IPL', 'IPL_RUMAH_KOSONG', 'DAU'];
+        const tariffTypes = {};
+        
+        // Get all active tariffs
+        const { data: tariffs, error } = await supabase
+            .from('tarif_ipl')
+            .select('*')
+            .eq('aktif', true)
+            .order('tanggal_mulai_berlaku', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching tariffs:', error);
+            return {
+                success: false,
+                message: 'Gagal memeriksa ketersediaan tarif IPL. Silakan coba lagi.'
+            };
+        }
+
+        if (!tariffs || tariffs.length === 0) {
+            return {
+                success: false,
+                message: 'Tidak ada tarif IPL yang aktif. Silakan tambahkan tarif IPL terlebih dahulu di menu Master > Tarif IPL.'
+            };
+        }
+
+        // Group tariffs by type
+        tariffs.forEach(tariff => {
+            if (!tariffTypes[tariff.type_tarif]) {
+                tariffTypes[tariff.type_tarif] = [];
+            }
+            tariffTypes[tariff.type_tarif].push(tariff);
+        });
+
+        // Check for missing required types
+        const missingTypes = requiredTypes.filter(type => !tariffTypes[type]);
+        
+        if (missingTypes.length > 0) {
+            const missingList = missingTypes.map(type => getTypeDisplayName(type)).join(', ');
+            return {
+                success: false,
+                message: `Tarif IPL berikut belum tersedia: ${missingList}. Silakan tambahkan terlebih dahulu di menu Master > Tarif IPL.`
+            };
+        }
+
+        // Check if we have at least one tariff for each required type
+        for (const type of requiredTypes) {
+            if (!tariffTypes[type] || tariffTypes[type].length === 0) {
+                return {
+                    success: false,
+                    message: `Tidak ada tarif aktif untuk jenis ${getTypeDisplayName(type)}. Silakan periksa data tarif di menu Master > Tarif IPL.`
+                };
+            }
+        }
+
+        return {
+            success: true,
+            message: 'Semua tarif IPL tersedia'
+        };
+
+    } catch (error) {
+        console.error('Error checking tariff availability:', error);
+        return {
+            success: false,
+            message: 'Terjadi kesalahan saat memeriksa ketersediaan tarif IPL.'
+        };
+    }
+}
+
+// Enhanced tariff availability check with period-specific validation
+async function checkTariffAvailabilityForPeriods(periodIds) {
+    try {
+        const requiredTypes = ['IPL', 'IPL_RUMAH_KOSONG', 'DAU'];
+        
+        // Get all active tariffs
+        const { data: tariffs, error } = await supabase
+            .from('tarif_ipl')
+            .select('*')
+            .eq('aktif', true)
+            .order('tanggal_mulai_berlaku', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching tariffs:', error);
+            return {
+                success: false,
+                message: 'Gagal memeriksa ketersediaan tarif IPL. Silakan coba lagi.'
+            };
+        }
+
+        if (!tariffs || tariffs.length === 0) {
+            return {
+                success: false,
+                message: 'Tidak ada tarif IPL yang aktif. Silakan tambahkan tarif IPL terlebih dahulu di menu Master > Tarif IPL.'
+            };
+        }
+
+        // Get period details to check dates
+        let periods = [];
+        if (periodIds && periodIds.length > 0) {
+            const { data: periodData, error: periodError } = await supabase
+                .from('periode')
+                .select('id, nama_periode, tanggal_awal')
+                .in('id', periodIds);
+
+            if (periodError) {
+                console.error('Error fetching periods:', periodError);
+                return {
+                    success: false,
+                    message: 'Gagal memeriksa data periode.'
+                };
+            }
+            periods = periodData || [];
+        }
+
+        // Group tariffs by type
+        const tariffTypes = {};
+        tariffs.forEach(tariff => {
+            if (!tariffTypes[tariff.type_tarif]) {
+                tariffTypes[tariff.type_tarif] = [];
+            }
+            tariffTypes[tariff.type_tarif].push(tariff);
+        });
+
+        // Check for missing required types
+        const missingTypes = requiredTypes.filter(type => !tariffTypes[type]);
+        
+        if (missingTypes.length > 0) {
+            const missingList = missingTypes.map(type => getTypeDisplayName(type)).join(', ');
+            return {
+                success: false,
+                message: `Tarif IPL berikut belum tersedia: ${missingList}. Silakan tambahkan terlebih dahulu di menu Master > Tarif IPL.`
+            };
+        }
+
+        // Check if we have tariffs that are effective for the selected periods
+        const issues = [];
+        
+        for (const type of requiredTypes) {
+            if (!tariffTypes[type] || tariffTypes[type].length === 0) {
+                issues.push(`Tidak ada tarif aktif untuk jenis ${getTypeDisplayName(type)}`);
+                continue;
+            }
+
+            // For each period, check if we have a tariff effective on or before the period date
+            if (periods.length > 0) {
+                for (const period of periods) {
+                    const effectiveTariffs = tariffTypes[type].filter(tariff => 
+                        new Date(tariff.tanggal_mulai_berlaku) <= new Date(period.tanggal_awal)
+                    );
+                    
+                    if (effectiveTariffs.length === 0) {
+                        issues.push(`Tidak ada tarif ${getTypeDisplayName(type)} yang berlaku untuk periode ${period.nama_periode} (${period.tanggal_awal})`);
+                    }
+                }
+            }
+        }
+
+        if (issues.length > 0) {
+            return {
+                success: false,
+                message: `Masalah tarif IPL ditemukan:\n${issues.join('\n')}\n\nSilakan periksa data tarif di menu Master > Tarif IPL.`
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Semua tarif IPL tersedia dan berlaku untuk periode yang dipilih'
+        };
+
+    } catch (error) {
+        console.error('Error checking tariff availability for periods:', error);
+        return {
+            success: false,
+            message: 'Terjadi kesalahan saat memeriksa ketersediaan tarif IPL.'
+        };
     }
 }
 

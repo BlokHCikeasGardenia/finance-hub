@@ -13,6 +13,7 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-commonjs": "^25.0.7",
+    "@supabase/supabase-js": "^2.39.3",
     "rollup": "^4.9.6",
     "rollup-plugin-copy": "^3.5.0"
   },

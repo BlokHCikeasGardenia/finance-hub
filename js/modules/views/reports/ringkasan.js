@@ -75,7 +75,7 @@ async function loadViewRingkasan(selectedYear = null) {
         const ringkasanData = [];
 
         for (const kategori of kategoriData || []) {
-            let saldoAwal = kategori.saldo_awal || 0;
+            let saldoAwalTahunIni = kategori.saldo_awal || 0;
             let totalPemasukan = 0;
             let totalPengeluaran = 0;
 
@@ -106,7 +106,7 @@ async function loadViewRingkasan(selectedYear = null) {
                 totalPengeluaran = pengeluaranData.reduce((sum, item) => sum + (item.nominal || 0), 0);
             } else {
                 // Year-specific logic
-                // Calculate saldo awal as: kategori.saldo_awal + cumulative transactions until end of previous year
+                // Calculate saldo awal tahun ini as: kategori.saldo_awal + cumulative transactions until end of previous year
                 const previousYear = (parseInt(selectedYear) - 1).toString();
                 const periodsUntilPreviousYear = allPeriods.filter(p =>
                     p.nama_periode.includes(previousYear) ||
@@ -155,7 +155,7 @@ async function loadViewRingkasan(selectedYear = null) {
                 }
 
                 // Saldo awal tahun ini = saldo sistem + kumulatif sampai akhir tahun sebelumnya
-                saldoAwal = saldoAwal + cumulativePemasukanUntilPrevious - cumulativePengeluaranUntilPrevious;
+                saldoAwalTahunIni = saldoAwalTahunIni + cumulativePemasukanUntilPrevious - cumulativePengeluaranUntilPrevious;
 
                 // Get transactions only for the selected year periods
                 if (periodsToFilter.length > 0) {
@@ -195,15 +195,15 @@ async function loadViewRingkasan(selectedYear = null) {
                 }
             }
 
-            // Calculate current balance
-            const saldoSaatIni = saldoAwal + totalPemasukan - totalPengeluaran;
+            // Calculate current balance (saldo akhir tahun ini)
+            const saldoAkhirTahunIni = saldoAwalTahunIni + totalPemasukan - totalPengeluaran;
 
             ringkasanData.push({
                 nama_kategori: kategori.nama_kategori,
-                saldo_awal: saldoAwal,
+                saldo_awal: saldoAwalTahunIni,  // Kolom "Saldo Awal" = saldo awal tahun ini
                 total_pemasukan: totalPemasukan,
                 total_pengeluaran: totalPengeluaran,
-                saldo_saat_ini: saldoSaatIni,
+                saldo_saat_ini: saldoAkhirTahunIni,  // Kolom "Saldo Saat Ini" = saldo akhir tahun ini
                 keterangan: kategori.keterangan || '-'
             });
         }

@@ -35,8 +35,17 @@ async function loadViewRekapIPL(selectedYear = null) {
 
         // Extract unique years from period names for filter
         const availableYears = [...new Set(allPeriods.map(p => {
-            const match = p.nama_periode.match(/(\d{4})$/);
-            return match ? match[1] : null;
+            // Cari tahun dalam format 4 digit (2026) atau 2 digit ('26) di mana saja dalam nama periode
+            const match4Digit = p.nama_periode.match(/(\d{4})/);
+            const match2Digit = p.nama_periode.match(/'(\d{2})/);
+            
+            if (match4Digit) {
+                return match4Digit[1];
+            } else if (match2Digit) {
+                return '20' + match2Digit[1]; // Konversi 2 digit ke 4 digit dengan awalan 20
+            }
+            
+            return null;
         }).filter(year => year !== null))].sort((a, b) => b - a);
 
         // Find current active period
@@ -51,8 +60,16 @@ async function loadViewRekapIPL(selectedYear = null) {
         // Determine default year from active period
         let defaultYear;
         if (activePeriod) {
-            const yearMatch = activePeriod.nama_periode.match(/(\d{4})$/);
-            defaultYear = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
+            const yearMatch4 = activePeriod.nama_periode.match(/(\d{4})/);
+            const yearMatch2 = activePeriod.nama_periode.match(/'(\d{2})/);
+            
+            if (yearMatch4) {
+                defaultYear = yearMatch4[1];
+            } else if (yearMatch2) {
+                defaultYear = '20' + yearMatch2[1];
+            } else {
+                defaultYear = new Date().getFullYear().toString();
+            }
         } else {
             defaultYear = new Date().getFullYear().toString();
         }
@@ -63,7 +80,22 @@ async function loadViewRekapIPL(selectedYear = null) {
         // Filter periods by selected year
         let periodsToShow = allPeriods;
         if (yearToUse !== 'all') {
-            periodsToShow = allPeriods.filter(p => p.nama_periode.includes(yearToUse));
+            periodsToShow = allPeriods.filter(p => {
+                // Cari tahun dalam format 4 digit (2026) atau 2 digit ('26) di mana saja dalam nama periode
+                const yearMatch4 = p.nama_periode.match(/(\d{4})/);
+                const yearMatch2 = p.nama_periode.match(/'(\d{2})/);
+                
+                let periodYear;
+                if (yearMatch4) {
+                    periodYear = yearMatch4[1];
+                } else if (yearMatch2) {
+                    periodYear = '20' + yearMatch2[1];
+                } else {
+                    return false; // Skip jika tidak ada tahun yang ditemukan
+                }
+                
+                return periodYear === yearToUse;
+            });
         }
 
         // Process each period to calculate all required metrics
@@ -426,7 +458,7 @@ async function getCurrentIplTariffForAdvancePayment() {
         return tariff[0].nominal; // Hanya return nominal penuh
     } catch (error) {
         console.error('Error getting current IPL tariff for advance payment:', error);
-        return 60000; // Default fallback (bukan 55000)
+        return 70000; // Default fallback (bukan 55000)
     }
 }
 
@@ -488,8 +520,8 @@ async function generateAdvancePaymentSection(currentYear) {
 // Generate Pengeluaran Rutin section
 function generateRoutineExpensesSection() {
     const expenses = [
-        { name: 'IURAN SAMPAH', amount: 2360000 },
-        { name: 'GAJI SECURITY 2 ORANG', amount: 3060000 },
+        { name: 'IURAN SAMPAH', amount: 3190000 },
+        { name: 'GAJI SECURITY 2 ORANG', amount: 3370000 },
         { name: 'LEMBUR SECURITY 2 ORANG', amount: 280000 },
         { name: 'BPJS SECURITY 2 ORANG', amount: 176500 },
         { name: 'POSYANDU', amount: 200000 },

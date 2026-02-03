@@ -603,27 +603,43 @@ async function loadViewRekapAir(selectedYear = null) {
 
         if (periodsError) throw periodsError;
 
-        // Extract unique years from period names (e.g., "Jan2025" -> "2025")
+        // Extract unique years from period names for filter
         const availableYears = [...new Set(allPeriods.map(p => {
-            const match = p.nama_periode.match(/(\d{4})$/);
-            return match ? match[1] : null;
-        }).filter(year => year !== null))].sort((a, b) => b - a); // Sort descending (newest first)
+            // Cari tahun dalam format 4 digit (2026) atau 2 digit ('26) di mana saja dalam nama periode
+            const match4Digit = p.nama_periode.match(/(\d{4})/);
+            const match2Digit = p.nama_periode.match(/'(\d{2})/);
+            
+            if (match4Digit) {
+                return match4Digit[1];
+            } else if (match2Digit) {
+                return '20' + match2Digit[1]; // Konversi 2 digit ke 4 digit dengan awalan 20
+            }
+            
+            return null;
+        }).filter(year => year !== null))].sort((a, b) => b - a);
 
-        // Find current active period based on today's date
+        // Find current active period
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
-
+        today.setHours(0, 0, 0, 0);
         const activePeriod = allPeriods.find(p => {
             const startDate = new Date(p.tanggal_awal);
             const endDate = new Date(p.tanggal_akhir);
             return today >= startDate && today <= endDate;
         });
 
-        // Get year from active period, or fallback to current calendar year
+        // Determine default year from active period
         let defaultYear;
         if (activePeriod) {
-            const yearMatch = activePeriod.nama_periode.match(/(\d{4})$/);
-            defaultYear = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
+            const yearMatch4 = activePeriod.nama_periode.match(/(\d{4})/);
+            const yearMatch2 = activePeriod.nama_periode.match(/'(\d{2})/);
+            
+            if (yearMatch4) {
+                defaultYear = yearMatch4[1];
+            } else if (yearMatch2) {
+                defaultYear = '20' + yearMatch2[1];
+            } else {
+                defaultYear = new Date().getFullYear().toString();
+            }
         } else {
             defaultYear = new Date().getFullYear().toString();
         }
@@ -636,7 +652,22 @@ async function loadViewRekapAir(selectedYear = null) {
         // Filter periods by selected year
         let periods = allPeriods;
         if (selectedYear !== 'all') {
-            periods = allPeriods.filter(p => p.nama_periode.includes(selectedYear));
+            periods = allPeriods.filter(p => {
+                // Cari tahun dalam format 4 digit (2026) atau 2 digit ('26) di mana saja dalam nama periode
+                const yearMatch4 = p.nama_periode.match(/(\d{4})/);
+                const yearMatch2 = p.nama_periode.match(/'(\d{2})/);
+                
+                let periodYear;
+                if (yearMatch4) {
+                    periodYear = yearMatch4[1];
+                } else if (yearMatch2) {
+                    periodYear = '20' + yearMatch2[1];
+                } else {
+                    return false; // Skip jika tidak ada tahun yang ditemukan
+                }
+                
+                return periodYear === selectedYear;
+            });
         }
 
         // Aggregate data for each period

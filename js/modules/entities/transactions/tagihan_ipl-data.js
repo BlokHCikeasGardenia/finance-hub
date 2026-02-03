@@ -199,6 +199,9 @@ async function generateTagihanIplForPeriod(hunianData, periodeId, options = {}) 
                 nominal_tagihan: tariff.nominal,
                 sisa_tagihan: tariff.nominal,
 
+                // Add type_tarif field
+                type_tarif: iplType,
+
                 // Dates
                 tanggal_tagihan: new Date().toISOString().split('T')[0],
                 tanggal_jatuh_tempo: calculateDueDate(new Date()),

@@ -402,53 +402,80 @@ async function calculateRumahKosong(period) {
     return data.length;
 }
 
+// Helper function to get current IPL tariff for advance payment calculation
+async function getCurrentIplTariffForAdvancePayment() {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: tariff, error } = await supabase
+            .from('tarif_ipl')
+            .select('nominal')
+            .eq('type_tarif', 'IPL')
+            .eq('aktif', true)
+            .lte('tanggal_mulai_berlaku', today)
+            .order('tanggal_mulai_berlaku', { ascending: false })
+            .limit(1);
+
+        if (error) throw error;
+        
+        if (!tariff || tariff.length === 0) {
+            throw new Error('Tarif IPL tidak ditemukan');
+        }
+
+        // Return full IPL nominal (TANPA dikurangi DAU)
+        return tariff[0].nominal; // Hanya return nominal penuh
+    } catch (error) {
+        console.error('Error getting current IPL tariff for advance payment:', error);
+        return 60000; // Default fallback (bukan 55000)
+    }
+}
+
 // Generate IPL Terbayar di Muka section
 async function generateAdvancePaymentSection(currentYear) {
     try {
-        // Get current period
         const today = new Date();
-        const { data: currentPeriod, error } = await supabase
-            .from('periode')
-            .select('id, nomor_urut')
-            .gte('tanggal_awal', today.toISOString().split('T')[0])
-            .lte('tanggal_akhir', today.toISOString().split('T')[0])
-            .single();
-
-        if (error || !currentPeriod) {
-            return '<p class="text-muted">Tidak dapat menentukan periode saat ini</p>';
-        }
-
-        // Count advance payments (future periods with IPL Normal 60000)
+        
+        // Get all advance payments for future periods
         const { data: advancePayments, error: advanceError } = await supabase
             .from('tagihan_ipl')
-            .select('id')
+            .select(`
+                id,
+                nominal_tagihan,
+                type_tarif,
+                periode:periode_id (tanggal_awal, tanggal_akhir, nama_periode)
+            `)
             .eq('status', 'lunas')
-            .eq('nominal_tagihan', 60000)
-            .gt('periode_id', currentPeriod.id);
+            .eq('type_tarif', 'IPL')
+            .gte('periode.tanggal_awal', '2026-01-01')
+            .gt('periode.tanggal_awal', today.toISOString().split('T')[0]); // Hanya periode masa depan
 
         if (advanceError) throw advanceError;
 
-        const jumlah_bulan = advancePayments.length;
-        const nominal = jumlah_bulan * 55000; // 55000 = 60000 - 5000 DAU
+        // Filter payments with valid period
+        const validPayments = advancePayments.filter(payment => payment.periode && payment.periode.nama_periode);
+
+        // Calculate total nominal and DAU
+        const nominal = validPayments.reduce((sum, payment) => {
+            return sum + (payment.nominal_tagihan || 0);
+        }, 0);
+        
+        const dau = validPayments.length * 5000;
 
         return `
             <div class="row text-center">
                 <div class="col-md-6">
                     <div class="p-3 bg-light rounded">
                         <div class="fw-bold">Jumlah Bulan Dibayar di Muka</div>
-                        <div class="fs-4 text-primary">${jumlah_bulan} bulan</div>
+                        <div class="fs-4 text-primary">${validPayments.length} bulan</div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="p-3 bg-light rounded">
                         <div class="fw-bold">Nominal Disimpan</div>
                         <div class="fs-4 text-success">${formatCurrency(nominal)}</div>
-                        <small class="text-muted">55000 × ${jumlah_bulan} bulan</small>
+                        <small class="text-muted">70.000 × ${validPayments.length} bulan</small>
                     </div>
                 </div>
-            </div>
-            <div class="mt-2 text-muted small">
-                <i class="bi bi-info-circle"></i> DAU 5.000 × ${jumlah_bulan} bulan = ${formatCurrency(jumlah_bulan * 5000)} langsung disetor ke manajemen DAU
             </div>
         `;
 

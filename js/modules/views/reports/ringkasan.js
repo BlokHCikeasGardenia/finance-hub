@@ -29,8 +29,17 @@ async function loadViewRingkasan(selectedYear = null) {
 
         // Extract unique years from period names for filter
         const availableYears = [...new Set(allPeriods.map(p => {
-            const match = p.nama_periode.match(/(\d{4})$/);
-            return match ? match[1] : null;
+            // Cari tahun dalam format 4 digit (2026) atau 2 digit ('26)
+            const match4Digit = p.nama_periode.match(/(\d{4})/);
+            const match2Digit = p.nama_periode.match(/'(\d{2})/);
+            
+            if (match4Digit) {
+                return match4Digit[1];
+            } else if (match2Digit) {
+                return '20' + match2Digit[1]; // Konversi 2 digit ke 4 digit dengan awalan 20
+            }
+            
+            return null;
         }).filter(year => year !== null))].sort((a, b) => b - a);
 
         // Find current active period
@@ -44,8 +53,16 @@ async function loadViewRingkasan(selectedYear = null) {
 
         let defaultYear;
         if (activePeriod) {
-            const yearMatch = activePeriod.nama_periode.match(/(\d{4})$/);
-            defaultYear = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
+            const yearMatch4 = activePeriod.nama_periode.match(/(\d{4})/);
+            const yearMatch2 = activePeriod.nama_periode.match(/'(\d{2})/);
+            
+            if (yearMatch4) {
+                defaultYear = yearMatch4[1];
+            } else if (yearMatch2) {
+                defaultYear = '20' + yearMatch2[1];
+            } else {
+                defaultYear = new Date().getFullYear().toString();
+            }
         } else {
             defaultYear = new Date().getFullYear().toString();
         }
@@ -61,7 +78,22 @@ async function loadViewRingkasan(selectedYear = null) {
         // Filter periods by selected year (for transaction filtering)
         let periodsToFilter = allPeriods;
         if (selectedYear !== 'all') {
-            periodsToFilter = allPeriods.filter(p => p.nama_periode.includes(selectedYear));
+            periodsToFilter = allPeriods.filter(p => {
+                // Cari tahun dalam format 4 digit (2026) atau 2 digit ('26)
+                const yearMatch4 = p.nama_periode.match(/(\d{4})/);
+                const yearMatch2 = p.nama_periode.match(/'(\d{2})/);
+                
+                let periodYear;
+                if (yearMatch4) {
+                    periodYear = yearMatch4[1];
+                } else if (yearMatch2) {
+                    periodYear = '20' + yearMatch2[1];
+                } else {
+                    return false; // Skip jika tidak ada tahun yang ditemukan
+                }
+                
+                return periodYear === selectedYear;
+            });
         }
 
         // Get all categories with their current balances
@@ -107,11 +139,23 @@ async function loadViewRingkasan(selectedYear = null) {
             } else {
                 // Year-specific logic
                 // Calculate saldo awal tahun ini as: kategori.saldo_awal + cumulative transactions until end of previous year
-                const previousYear = (parseInt(selectedYear) - 1).toString();
-                const periodsUntilPreviousYear = allPeriods.filter(p =>
-                    p.nama_periode.includes(previousYear) ||
-                    parseInt(p.nama_periode.match(/(\d{4})$/)?.[1] || 0) < parseInt(selectedYear)
-                );
+                const targetYear = parseInt(selectedYear);
+                const periodsUntilPreviousYear = allPeriods.filter(p => {
+                    // Cari tahun dalam format 4 digit (2026) atau 2 digit ('26)
+                    const yearMatch4 = p.nama_periode.match(/(\d{4})/);
+                    const yearMatch2 = p.nama_periode.match(/'(\d{2})/);
+                    
+                    let periodYear;
+                    if (yearMatch4) {
+                        periodYear = parseInt(yearMatch4[1]);
+                    } else if (yearMatch2) {
+                        periodYear = parseInt('20' + yearMatch2[1]);
+                    } else {
+                        return false; // Skip jika tidak ada tahun yang ditemukan
+                    }
+                    
+                    return periodYear < targetYear;
+                });
 
                 // Calculate cumulative transactions until end of previous year
                 let cumulativePemasukanUntilPrevious = 0;
@@ -152,10 +196,13 @@ async function loadViewRingkasan(selectedYear = null) {
                     }
 
                     cumulativePengeluaranUntilPrevious = pengeluaranUntilPrevious.reduce((sum, item) => sum + (item.nominal || 0), 0);
-                }
 
-                // Saldo awal tahun ini = saldo sistem + kumulatif sampai akhir tahun sebelumnya
-                saldoAwalTahunIni = saldoAwalTahunIni + cumulativePemasukanUntilPrevious - cumulativePengeluaranUntilPrevious;
+                    // Saldo awal tahun ini = saldo sistem + kumulatif sampai akhir tahun sebelumnya
+                    saldoAwalTahunIni = kategori.saldo_awal + cumulativePemasukanUntilPrevious - cumulativePengeluaranUntilPrevious;
+                } else {
+                    // No periods before selected year, use original saldo_awal from kategori_saldo
+                    saldoAwalTahunIni = kategori.saldo_awal || 0;
+                }
 
                 // Get transactions only for the selected year periods
                 if (periodsToFilter.length > 0) {

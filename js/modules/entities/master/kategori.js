@@ -64,6 +64,7 @@ function createKategoriTableHtml(data) {
                     <tr>
                         <th>Nama Kategori</th>
                         <th class="text-end">Saldo Awal</th>
+                        <th>Keterangan</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -75,6 +76,7 @@ function createKategoriTableHtml(data) {
             html += `<tr>
                 <td>${item.nama_kategori}</td>
                 <td class="text-end">Rp ${item.saldo_awal?.toLocaleString('id-ID') || 0}</td>
+                <td>${item.keterangan || '-'}</td>
                 <td>
                     <button onclick="editKategori('${item.id}')" class="btn btn-sm btn-outline-primary me-2">Edit</button>
                     <button onclick="confirmDeleteKategori('${item.id}')" class="btn btn-sm btn-outline-danger">Hapus</button>
@@ -88,9 +90,10 @@ function createKategoriTableHtml(data) {
             <td><strong>TOTAL</strong></td>
             <td class="text-end"><strong>Rp ${totalSaldoAwal.toLocaleString('id-ID')}</strong></td>
             <td></td>
+            <td></td>
         </tr>`;
     } else {
-        html += '<tr><td colspan="3" class="text-center text-muted">Tidak ada data kategori</td></tr>';
+        html += '<tr><td colspan="4" class="text-center text-muted">Tidak ada data kategori</td></tr>';
     }
 
     html += `</tbody></table></div>`;
@@ -155,6 +158,10 @@ function createKategoriFormHtml(kategori = null) {
                 <input type="number" class="form-control" id="saldo_awal" name="saldo_awal" step="0.01" min="0"
                        value="${kategori?.saldo_awal || 0}">
             </div>
+            <div class="mb-3">
+                <label for="keterangan" class="form-label">Keterangan:</label>
+                <textarea class="form-control" id="keterangan" name="keterangan" rows="3">${kategori?.keterangan || ''}</textarea>
+            </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">${isEdit ? 'Update' : 'Simpan'}</button>
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">Batal</button>
@@ -175,7 +182,8 @@ async function handleKategoriFormSubmit(isEdit, editId) {
     try {
         const formData = {
             nama_kategori: document.getElementById('nama_kategori').value.trim(),
-            saldo_awal: parseFloat(document.getElementById('saldo_awal').value) || 0
+            saldo_awal: parseFloat(document.getElementById('saldo_awal').value) || 0,
+            keterangan: document.getElementById('keterangan').value.trim()
         };
 
         const result = isEdit ?

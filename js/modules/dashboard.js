@@ -150,56 +150,15 @@ async function getTotalPenghuni() {
 
 async function getPerluPerhatianAdministrasi() {
     try {
-        // Current date for calculations
-        const currentDate = new Date();
-        // 3 months from end of September period (6 Oct) = 6 Oct + 3 months = 6 Jan
-        // But user said "means 6 Dec", so let's use 3 months from today for now
-        const threeMonthsAgo = new Date(currentDate);
-        threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
-
-        // Get last 3 periods
-        const { data: periods, error: periodsError } = await supabase
-            .from('periode')
-            .select('id, nama_periode, nomor_urut')
-            .order('nomor_urut', { ascending: false })
-            .limit(3);
-
-        if (periodsError) throw periodsError;
-        const lastThreePeriodIds = periods.map(p => p.id);
-
-        // Get IPL problematic households (condition a AND b)
-        const { data: iplPayments, error: iplPaymentsError } = await supabase
-            .from('tagihan_ipl_pembayaran')
-            .select(`
-                tanggal_alokasi,
-                pemasukan:pemasukan_id (
-                    hunian_id
-                )
-            `)
-            .gte('tanggal_alokasi', threeMonthsAgo.toISOString().split('T')[0]);
-
-        if (iplPaymentsError) throw iplPaymentsError;
-
-        // Group IPL payments by household
-        const iplPaymentMap = new Map();
-        iplPayments.forEach(payment => {
-            const hunianId = payment.pemasukan?.hunian_id;
-            if (hunianId) {
-                if (!iplPaymentMap.has(hunianId)) {
-                    iplPaymentMap.set(hunianId, []);
-                }
-                iplPaymentMap.get(hunianId).push(payment);
-            }
-        });
-
-        // Get ALL IPL bills for all households (to count total periods with bills)
+        // Get IPL bills that are NOT YET PAID (sisa_tagihan > 0)
         const { data: iplBills, error: iplBillsError } = await supabase
             .from('tagihan_ipl')
-            .select('hunian_id, periode_id');
+            .select('hunian_id, periode_id')
+            .gt('sisa_tagihan', 0);
 
         if (iplBillsError) throw iplBillsError;
 
-        // Group IPL bills by household and count unique periods
+        // Group IPL bills by household and count unique unpaid periods
         const iplBillsMap = new Map();
         iplBills.forEach(bill => {
             const hunianId = bill.hunian_id;
@@ -209,17 +168,11 @@ async function getPerluPerhatianAdministrasi() {
             iplBillsMap.get(hunianId).add(bill.periode_id);
         });
 
-        // Find households that meet IPL criteria (a AND b)
+        // Find households that meet IPL criteria: has 4 or more unpaid periods
         const iplProblematicHouseholds = new Set();
         for (const [hunianId, periodsSet] of iplBillsMap) {
-            // Check condition b: has bills in 4 or more periods
-            const totalPeriodsWithBills = periodsSet.size;
-            const hasBillsIn4OrMorePeriods = totalPeriodsWithBills >= 4;
-
-            // Check condition a: no payments in last 3 months
-            const hasRecentPayments = iplPaymentMap.has(hunianId);
-
-            if (hasBillsIn4OrMorePeriods && !hasRecentPayments) {
+            const totalUnpaidPeriods = periodsSet.size;
+            if (totalUnpaidPeriods >= 4) {
                 iplProblematicHouseholds.add(hunianId);
             }
         }
@@ -273,54 +226,15 @@ async function getPerluPerhatianAdministrasi() {
 
 async function getPerluPerhatianDetail() {
     try {
-        // Current date for calculations
-        const currentDate = new Date();
-        const threeMonthsAgo = new Date(currentDate);
-        threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
-
-        // Get last 3 periods
-        const { data: periods, error: periodsError } = await supabase
-            .from('periode')
-            .select('id, nama_periode, nomor_urut')
-            .order('nomor_urut', { ascending: false })
-            .limit(3);
-
-        if (periodsError) throw periodsError;
-        const lastThreePeriodIds = periods.map(p => p.id);
-
-        // Get IPL problematic households (condition a AND b)
-        const { data: iplPayments, error: iplPaymentsError } = await supabase
-            .from('tagihan_ipl_pembayaran')
-            .select(`
-                tanggal_alokasi,
-                pemasukan:pemasukan_id (
-                    hunian_id
-                )
-            `)
-            .gte('tanggal_alokasi', threeMonthsAgo.toISOString().split('T')[0]);
-
-        if (iplPaymentsError) throw iplPaymentsError;
-
-        // Group IPL payments by household
-        const iplPaymentMap = new Map();
-        iplPayments.forEach(payment => {
-            const hunianId = payment.pemasukan?.hunian_id;
-            if (hunianId) {
-                if (!iplPaymentMap.has(hunianId)) {
-                    iplPaymentMap.set(hunianId, []);
-                }
-                iplPaymentMap.get(hunianId).push(payment);
-            }
-        });
-
-        // Get ALL IPL bills for all households (to count total periods with bills)
+        // Get IPL bills that are NOT YET PAID (sisa_tagihan > 0)
         const { data: iplBills, error: iplBillsError } = await supabase
             .from('tagihan_ipl')
-            .select('hunian_id, periode_id, sisa_tagihan');
+            .select('hunian_id, periode_id, sisa_tagihan')
+            .gt('sisa_tagihan', 0);
 
         if (iplBillsError) throw iplBillsError;
 
-        // Group IPL bills by household and count unique periods
+        // Group IPL bills by household and count unique unpaid periods
         const iplBillsMap = new Map();
         iplBills.forEach(bill => {
             const hunianId = bill.hunian_id;
@@ -331,20 +245,14 @@ async function getPerluPerhatianDetail() {
             iplBillsMap.get(hunianId).totalOutstanding += bill.sisa_tagihan || 0;
         });
 
-        // Find households that meet IPL criteria (a AND b)
+        // Find households that meet IPL criteria: has 4 or more unpaid periods
         const iplProblematicHouseholds = new Map();
         for (const [hunianId, data] of iplBillsMap) {
-            // Check condition b: has bills in 4 or more periods
-            const totalPeriodsWithBills = data.periods.size;
-            const hasBillsIn4OrMorePeriods = totalPeriodsWithBills >= 4;
-
-            // Check condition a: no payments in last 3 months
-            const hasRecentPayments = iplPaymentMap.has(hunianId);
-
-            if (hasBillsIn4OrMorePeriods && !hasRecentPayments) {
+            const totalUnpaidPeriods = data.periods.size;
+            if (totalUnpaidPeriods >= 4) {
                 iplProblematicHouseholds.set(hunianId, {
                     kategori: 'IPL',
-                    detail: `Total tagihan IPL di ${totalPeriodsWithBills} periode: ${formatCurrency(data.totalOutstanding)}`
+                    detail: `Total tagihan IPL di ${totalUnpaidPeriods} periode belum lunas: ${formatCurrency(data.totalOutstanding)}`
                 });
             }
         }

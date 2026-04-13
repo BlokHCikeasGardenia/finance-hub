@@ -190,7 +190,7 @@ async function generateTagihanIplForPeriod(hunianData, periodeId, options = {}) 
                 hunian_id: hunian.id,
                 // Use selected penghuni from form, fallback to current occupant if not provided
                 penghuni_id: hunian.selectedPenghuniId ||
-                            hunian.penghuni_saat_ini?.id ||
+                            hunian.penghuni_saat_ini_id ||
                             hunian.penghuni_sebelumnya_1_id ||
                             hunian.penghuni_sebelumnya_2_id,
 

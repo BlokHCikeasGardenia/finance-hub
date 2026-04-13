@@ -215,7 +215,13 @@ function collectHunianFormData(isEdit) {
 
     // Optional fields
     if (lorongId) formData.lorong_id = lorongId;
-    if (penghuniId) formData.penghuni_saat_ini_id = penghuniId;
+
+    // Penghuni: set to null if empty string selected (to remove penghuni)
+    if (penghuniId === "") {
+        formData.penghuni_saat_ini_id = null;
+    } else if (penghuniId) {
+        formData.penghuni_saat_ini_id = penghuniId;
+    }
 
     return formData;
 }

@@ -116,10 +116,15 @@ async function getPenghuniOptions() {
             .order('nama_kepala_keluarga');
 
         if (error) throw error;
-        return data ? data.map(item => ({ value: item.id, text: item.nama_kepala_keluarga })) : [];
+        
+        const penghuniOptions = data 
+            ? [{ value: "", text: "Tidak ada penghuni" }, ...data.map(item => ({ value: item.id, text: item.nama_kepala_keluarga }))]
+            : [{ value: "", text: "Tidak ada penghuni" }];
+        
+        return penghuniOptions;
     } catch (error) {
         console.error('Error loading penghuni data:', error);
-        return [];
+        return [{ value: "", text: "Tidak ada penghuni" }];
     }
 }
 

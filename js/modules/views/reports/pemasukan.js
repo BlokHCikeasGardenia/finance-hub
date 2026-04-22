@@ -233,7 +233,7 @@ async function loadViewPemasukan(selectedYear = null) {
                 rekening:rekening_id (jenis_rekening),
                 kategori:kategori_id (nama_kategori),
                 keterangan
-            `);
+            `).range(0, 999999);
 
         // If specific periods are selected, filter by date range
         if (defaultYear !== 'all' && periods.length > 0) {

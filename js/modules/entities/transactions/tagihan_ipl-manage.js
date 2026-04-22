@@ -55,12 +55,13 @@ async function loadIplBillsData() {
                 penghuni:penghuni_id (nama_kepala_keluarga),
                 tagihan_ipl_pembayaran (
                     nominal_dialokasikan,
-                    pemasukan:pemasukan_id (
+                    Pemasukan:pemasukan_id (
                         tanggal
                     )
                 )
             `)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(0, 999999);
 
         if (error) throw error;
 

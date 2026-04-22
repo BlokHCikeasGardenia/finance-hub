@@ -11,6 +11,7 @@ let itemsPerPage = 10;
 let searchTerm = '';
 let statusFilter = '';
 let areaFilter = '';
+let periodFilter = '6periode'; // '6periode' (default) or 'semua'
 
 // Load Halaman Administrasi per Hunian
 async function loadViewHunianAdministrasi() {
@@ -43,7 +44,7 @@ async function loadViewHunianAdministrasi() {
     }
 }
 
-// Load data hunian dengan tagihan IPL dan Air
+// // Load data hunian dasar
 async function loadHunianAdministrasiData() {
     try {
         // Query untuk mendapatkan semua hunian
@@ -61,7 +62,36 @@ async function loadHunianAdministrasiData() {
 
         if (hunianError) throw hunianError;
 
-        // Query untuk tagihan IPL dengan detail pembayaran
+        // Pada tahap awal, data tagihan belum diisi (akan diisi on-demand per page)
+        const processedData = hunianData.map(hunian => ({
+            id: hunian.id,
+            nomor_urut: hunian.nomor_urut,
+            nomor_blok_rumah: hunian.nomor_blok_rumah,
+            status: hunian.status,
+            penghuni_saat_ini: hunian.penghuni_saat_ini?.nama_kepala_keluarga || '-',
+            area: hunian.lorong?.nama_lorong || '-',
+            tagihan: [],
+            summary: {
+                total_outstanding: 0,
+                jumlah_belum_lunas: 0
+            },
+            isLoaded: false // Flag untuk menandai apakah tagihan sudah ditarik
+        }));
+
+        return { success: true, data: processedData };
+
+    } catch (error) {
+        console.error('Error loading hunian administrasi data:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+// Fetch bills for a batch of hunian IDs (no period filtering - client-side filtering applied later)
+async function fetchBillsForBatch(hunianIds) {
+    if (!hunianIds || hunianIds.length === 0) return { ipl: [], air: [] };
+
+    try {
+        // Query untuk tagihan IPL (ALL bills, no period filter)
         const { data: tagihanIplData, error: iplError } = await supabase
             .from('tagihan_ipl')
             .select(`
@@ -81,11 +111,12 @@ async function loadHunianAdministrasiData() {
                     pemasukan:pemasukan_id (tanggal)
                 )
             `)
+            .in('hunian_id', hunianIds)
             .order('tanggal_tagihan', { ascending: false });
 
         if (iplError) throw iplError;
 
-        // Query untuk tagihan Air dengan detail pembayaran
+        // Query untuk tagihan Air (ALL bills, no period filter)
         const { data: tagihanAirData, error: airError } = await supabase
             .from('meteran_air_billing')
             .select(`
@@ -105,67 +136,17 @@ async function loadHunianAdministrasiData() {
                     pemasukan:pemasukan_id (tanggal)
                 )
             `)
+            .in('hunian_id', hunianIds)
             .order('tanggal_tagihan', { ascending: false });
 
         if (airError) throw airError;
 
-        // Process data untuk setiap hunian
-        const processedData = hunianData.map(hunian => {
-            // Filter tagihan IPL untuk hunian ini
-            const iplBills = tagihanIplData.filter(bill => bill.hunian_id === hunian.id);
-            const airBills = tagihanAirData.filter(bill => bill.hunian_id === hunian.id);
+        console.log(`Fetched ${tagihanIplData.length} IPL bills and ${tagihanAirData.length} Air bills for batch`);
 
-            // Process IPL bills
-            const iplDetails = iplBills.map(bill => ({
-                type: 'IPL',
-                periode: bill.periode?.nama_periode || 'Unknown',
-                nominal_tagihan: bill.nominal_tagihan,
-                sisa_tagihan: bill.sisa_tagihan,
-                status: bill.status,
-                tanggal_tagihan: bill.tanggal_tagihan,
-                penghuni_nama: bill.penghuni?.nama_kepala_keluarga || 'Kosong',
-                pembayaran: bill.pembayaran || []
-            }));
-
-            // Process Air bills
-            const airDetails = airBills.map(bill => ({
-                type: 'Air',
-                periode: bill.periode?.nama_periode || 'Unknown',
-                nominal_tagihan: bill.nominal_tagihan,
-                sisa_tagihan: bill.sisa_tagihan,
-                status: bill.status,
-                tanggal_tagihan: bill.tanggal_tagihan,
-                penghuni_nama: bill.penghuni?.nama_kepala_keluarga || 'Kosong',
-                pembayaran: bill.pembayaran || []
-            }));
-
-            // Combine dan sort tagihan: periode terbaru ke terlama, IPL → Air dalam periode sama
-            const semuaTagihan = sortTagihanByPeriode([...iplDetails, ...airDetails]);
-
-            // Hitung summary
-            const totalOutstanding = semuaTagihan.reduce((sum, tagihan) => sum + (tagihan.sisa_tagihan || 0), 0);
-            const jumlahTagihanBelumLunas = semuaTagihan.filter(tagihan => tagihan.sisa_tagihan > 0).length;
-
-            return {
-                id: hunian.id,
-                nomor_urut: hunian.nomor_urut,
-                nomor_blok_rumah: hunian.nomor_blok_rumah,
-                status: hunian.status,
-                penghuni_saat_ini: hunian.penghuni_saat_ini?.nama_kepala_keluarga || '-',
-                area: hunian.lorong?.nama_lorong || '-',
-                tagihan: semuaTagihan,
-                summary: {
-                    total_outstanding: totalOutstanding,
-                    jumlah_belum_lunas: jumlahTagihanBelumLunas
-                }
-            };
-        });
-
-        return { success: true, data: processedData };
-
+        return { ipl: tagihanIplData || [], air: tagihanAirData || [] };
     } catch (error) {
-        console.error('Error loading hunian administrasi data:', error);
-        return { success: false, message: error.message };
+        console.error('Error fetching bills batch:', error);
+        return { ipl: [], air: [] };
     }
 }
 
@@ -207,6 +188,13 @@ function renderHunianAdministrasiPage() {
                                 </select>
                             </div>
                             <div class="col-md-2">
+                                <label for="hunian-admin-period-filter" class="form-label">Periode:</label>
+                                <select class="form-select" id="hunian-admin-period-filter">
+                                    <option value="6periode" selected>6 Periode Terakhir</option>
+                                    <option value="semua">Semua Periode</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <label for="hunian-admin-items-per-page" class="form-label">Per Halaman:</label>
                                 <select class="form-select" id="hunian-admin-items-per-page">
                                     <option value="5">5</option>
@@ -226,6 +214,29 @@ function renderHunianAdministrasiPage() {
                 </div>
 
                 <div id="hunian-admin-cards-container"></div>
+
+                <!-- Modal for detailed tagihan history -->
+                <div class="modal fade" id="detailedModal" tabindex="-1" aria-labelledby="detailedModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="detailedModalLabel">Riwayat Lengkap Tagihan</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body" id="detailedModalBody">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Memuat data tagihan...</p>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -239,9 +250,51 @@ function renderHunianAdministrasiPage() {
     }, 100);
 }
 
+// Apply client-side period filtering to bills
+async function applyPeriodFilter(allBills, filter) {
+    if (filter === 'semua') {
+        return sortTagihanByPeriode(allBills);
+    }
+
+    // Get unique period IDs from bills
+    const periodIdsWithBills = [...new Set(allBills.map(b => b.periode_id).filter(id => id))];
+
+    if (periodIdsWithBills.length === 0) {
+        return []; // No bills with period IDs
+    }
+
+    // Fetch period details for these IDs (only if we need to filter)
+    const { data: periodData, error } = await supabase
+        .from('periode')
+        .select('id, nama_periode, tanggal_awal')
+        .in('id', periodIdsWithBills);
+
+    if (error) {
+        console.error('Error fetching period details:', error);
+        return sortTagihanByPeriode(allBills); // Fallback to all bills
+    }
+
+    // Sort periods by tanggal_awal DESC (most recent first)
+    const sortedPeriods = (periodData || []).sort((a, b) =>
+        new Date(b.tanggal_awal) - new Date(a.tanggal_awal)
+    );
+
+    // Take top 6 periods (or all available if less than 6)
+    const selectedPeriodIds = sortedPeriods.slice(0, 6).map(p => p.id);
+
+    // Filter bills to only those belonging to selected periods
+    const filteredBills = allBills.filter(bill =>
+        bill.periode_id && selectedPeriodIds.includes(bill.periode_id)
+    );
+
+    // Sort and return
+    return sortTagihanByPeriode(filteredBills);
+}
+
 // Render cards hunian
-function renderHunianAdminCards() {
+async function renderHunianAdminCards() {
     const container = document.getElementById('hunian-admin-cards-container');
+    if (!container) return;
 
     // Apply filters
     let filteredData = [...hunianAdministrasiData];
@@ -269,9 +322,78 @@ function renderHunianAdminCards() {
     const endIndex = startIndex + itemsPerPage;
     const paginatedData = filteredData.slice(startIndex, endIndex);
 
+    // Fetch bills for paginated data if not already loaded
+    const idsToFetch = paginatedData.filter(h => !h.isLoaded).map(h => h.id);
+
+    if (idsToFetch.length > 0) {
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" role="status"></div><small class="ms-2">Loading detail tagihan...</small></div>';
+
+        // Fetch ALL bills (no period filter) - we'll filter client-side
+        const { ipl, air } = await fetchBillsForBatch(idsToFetch);
+        console.log('Batch fetch result:', { iplCount: ipl.length, airCount: air.length });
+
+        // Update hunianAdministrasiData with fetched bills
+        paginatedData.forEach(hunian => {
+            if (!hunian.isLoaded) {
+                const iplBills = ipl.filter(b => b.hunian_id === hunian.id);
+                const airBills = air.filter(b => b.hunian_id === hunian.id);
+
+                // Process IPL bills
+                const iplDetails = iplBills.map(bill => ({
+                    type: 'IPL',
+                    periode: bill.periode?.nama_periode || 'Unknown',
+                    periode_id: bill.periode_id, // Add periode_id for filtering
+                    nominal_tagihan: bill.nominal_tagihan,
+                    sisa_tagihan: bill.sisa_tagihan,
+                    status: bill.status,
+                    tanggal_tagihan: bill.tanggal_tagihan,
+                    penghuni_nama: bill.penghuni?.nama_kepala_keluarga || 'Kosong',
+                    pembayaran: bill.pembayaran || []
+                }));
+
+                // Process Air bills
+                const airDetails = airBills.map(bill => ({
+                    type: 'Air',
+                    periode: bill.periode?.nama_periode || 'Unknown',
+                    periode_id: bill.periode_id, // Add periode_id for filtering
+                    nominal_tagihan: bill.nominal_tagihan,
+                    sisa_tagihan: bill.sisa_tagihan,
+                    status: bill.status,
+                    tanggal_tagihan: bill.tanggal_tagihan,
+                    penghuni_nama: bill.penghuni?.nama_kepala_keluarga || 'Kosong',
+                    pembayaran: bill.pembayaran || []
+                }));
+
+                // Combine ALL bills (no period filtering yet)
+                const semuaTagihan = sortTagihanByPeriode([...iplDetails, ...airDetails]);
+
+                // Update original object in hunianAdministrasiData
+                const originalHunian = hunianAdministrasiData.find(h => h.id === hunian.id);
+                if (originalHunian) {
+                    // Store ALL bills - filtering will happen in renderHunianCard()
+                    originalHunian.allTagihan = semuaTagihan;
+
+                    // Calculate summary from ALL bills
+                    const totalOutstanding = semuaTagihan.reduce((sum, tagihan) => sum + (tagihan.sisa_tagihan || 0), 0);
+                    const jumlahTagihanBelumLunas = semuaTagihan.filter(tagihan => tagihan.sisa_tagihan > 0).length;
+
+                    originalHunian.summary = {
+                        total_outstanding: totalOutstanding,
+                        jumlah_belum_lunas: jumlahTagihanBelumLunas
+                    };
+                    originalHunian.isLoaded = true;
+                }
+            }
+        });
+    }
+
+    // Render cards asynchronously
+    const cardPromises = paginatedData.map(hunian => renderHunianCard(hunian));
+    const cardHtmls = await Promise.all(cardPromises);
+
     const cardsHtml = `
         <div class="row g-3">
-            ${paginatedData.map(hunian => renderHunianCard(hunian)).join('')}
+            ${cardHtmls.join('')}
         </div>
 
         <!-- Pagination -->
@@ -282,11 +404,31 @@ function renderHunianAdminCards() {
 }
 
 // Render card untuk satu hunian
-function renderHunianCard(hunian) {
-    const { summary, tagihan } = hunian;
+async function renderHunianCard(hunian) {
+    const { summary, allTagihan } = hunian;
 
-    // Tagihan sudah di-sort dari database query
-    const sortedTagihan = tagihan;
+    // If no bills loaded yet, show empty
+    if (!allTagihan) {
+        return `
+            <div class="col-md-6 col-lg-4 col-xl-3">
+                <div class="card shadow-sm" style="max-height: 500px;">
+                    <div class="card-header bg-primary text-white py-2">
+                        <h6 class="mb-0 fs-6">${hunian.nomor_blok_rumah}</h6>
+                        <small class="text-white-50 d-block" style="font-size: 0.7rem;">${hunian.penghuni_saat_ini}</small>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Apply client-side period filtering
+    const filteredTagihan = await applyPeriodFilter(allTagihan, periodFilter);
+
+    // Determine if showing limited view
+    const isLimited = periodFilter === '6periode';
 
     return `
         <div class="col-md-6 col-lg-4 col-xl-3">
@@ -313,12 +455,22 @@ function renderHunianCard(hunian) {
                         </div>
                     </div>
 
+                    <!-- Limited view indicator -->
+                    ${isLimited ? '<small class="text-muted text-center d-block mb-1" style="font-size: 0.7rem;">Menampilkan 6 periode terakhir</small>' : ''}
+
                     <!-- Riwayat Tagihan Scrollable -->
                     <div class="tagihan-history flex-grow-1" style="overflow-y: auto; font-size: 0.8rem;">
-                        ${sortedTagihan.length > 0 ?
-                            sortedTagihan.map(tagihan => renderTagihanItemCompact(tagihan)).join('') :
+                        ${filteredTagihan.length > 0 ?
+                            filteredTagihan.map(tagihan => renderTagihanItemCompact(tagihan)).join('') :
                             '<div class="text-center text-muted py-3"><small>Tidak ada tagihan</small></div>'
                         }
+                    </div>
+
+                    <!-- Selengkapnya button -->
+                    <div class="mt-2 text-center flex-shrink-0">
+                        <button class="btn btn-sm btn-outline-primary" onclick="showDetailedModal('${hunian.id}')">
+                            Selengkapnya
+                        </button>
                     </div>
                 </div>
             </div>
@@ -469,6 +621,14 @@ function initializeHunianAdminFilters() {
         currentPage = 1;
         renderHunianAdminCards();
     });
+
+    document.getElementById('hunian-admin-period-filter').addEventListener('change', () => {
+        periodFilter = document.getElementById('hunian-admin-period-filter').value;
+        currentPage = 1;
+        // Reset loaded state so cards refetch and re-apply period filtering
+        hunianAdministrasiData.forEach(h => h.isLoaded = false);
+        renderHunianAdminCards();
+    });
 }
 
 // Reset filters
@@ -476,10 +636,14 @@ function resetHunianAdminFilters() {
     document.getElementById('hunian-admin-search').value = '';
     document.getElementById('hunian-admin-status-filter').value = '';
     document.getElementById('hunian-admin-area-filter').value = '';
+    document.getElementById('hunian-admin-period-filter').value = '6periode';
 
     searchTerm = '';
     statusFilter = '';
     areaFilter = '';
+    periodFilter = '6periode';
+    // Reset loaded data to refetch and re-apply default period filter
+    hunianAdministrasiData.forEach(h => h.isLoaded = false);
     currentPage = 1;
 
     renderHunianAdminCards();
@@ -493,33 +657,59 @@ function changeHunianAdminPage(page) {
 
 // Sort tagihan: periode terbaru ke terlama, IPL → Air dalam periode sama
 function sortTagihanByPeriode(tagihanArray) {
+    if (!tagihanArray || tagihanArray.length === 0) return [];
+
     // Mapping bulan Indonesia ke angka untuk sorting yang benar
     const bulanMap = {
         'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4, 'Mei': 5, 'Juni': 6,
         'Juli': 7, 'Agustus': 8, 'September': 9, 'Oktober': 10, 'November': 11, 'Desember': 12,
         'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
-        'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
+        'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12,
+        // Abbreviations
+        'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'Mei': 5, 'Mei': 5, 'Jun': 6, 'Jul': 7, 'Agu': 8, 'Sep': 9, 'Okt': 10, 'Nov': 11, 'Des': 12,
+        'Aug': 8, 'Oct': 10, 'Dec': 12
     };
 
     // Fungsi untuk parse periode menjadi nilai sortable
     function parsePeriodeValue(periode) {
-        // Format: "Bulan Tahun" atau "Month Year"
-        const parts = periode.split(' ');
+        if (!periode || typeof periode !== 'string') return 0;
+
+        // Format: "Bulan Tahun" atau "Month Year" or "Abbr 'YY"
+        const parts = periode.trim().split(/\s+/);
         if (parts.length >= 2) {
-            const bulan = bulanMap[parts[0]] || 0;
-            const tahun = parseInt(parts[parts.length - 1]) || 0;
-            return tahun * 100 + bulan; // Tahun * 100 + bulan
+            const bulanStr = parts[0];
+            const tahunStr = parts[parts.length - 1];
+            
+            const bulan = bulanMap[bulanStr] || 0;
+            
+            // Handle 'YY or YYYY
+            let tahun = 0;
+            if (tahunStr.startsWith("'")) {
+                tahun = 2000 + parseInt(tahunStr.substring(1));
+            } else {
+                tahun = parseInt(tahunStr);
+                if (tahun < 100) tahun += 2000;
+            }
+            
+            if (isNaN(tahun)) tahun = 0;
+            
+            return tahun * 100 + bulan;
         }
         return 0;
     }
 
     // Sort berdasarkan periode value (terbesar dulu = terbaru)
-    const sortedTagihan = tagihanArray.sort((a, b) => {
+    const sortedTagihan = [...tagihanArray].sort((a, b) => {
         const valueA = parsePeriodeValue(a.periode);
         const valueB = parsePeriodeValue(b.periode);
 
         // Jika periode sama, urutkan IPL dulu baru Air
         if (valueA === valueB) {
+            // Jika tanggal tagihan ada, gunakan itu sebagai tie-breaker
+            if (a.tanggal_tagihan && b.tanggal_tagihan && a.tanggal_tagihan !== b.tanggal_tagihan) {
+                return b.tanggal_tagihan.localeCompare(a.tanggal_tagihan);
+            }
+            
             if (a.type === 'IPL' && b.type === 'Air') return -1;
             if (a.type === 'Air' && b.type === 'IPL') return 1;
             return 0;
@@ -537,11 +727,142 @@ async function refreshViewHunianAdministrasi() {
     await loadViewHunianAdministrasi();
 }
 
+// Show detailed modal with full billing history for a hunian
+async function showDetailedModal(hunianId) {
+    // Show modal with loading state
+    const modalBody = document.getElementById('detailedModalBody');
+    const modal = new bootstrap.Modal(document.getElementById('detailedModal'));
+    modalBody.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Memuat data tagihan lengkap...</p>
+        </div>
+    `;
+    modal.show();
+
+    try {
+        // Fetch ALL bills for this hunian (no period filter)
+        const { ipl, air } = await fetchBillsForBatch([hunianId]);
+        
+        // Get hunian info for title
+        const hunian = hunianAdministrasiData.find(h => h.id === hunianId);
+        const title = document.getElementById('detailedModalLabel');
+        if (title && hunian) {
+            title.textContent = `Riwayat Lengkap Tagihan - ${hunian.nomor_blok_rumah} (${hunian.penghuni_saat_ini})`;
+        }
+
+        // Combine and sort all bills
+        const allBills = sortTagihanByPeriode([
+            ...ipl.map(bill => ({
+                type: 'IPL',
+                periode: bill.periode?.nama_periode || 'Unknown',
+                nominal_tagihan: bill.nominal_tagihan,
+                sisa_tagihan: bill.sisa_tagihan,
+                status: bill.status,
+                tanggal_tagihan: bill.tanggal_tagihan,
+                penghuni_nama: bill.penghuni?.nama_kepala_keluarga || 'Kosong',
+                pembayaran: bill.pembayaran || []
+            })),
+            ...air.map(bill => ({
+                type: 'Air',
+                periode: bill.periode?.nama_periode || 'Unknown',
+                nominal_tagihan: bill.nominal_tagihan,
+                sisa_tagihan: bill.sisa_tagihan,
+                status: bill.status,
+                tanggal_tagihan: bill.tanggal_tagihan,
+                penghuni_nama: bill.penghuni?.nama_kepala_keluarga || 'Kosong',
+                pembayaran: bill.pembayaran || []
+            }))
+        ]);
+
+        // Calculate totals
+        const totalOutstanding = allBills.reduce((sum, bill) => sum + (bill.sisa_tagihan || 0), 0);
+        const totalBills = allBills.length;
+        const paidBills = allBills.filter(b => b.status === 'lunas').length;
+        const unpaidBills = allBills.filter(b => b.status !== 'lunas').length;
+
+        // Render modal content
+        modalBody.innerHTML = `
+            <!-- Summary -->
+            <div class="row mb-3 g-2">
+                <div class="col-4">
+                    <div class="border rounded p-2 text-center">
+                        <strong>${formatCurrency(totalOutstanding)}</strong><br>
+                        <small class="text-muted">Outstanding</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded p-2 text-center">
+                        <strong>${totalBills}</strong><br>
+                        <small class="text-muted">Total Tagihan</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="border rounded p-2 text-center">
+                        <strong>${paidBills} / ${unpaidBills}</strong><br>
+                        <small class="text-muted">Lunas / Belum</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed list -->
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Type</th>
+                            <th>Periode</th>
+                            <th>Nominal</th>
+                            <th>Sisa</th>
+                            <th>Status</th>
+                            <th>Tanggal Bayar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allBills.map(bill => {
+                            const pembayaran = bill.pembayaran || [];
+                            const tanggalBayar = pembayaran.length > 0 ?
+                                new Date(pembayaran[0].tanggal_alokasi).toLocaleDateString('id-ID') : '-';
+                            const statusBadge = bill.status === 'lunas' ?
+                                '<span class="badge bg-success">Lunas</span>' :
+                                '<span class="badge bg-warning text-dark">Belum</span>';
+                            const typeColor = bill.type === 'IPL' ? 'text-primary' : 'text-info';
+                            
+                            return `
+                                <tr>
+                                    <td><small class="fw-bold ${typeColor}">${bill.type}</small></td>
+                                    <td><small>${bill.periode}</small></td>
+                                    <td><small>${formatCurrency(bill.nominal_tagihan)}</small></td>
+                                    <td><small class="${bill.sisa_tagihan > 0 ? 'text-danger' : ''}">${formatCurrency(bill.sisa_tagihan)}</small></td>
+                                    <td>${statusBadge}</td>
+                                    <td><small>${tanggalBayar}</small></td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+                            </div>
+        `;
+
+    } catch (error) {
+        console.error('Error loading detailed modal:', error);
+        modalBody.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> Gagal memuat data tagihan.
+                <br><small>${error.message}</small>
+            </div>
+        `;
+    }
+}
+
 export {
     loadViewHunianAdministrasi,
     refreshViewHunianAdministrasi,
     changeHunianAdminPage,
-    resetHunianAdminFilters
+    resetHunianAdminFilters,
+    showDetailedModal
 };
 
 // Backward compatibility
@@ -549,3 +870,4 @@ window.loadViewHunianAdministrasi = loadViewHunianAdministrasi;
 window.refreshViewHunianAdministrasi = refreshViewHunianAdministrasi;
 window.changeHunianAdminPage = changeHunianAdminPage;
 window.resetHunianAdminFilters = resetHunianAdminFilters;
+window.showDetailedModal = showDetailedModal;

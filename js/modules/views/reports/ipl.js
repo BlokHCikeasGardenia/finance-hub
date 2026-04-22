@@ -48,7 +48,7 @@ async function loadViewIPL() {
                 )
             `).order('nomor_urut'),
 
-            // Get ALL IPL bills
+// Get ALL IPL bills
             supabase.from('tagihan_ipl').select(`
                 id,
                 hunian_id,
@@ -62,18 +62,18 @@ async function loadViewIPL() {
                     tanggal_akhir,
                     nomor_urut
                 )
-            `),
+            `).range(0, 999999),
 
             // Get ALL IPL payments (from allocation table)
             supabase.from('tagihan_ipl_pembayaran').select(`
                 tagihan_ipl_id,
                 nominal_dialokasikan,
                 tanggal_alokasi,
-                pemasukan:pemasukan_id (
+                Pemasukan:pemasukan_id (
                     tanggal,
                     id_transaksi
                 )
-            `)
+            `).range(0, 999999)
         ]);
 
         // Extract results

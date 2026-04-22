@@ -61,19 +61,19 @@ async function loadViewAir() {
             // Pre-load all tariff data for caching
             loadTariffCache(),
 
-            // Get ALL meter data from consolidated billing table with payment info
+// Get ALL meter data from consolidated billing table with payment info
             supabase.from('meteran_air_billing').select(`
                 *,
                 periode:periode_id (nama_periode, tanggal_awal, nomor_urut),
                 meteran_air_billing_pembayaran (
                     nominal_dialokasikan,
                     tanggal_alokasi,
-                    pemasukan:pemasukan_id (
+                    Pemasukan:pemasukan_id (
                         tanggal,
                         keterangan
                     )
                 )
-            `),
+            `).range(0, 999999),
 
             // Get ALL payments for air category in one query (will filter by household later)
             supabase.from('kategori_saldo').select('id').eq('nama_kategori', 'Air').single()

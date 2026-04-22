@@ -94,7 +94,7 @@ async function loadViewPengeluaran(selectedYear = null) {
                 subkategori:subkategori_id (nama_subkategori),
                 penerima,
                 link_url
-            `);
+            `).range(0, 999999);
 
         // If specific periods are selected, filter by date range
         if (defaultYear !== 'all' && periods.length > 0) {

@@ -666,6 +666,18 @@ window.changePage = async (tableType, page) => {
                 }
                 break;
 
+            case 'lorong':
+                // Import and call lorong page change function
+                const { changeLorongPage } = await import('./entities/master/lorong.js');
+                changeLorongPage(page);
+                break;
+
+            case 'pemindahbukuan':
+                // Import and call pemindahbukuan page change function
+                const { changePemindahbukuanPage } = await import('./entities/transactions/pemindahbukuan-table.js');
+                changePemindahbukuanPage(page);
+                break;
+
             default:
                 console.warn(`Page change not implemented for table type: ${tableType}`);
                 const { showToast } = await import('./utils.js');

@@ -17,33 +17,32 @@ let meteranAirBillingData = [];
 let meteranAirBillingCurrentPage = 1;
 let meteranAirBillingItemsPerPage = 10;
 
-// Load meteran air billing data with filters
+// Load meteran air billing data with chunked loading to bypass 1000-record limit
 async function loadMeteranAirBilling(filters = {}) {
     try {
-        let query = supabase
-            .from('meteran_air_billing')
-            .select(`
+        // Use chunked loading for large datasets
+        const { loadDataInChunks } = await import('../../utils.js');
+
+        // First, load all data without client-side filters
+        const allData = await loadDataInChunks('meteran_air_billing', {
+            select: `
                 *,
                 periode:periode_id (nama_periode, tanggal_awal, tanggal_akhir, nomor_urut),
                 hunian:hunian_id (nomor_blok_rumah),
                 penghuni:penghuni_id (nama_kepala_keluarga)
-            `)
-            .order('tanggal_tagihan', { ascending: false });
+            `,
+            orderBy: 'tanggal_tagihan',
+            ascending: false,
+            onProgress: (loaded, complete) => {
+                if (!complete) {
+                    console.log(`Loading air billing data: ${loaded} records...`);
+                }
+            }
+        });
 
-        // Apply database filters
-        if (filters.status) query = query.eq('status', filters.status);
-        if (filters.hunian_id) query = query.eq('hunian_id', filters.hunian_id);
-        if (filters.periode_id) query = query.eq('periode_id', filters.periode_id);
-        if (filters.status_outstanding) {
-            query = query.in('status', ['belum_bayar', 'sebagian']);
-        }
-        if (filters.billing_type) query = query.eq('billing_type', filters.billing_type);
+        console.log(`Air Billing Data: ${allData.length} records loaded`);
 
-        const { data, error } = await query;
-
-        if (error) throw error;
-
-        let filteredData = data || [];
+        let filteredData = allData;
 
         // Apply client-side text filters
         if (filters.hunian_search) {

@@ -40,15 +40,16 @@ async function loadIplBillsManagement() {
     initializeIplBillsControls();
 }
 
-// Load IPL bills data
+// Load IPL bills data with chunked loading to bypass 1000-record limit
 async function loadIplBillsData() {
     try {
         showToast('Memuat data tagihan IPL...', 'info');
 
-        // First get the bill data with payment information
-        const { data, error } = await supabase
-            .from('tagihan_ipl')
-            .select(`
+        // Use the new chunked loading utility
+        const { loadDataInChunks } = await import('../../utils.js');
+
+        const allData = await loadDataInChunks('tagihan_ipl', {
+            select: `
                 *,
                 periode:periode_id (nama_periode, tanggal_awal, tanggal_akhir),
                 hunian:hunian_id (nomor_blok_rumah),
@@ -59,14 +60,20 @@ async function loadIplBillsData() {
                         tanggal
                     )
                 )
-            `)
-            .order('created_at', { ascending: false })
-            .range(0, 999999);
+            `,
+            orderBy: 'created_at',
+            ascending: false,
+            onProgress: (loaded, complete) => {
+                if (!complete) {
+                    showToast(`Memuat ${loaded} data IPL...`, 'info');
+                }
+            }
+        });
 
-        if (error) throw error;
+        console.log(`IPL Bills Query Result: ${allData.length} records fetched from database (chunked loading)`);
 
         // Process the data to include earliest payment date
-        iplBillsData = (data || []).map(bill => {
+        iplBillsData = allData.map(bill => {
             // Find the earliest payment date from allocations
             let earliestPaymentDate = null;
             if (bill.tagihan_ipl_pembayaran && bill.tagihan_ipl_pembayaran.length > 0) {
@@ -85,6 +92,8 @@ async function loadIplBillsData() {
                 tanggal_bayar: earliestPaymentDate ? earliestPaymentDate.toISOString().split('T')[0] : null
             };
         });
+
+        console.log(`IPL Bills Total Data: ${iplBillsData.length} records processed`);
 
         displayIplBillsTable();
 
@@ -115,6 +124,7 @@ async function loadPeriodeOptions() {
 // Display IPL bills table
 function displayIplBillsTable() {
     const dataToDisplay = iplBillsFilteredData || iplBillsData;
+    console.log(`Displaying IPL table: total=${dataToDisplay.length}, page=${iplBillsCurrentPage}, perPage=${iplBillsItemsPerPage}`);
     const { data: paginatedData } = paginateData(dataToDisplay, iplBillsCurrentPage, iplBillsItemsPerPage);
 
     const tableHtml = createIplBillsTableHtml(paginatedData);
@@ -412,7 +422,8 @@ function attachIplBillsSortListeners() {
                 // Reset sorting
                 iplBillsSortBy = '';
                 iplBillsSortOrder = 'asc';
-                displayIplBillsTable();
+        console.log(`IPL Bills Total Data: ${iplBillsData.length} records`);
+        displayIplBillsTable();
             } else {
                 // Apply sorting
                 e.currentTarget.dataset.sort = newSort;

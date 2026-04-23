@@ -194,6 +194,95 @@ function formatDateTime(date, locale = 'id-ID') {
     }
 }
 
+// Chunked data loading utility to bypass Supabase 1000-record limit
+async function loadDataInChunks(tableName, options = {}) {
+    const {
+        select = '*',
+        orderBy = 'created_at',
+        ascending = false,
+        filters = {},
+        chunkSize = 1000,
+        maxRecords = null, // null = load all
+        onProgress = null // callback function for progress updates
+    } = options;
+
+    let allData = [];
+    let hasMoreData = true;
+    let offset = 0;
+    let totalLoaded = 0;
+
+    console.log(`🔄 Starting chunked loading for ${tableName}`);
+
+    while (hasMoreData) {
+        // Build query for this chunk
+        let query = supabase
+            .from(tableName)
+            .select(select)
+            .order(orderBy, { ascending })
+            .range(offset, offset + chunkSize - 1);
+
+        // Apply filters
+        if (filters) {
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== null && value !== undefined && value !== '') {
+                    if (Array.isArray(value)) {
+                        query = query.in(key, value);
+                    } else {
+                        query = query.eq(key, value);
+                    }
+                }
+            });
+        }
+
+        console.log(`📦 Loading chunk: offset ${offset}, limit ${chunkSize}`);
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error(`❌ Error loading chunk at offset ${offset}:`, error);
+            throw error;
+        }
+
+        if (data && data.length > 0) {
+            allData = allData.concat(data);
+            totalLoaded += data.length;
+            offset += chunkSize;
+
+            console.log(`✅ Loaded chunk: ${data.length} records, total: ${totalLoaded}`);
+
+            // Call progress callback if provided
+            if (onProgress) {
+                onProgress(totalLoaded, false);
+            }
+
+            // If we got less than chunkSize, this is the last chunk
+            if (data.length < chunkSize) {
+                hasMoreData = false;
+                console.log(`🏁 Reached end of data (last chunk: ${data.length} records)`);
+            }
+
+            // Safety check - stop if we've hit maxRecords
+            if (maxRecords && totalLoaded >= maxRecords) {
+                hasMoreData = false;
+                console.log(`🛑 Reached maxRecords limit (${maxRecords})`);
+                // Trim to exact limit
+                allData = allData.slice(0, maxRecords);
+            }
+        } else {
+            hasMoreData = false;
+            console.log(`🏁 No more data available`);
+        }
+    }
+
+    // Call final progress callback
+    if (onProgress) {
+        onProgress(totalLoaded, true);
+    }
+
+    console.log(`🎉 Chunked loading complete: ${totalLoaded} total records loaded for ${tableName}`);
+    return allData;
+}
+
 // Object utilities
 function deepClone(obj) {
     if (obj === null || typeof obj !== 'object') return obj;
@@ -204,7 +293,6 @@ function deepClone(obj) {
     Object.keys(obj).forEach(key => {
         cloned[key] = deepClone(obj[key]);
     });
-
     return cloned;
 }
 
@@ -231,5 +319,6 @@ export {
     formatDateTime,
     deepClone,
     generateUniqueId,
-    globalPeriodeCache
+    globalPeriodeCache,
+    loadDataInChunks
 };

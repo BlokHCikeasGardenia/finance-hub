@@ -48,38 +48,56 @@ async function loadViewIPL() {
                 )
             `).order('nomor_urut'),
 
-// Get ALL IPL bills
-            supabase.from('tagihan_ipl').select(`
-                id,
-                hunian_id,
-                nominal_tagihan,
-                sisa_tagihan,
-                status,
-                tanggal_tagihan,
-                periode:periode_id (
-                    nama_periode,
-                    tanggal_awal,
-                    tanggal_akhir,
-                    nomor_urut
-                )
-            `).range(0, 999999),
+            // Get ALL IPL bills using chunked loading
+            (async () => {
+                const { loadDataInChunks } = await import('../../utils.js');
+                return await loadDataInChunks('tagihan_ipl', {
+                    select: `
+                        id,
+                        hunian_id,
+                        nominal_tagihan,
+                        sisa_tagihan,
+                        status,
+                        tanggal_tagihan,
+                        periode:periode_id (
+                            nama_periode,
+                            tanggal_awal,
+                            tanggal_akhir,
+                            nomor_urut
+                        )
+                    `,
+                    onProgress: (loaded, complete) => {
+                        // Progress callback - can be used for loading indicators if needed
+                    }
+                });
+            })(),
 
-            // Get ALL IPL payments (from allocation table)
-            supabase.from('tagihan_ipl_pembayaran').select(`
-                tagihan_ipl_id,
-                nominal_dialokasikan,
-                tanggal_alokasi,
-                Pemasukan:pemasukan_id (
-                    tanggal,
-                    id_transaksi
-                )
-            `).range(0, 999999)
+            // Get ALL IPL payments using chunked loading
+            (async () => {
+                const { loadDataInChunks } = await import('../../utils.js');
+                return await loadDataInChunks('tagihan_ipl_pembayaran', {
+                    select: `
+                        tagihan_ipl_id,
+                        nominal_dialokasikan,
+                        tanggal_alokasi,
+                        Pemasukan:pemasukan_id (
+                            tanggal,
+                            id_transaksi
+                        )
+                    `,
+                    onProgress: (loaded, complete) => {
+                        if (!complete) {
+                            console.log(`Loading IPL payments: ${loaded} records...`);
+                        }
+                    }
+                });
+            })()
         ]);
 
         // Extract results
         const hunianData = hunianDataResult.data;
-        const allBills = allBillsResult.data || [];
-        const allPayments = allPaymentsResult.data || [];
+        const allBills = allBillsResult || []; // chunked loading returns array directly
+        const allPayments = allPaymentsResult || []; // chunked loading returns array directly
 
         // Create lookup maps for fast access
         const billsMap = new Map();
@@ -126,18 +144,47 @@ async function loadViewIPL() {
                     new Date(payment.tanggal_alokasi).toLocaleDateString('id-ID')
                 );
 
-                billingDetails[periodeName] = {
-                    nominal_tagihan: bill.nominal_tagihan,
-                    nominal_bayar: totalPaidForBill,
-                    sisa_tagihan: bill.sisa_tagihan,
-                    status: bill.status,
-                    tanggal_bayar: paymentDates.length > 0 ? paymentDates : null
-                };
+                // Accumulate bills per periode (in case there are multiple bills for same periode)
+                if (!billingDetails[periodeName]) {
+                    billingDetails[periodeName] = {
+                        nominal_tagihan: 0,
+                        nominal_bayar: 0,
+                        sisa_tagihan: 0,
+                        status: 'mixed', // Will be set to the most severe status
+                        tanggal_bayar: []
+                    };
+                }
+
+                // Add this bill's amounts to the periode total
+                billingDetails[periodeName].nominal_tagihan += bill.nominal_tagihan;
+                billingDetails[periodeName].nominal_bayar += totalPaidForBill;
+                billingDetails[periodeName].sisa_tagihan += bill.sisa_tagihan;
+
+                // Collect all payment dates
+                if (paymentDates.length > 0) {
+                    billingDetails[periodeName].tanggal_bayar.push(...paymentDates);
+                }
+
+                // Set status: if any bill is not lunas, mark as not fully paid
+                if (bill.status !== 'lunas') {
+                    billingDetails[periodeName].status = bill.status;
+                } else if (billingDetails[periodeName].status === 'mixed') {
+                    billingDetails[periodeName].status = 'lunas';
+                }
 
                 // Count bills with remaining balance (not fully paid)
                 if (bill.sisa_tagihan > 0) {
                     totalOutstanding += bill.sisa_tagihan;
                     outstandingBillsCount++;
+                }
+            });
+
+            // Clean up payment dates (remove duplicates and sort)
+            Object.values(billingDetails).forEach(detail => {
+                if (detail.tanggal_bayar.length > 0) {
+                    detail.tanggal_bayar = [...new Set(detail.tanggal_bayar)].sort();
+                } else {
+                    detail.tanggal_bayar = null;
                 }
             });
 

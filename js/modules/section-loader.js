@@ -7,6 +7,7 @@ import { isAuthenticated } from './auth.js';
 import { loadDashboard } from './dashboard.js';
 import { loadAdminSection } from './admin.js';
 import { loadAdminKonsistensiSaldo } from './admin/balance-consistency.js';
+import { loadMutasiRekening } from './admin/mutasi-rekening.js';
 
 // Import entity modules
 import { loadLorong, showAddLorongForm } from './entities/master/lorong.js';
@@ -719,6 +720,11 @@ async function loadSectionContent(sectionId) {
         case 'admin':
             contentDiv.innerHTML = '<p>Loading admin konsistensi saldo...</p>';
             await loadAdminKonsistensiSaldo();
+            break;
+
+        case 'mutasi_rekening':
+            contentDiv.innerHTML = '<p>Loading mutasi rekening...</p>';
+            await loadMutasiRekening();
             break;
 
         case 'laporan':

@@ -5378,6 +5378,8 @@
             const formHtml = createPemasukanFormHtml(pemasukan);
             showModal$1('Edit Pemasukan', formHtml);
 
+            isPopulating$1 = true; // Set populating flag to prevent auto-fill loops
+
             setTimeout(() => {
                 initializePemasukanFormSelects();
                 populatePemasukanFormValues(pemasukan);
@@ -5387,6 +5389,11 @@
                 if (typeof window.initializePemasukanSearchAndFilter === 'function') {
                     window.initializePemasukanSearchAndFilter();
                 }
+
+                // Reset isPopulating flag after values settle (populate has 500ms delay)
+                setTimeout(() => {
+                    isPopulating$1 = false;
+                }, 1000);
             }, 100);
 
         } catch (error) {
@@ -5487,6 +5494,7 @@
     // Initialize searchable selects in form with advanced features
     let penghuniSearchable$3, hunianSearchable$3, kategoriSearchable$1, rekeningSearchable$1;
     let periodeMultiSelect; // For multiple periode selection
+    let isPopulating$1 = false;
 
     async function initializePemasukanFormSelects() {
         try {
@@ -6144,6 +6152,7 @@
 
         // Auto-fill penghuni when hunian is selected
         hunianSearchable$3.selectElement.addEventListener('change', async function() {
+            if (isPopulating$1) return; // Skip during form populating to avoid loop
             const hunianId = hunianSearchable$3.getValue();
             if (!hunianId) return;
 
@@ -6152,7 +6161,7 @@
                 // Find the option in penghuni dropdown and select it
                 const options = penghuniSearchable$3.data;
                 const optionToSelect = options.find(opt => opt.value === penghuni.id.toString());
-                if (optionToSelect) {
+                if (optionToSelect && penghuniSearchable$3.getValue() !== optionToSelect.value) {
                     penghuniSearchable$3.setValue(optionToSelect.value);
                 }
             }
@@ -6160,6 +6169,7 @@
 
         // Auto-fill hunian when penghuni is selected
         penghuniSearchable$3.selectElement.addEventListener('change', async function() {
+            if (isPopulating$1) return; // Skip during form populating to avoid loop
             const penghuniId = penghuniSearchable$3.getValue();
             if (!penghuniId) return;
 
@@ -6168,7 +6178,7 @@
                 // Find the option in hunian dropdown and select it
                 const options = hunianSearchable$3.data;
                 const optionToSelect = options.find(opt => opt.value === hunian.id.toString());
-                if (optionToSelect) {
+                if (optionToSelect && hunianSearchable$3.getValue() !== optionToSelect.value) {
                     hunianSearchable$3.setValue(optionToSelect.value);
                 }
             }
@@ -11028,10 +11038,17 @@
             const formHtml = createDanaTitipanFormHtml(danaTitipan);
             showModal$1('Edit Dana Titipan', formHtml);
 
+            isPopulating = true; // Set populating flag to prevent auto-fill loops
+
             setTimeout(() => {
                 initializeDanaTitipanFormSelects();
                 populateDanaTitipanFormValues(danaTitipan);
                 attachDanaTitipanFormEventListeners(true, danaTitipan.id);
+
+                // Reset isPopulating flag after values settle (populate has 500ms delay)
+                setTimeout(() => {
+                    isPopulating = false;
+                }, 1000);
             }, 100);
 
         } catch (error) {
@@ -11143,6 +11160,7 @@
 
     // Initialize searchable selects in form with smart auto-fill
     let penghuniSearchable$2, hunianSearchable$2, kategoriSearchable, rekeningSearchable, periodeSearchable$1;
+    let isPopulating = false;
     async function initializeDanaTitipanFormSelects() {
         try {
             // Load and initialize SearchableSelect for rekening
@@ -11310,6 +11328,7 @@
 
         // Auto-fill penghuni when hunian is selected
         hunianSearchable$2.selectElement.addEventListener('change', async function() {
+            if (isPopulating) return; // Skip during form populating to avoid loop
             const hunianId = hunianSearchable$2.getValue();
             if (!hunianId) return;
 
@@ -11318,7 +11337,7 @@
                 // Find the option in penghuni dropdown and select it
                 const options = penghuniSearchable$2.data;
                 const optionToSelect = options.find(opt => opt.value === penghuni.id.toString());
-                if (optionToSelect) {
+                if (optionToSelect && penghuniSearchable$2.getValue() !== optionToSelect.value) {
                     penghuniSearchable$2.setValue(optionToSelect.value);
                 }
             }
@@ -11326,6 +11345,7 @@
 
         // Auto-fill hunian when penghuni is selected
         penghuniSearchable$2.selectElement.addEventListener('change', async function() {
+            if (isPopulating) return; // Skip during form populating to avoid loop
             const penghuniId = penghuniSearchable$2.getValue();
             if (!penghuniId) return;
 
@@ -11334,7 +11354,7 @@
                 // Find the option in hunian dropdown and select it
                 const options = hunianSearchable$2.data;
                 const optionToSelect = options.find(opt => opt.value === hunian.id.toString());
-                if (optionToSelect) {
+                if (optionToSelect && hunianSearchable$2.getValue() !== optionToSelect.value) {
                     hunianSearchable$2.setValue(optionToSelect.value);
                 }
             }

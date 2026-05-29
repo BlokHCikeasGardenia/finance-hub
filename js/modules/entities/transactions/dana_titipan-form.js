@@ -49,10 +49,17 @@ async function showEditDanaTitipanForm(id) {
         const formHtml = createDanaTitipanFormHtml(danaTitipan);
         showModal('Edit Dana Titipan', formHtml);
 
+        isPopulating = true; // Set populating flag to prevent auto-fill loops
+
         setTimeout(() => {
             initializeDanaTitipanFormSelects();
             populateDanaTitipanFormValues(danaTitipan);
             attachDanaTitipanFormEventListeners(true, danaTitipan.id);
+
+            // Reset isPopulating flag after values settle (populate has 500ms delay)
+            setTimeout(() => {
+                isPopulating = false;
+            }, 1000);
         }, 100);
 
     } catch (error) {
@@ -164,6 +171,7 @@ function updateFormCategories(categories, selectedValue = '') {
 
 // Initialize searchable selects in form with smart auto-fill
 let penghuniSearchable, hunianSearchable, kategoriSearchable, rekeningSearchable, periodeSearchable;
+let isPopulating = false;
 async function initializeDanaTitipanFormSelects() {
     try {
         // Load and initialize SearchableSelect for rekening
@@ -331,6 +339,7 @@ function setupSmartAutoFill() {
 
     // Auto-fill penghuni when hunian is selected
     hunianSearchable.selectElement.addEventListener('change', async function() {
+        if (isPopulating) return; // Skip during form populating to avoid loop
         const hunianId = hunianSearchable.getValue();
         if (!hunianId) return;
 
@@ -339,7 +348,7 @@ function setupSmartAutoFill() {
             // Find the option in penghuni dropdown and select it
             const options = penghuniSearchable.data;
             const optionToSelect = options.find(opt => opt.value === penghuni.id.toString());
-            if (optionToSelect) {
+            if (optionToSelect && penghuniSearchable.getValue() !== optionToSelect.value) {
                 penghuniSearchable.setValue(optionToSelect.value);
             }
         }
@@ -347,6 +356,7 @@ function setupSmartAutoFill() {
 
     // Auto-fill hunian when penghuni is selected
     penghuniSearchable.selectElement.addEventListener('change', async function() {
+        if (isPopulating) return; // Skip during form populating to avoid loop
         const penghuniId = penghuniSearchable.getValue();
         if (!penghuniId) return;
 
@@ -355,7 +365,7 @@ function setupSmartAutoFill() {
             // Find the option in hunian dropdown and select it
             const options = hunianSearchable.data;
             const optionToSelect = options.find(opt => opt.value === hunian.id.toString());
-            if (optionToSelect) {
+            if (optionToSelect && hunianSearchable.getValue() !== optionToSelect.value) {
                 hunianSearchable.setValue(optionToSelect.value);
             }
         }

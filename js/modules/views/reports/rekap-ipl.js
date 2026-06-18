@@ -202,8 +202,16 @@ async function loadViewRekapIPL(selectedYear = null) {
                                         <td class="text-center"><span class="badge bg-primary">${item.jumlah_warga_bayar}</span></td>
                                         <td class="text-center"><span class="badge bg-secondary">${item.jumlah_periode_dibayar}</span></td>
                                         <td class="text-end text-info fw-bold">${formatCurrency(item.dau_terkumpul)}</td>
-                                        <td class="text-center"><span class="badge bg-success">${item.warga_lunas_ipl}</span></td>
-                                        <td class="text-center"><span class="badge bg-warning">${item.warga_belum_lunas_ipl}</span></td>
+                                        <td class="text-center">
+                                            ${item.warga_lunas_ipl > 0 ?
+                                                `<button class="btn btn-link text-decoration-none p-0" onclick="showRekapIplWargaDetails(${index}, 'lunas')"><span class="badge bg-success">${item.warga_lunas_ipl}</span></button>` :
+                                                `<span class="badge bg-success">${item.warga_lunas_ipl}</span>`}
+                                        </td>
+                                        <td class="text-center">
+                                            ${item.warga_belum_lunas_ipl > 0 ?
+                                                `<button class="btn btn-link text-decoration-none p-0" onclick="showRekapIplWargaDetails(${index}, 'belum_lunas')"><span class="badge bg-warning">${item.warga_belum_lunas_ipl}</span></button>` :
+                                                `<span class="badge bg-warning">${item.warga_belum_lunas_ipl}</span>`}
+                                        </td>
                                         <td class="text-center"><span class="badge bg-dark">${item.total_warga}</span></td>
                                         <td class="text-center"><span class="badge bg-light text-dark">${item.rumah_kosong}</span></td>
                                     </tr>
@@ -309,6 +317,7 @@ async function calculatePeriodData(period) {
 
         return {
             periode: period.nama_periode,
+            period_id: period.id,
             pemasukan: pemasukan.total,
             pengeluaran: pengeluaran.total,
             selisih_kas,
@@ -327,6 +336,7 @@ async function calculatePeriodData(period) {
         console.error('Error calculating period data:', error);
         return {
             periode: period.nama_periode,
+            period_id: period.id,
             pemasukan: 0,
             pengeluaran: 0,
             selisih_kas: 0,
@@ -724,8 +734,135 @@ function showRekapIplPengeluaranDetails(periodIndex) {
     modal.show();
 }
 
+// Show Rekap IPL Warga Details (Lunas or Belum Lunas)
+async function showRekapIplWargaDetails(periodIndex, statusType) {
+    const periodData = rekapIplDataGlobal[periodIndex];
+    if (!periodData) {
+        showToast('Data periode tidak ditemukan', 'danger');
+        return;
+    }
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('rekapIplWargaDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Show loading modal
+    const titleText = statusType === 'lunas' ? 'Lunas IPL' : 'Belum Lunas IPL';
+    const loadingHtml = `
+        <div class="modal fade" id="rekapIplWargaDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-${statusType === 'lunas' ? 'success text-white' : 'warning text-dark'}">
+                        <h5 class="modal-title">Daftar Hunian ${titleText} - ${periodData.periode}</h5>
+                        <button type="button" class="btn-close ${statusType === 'lunas' ? 'btn-close-white' : ''}" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center py-5">
+                        <div class="spinner-border text-${statusType === 'lunas' ? 'success' : 'warning'}" role="status"></div>
+                        <p class="mt-2 text-muted">Memuat data hunian...</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', loadingHtml);
+    const modal = new bootstrap.Modal(document.getElementById('rekapIplWargaDetailsModal'));
+    modal.show();
+
+    try {
+        const { data, error } = await supabase
+            .from('tagihan_ipl')
+            .select(`
+                id,
+                status,
+                nominal_tagihan,
+                sisa_tagihan,
+                total_pembayaran,
+                keterangan,
+                hunian:hunian_id (
+                    nomor_blok_rumah,
+                    status,
+                    penghuni_saat_ini:penghuni_saat_ini_id (
+                        nama_kepala_keluarga
+                    )
+                )
+            `)
+            .eq('periode_id', periodData.period_id);
+
+        if (error) throw error;
+
+        // Filter and ignore rumah kosong (nominal_tagihan === 30000)
+        const filteredData = statusType === 'lunas'
+            ? data.filter(item => item.status === 'lunas' && item.nominal_tagihan !== 30000)
+            : data.filter(item => item.status !== 'lunas' && item.nominal_tagihan !== 30000);
+
+        // Sort by block number
+        filteredData.sort((a, b) => {
+            const blockA = a.hunian?.nomor_blok_rumah || '';
+            const blockB = b.hunian?.nomor_blok_rumah || '';
+            return blockA.localeCompare(blockB, undefined, { numeric: true, sensitivity: 'base' });
+        });
+
+        // Update modal body
+        const modalBody = document.querySelector('#rekapIplWargaDetailsModal .modal-body');
+        if (modalBody) {
+            if (filteredData.length === 0) {
+                modalBody.innerHTML = `<p class="text-center text-muted my-3">Tidak ada data hunian untuk kategori ini.</p>`;
+            } else {
+                modalBody.className = "modal-body p-0"; // Remove padding for clean table layout
+                modalBody.innerHTML = `
+                    <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                        <table class="table table-sm table-striped table-hover mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th class="px-3">No</th>
+                                    <th>Blok Rumah</th>
+                                    <th>Nama Kepala Keluarga</th>
+                                    <th>Status Rumah</th>
+                                    <th class="text-end">Tagihan</th>
+                                    <th class="text-end">Terbayar</th>
+                                    <th class="px-3">Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filteredData.map((item, idx) => `
+                                    <tr>
+                                        <td class="px-3">${idx + 1}</td>
+                                        <td class="fw-bold text-primary">${item.hunian?.nomor_blok_rumah || '-'}</td>
+                                        <td>${item.hunian?.penghuni_saat_ini?.nama_kepala_keluarga || '<span class="text-muted italic">Tidak berpenghuni</span>'}</td>
+                                        <td>
+                                            <span class="badge bg-${item.hunian?.status === 'berpenghuni' ? 'info text-dark' : 'secondary'}">
+                                                ${item.hunian?.status || '-'}
+                                            </span>
+                                        </td>
+                                        <td class="text-end fw-bold">${formatCurrency(item.nominal_tagihan)}</td>
+                                        <td class="text-end text-success fw-bold">${formatCurrency(item.total_pembayaran || 0)}</td>
+                                        <td class="px-3"><small class="text-muted">${item.keterangan || '-'}</small></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        }
+    } catch (err) {
+        console.error('Error fetching resident detail list:', err);
+        const modalBody = document.querySelector('#rekapIplWargaDetailsModal .modal-body');
+        if (modalBody) {
+            modalBody.innerHTML = `<div class="alert alert-danger m-3" role="alert">Error memuat data: ${err.message || err}</div>`;
+        }
+    }
+}
+
 // Backward compatibility for global window functions
 window.loadViewRekapIPL = loadViewRekapIPL;
 window.refreshViewRekapIPL = refreshViewRekapIPL;
 window.showRekapIplPemasukanDetails = showRekapIplPemasukanDetails;
 window.showRekapIplPengeluaranDetails = showRekapIplPengeluaranDetails;
+window.showRekapIplWargaDetails = showRekapIplWargaDetails;

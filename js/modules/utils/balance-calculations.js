@@ -2,6 +2,7 @@
 // Shared functions for calculating balances across categories and accounts
 
 import { supabase } from '../config.js';
+import { loadDataInChunks } from '../utils.js';
 
 async function calculateTotalSaldo() {
     try {
@@ -21,17 +22,17 @@ async function calculateTotalSaldo() {
 
         const rekeningIds = rekeningData.map(r => r.id);
 
-        // Fetch all data in parallel using batch queries (WHERE IN clause)
+        // Fetch all data in parallel using chunked loading to bypass 1000-record limit
         const [
-            { data: pemasukanData },
-            { data: pengeluaranData },
-            { data: transferMasukData },
-            { data: transferKeluarData }
+            pemasukanData,
+            pengeluaranData,
+            transferMasukData,
+            transferKeluarData
         ] = await Promise.all([
-            supabase.from('pemasukan').select('rekening_id, nominal').in('rekening_id', rekeningIds),
-            supabase.from('pengeluaran').select('rekening_id, nominal').in('rekening_id', rekeningIds),
-            supabase.from('pemindahbukuan').select('rekening_ke_id, nominal').in('rekening_ke_id', rekeningIds),
-            supabase.from('pemindahbukuan').select('rekening_dari_id, nominal').in('rekening_dari_id', rekeningIds)
+            loadDataInChunks('pemasukan', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+            loadDataInChunks('pengeluaran', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+            loadDataInChunks('pemindahbukuan', { select: 'rekening_ke_id, nominal', orderBy: 'id', filters: { rekening_ke_id: rekeningIds } }),
+            loadDataInChunks('pemindahbukuan', { select: 'rekening_dari_id, nominal', orderBy: 'id', filters: { rekening_dari_id: rekeningIds } })
         ]);
 
         // Group data by rekening_id for efficient lookup
@@ -104,13 +105,13 @@ async function calculateDetailedKategoriSaldo() {
 
         const kategoriIds = kategoriData.map(k => k.id);
 
-        // Fetch all data in parallel using batch queries (WHERE IN clause)
+        // Fetch all data in parallel using chunked loading to bypass 1000-record limit
         const [
-            { data: pemasukanData },
-            { data: pengeluaranData }
+            pemasukanData,
+            pengeluaranData
         ] = await Promise.all([
-            supabase.from('pemasukan').select('kategori_id, nominal').in('kategori_id', kategoriIds),
-            supabase.from('pengeluaran').select('kategori_id, nominal').in('kategori_id', kategoriIds)
+            loadDataInChunks('pemasukan', { select: 'kategori_id, nominal', orderBy: 'id', filters: { kategori_id: kategoriIds } }),
+            loadDataInChunks('pengeluaran', { select: 'kategori_id, nominal', orderBy: 'id', filters: { kategori_id: kategoriIds } })
         ]);
 
         // Group data by kategori_id for efficient lookup
@@ -167,19 +168,19 @@ async function calculateDetailedRekeningSaldo() {
 
         const rekeningIds = rekeningData.map(r => r.id);
 
-        // Fetch all data in parallel using batch queries (WHERE IN clause)
+        // Fetch all data in parallel using chunked loading to bypass 1000-record limit
         const [
-            { data: pemasukanData },
-            { data: pengeluaranData },
-            { data: transferMasukData },
-            { data: transferKeluarData },
-            { data: danaTitipanData }
+            pemasukanData,
+            pengeluaranData,
+            transferMasukData,
+            transferKeluarData,
+            danaTitipanData
         ] = await Promise.all([
-            supabase.from('pemasukan').select('rekening_id, nominal').in('rekening_id', rekeningIds),
-            supabase.from('pengeluaran').select('rekening_id, nominal').in('rekening_id', rekeningIds),
-            supabase.from('pemindahbukuan').select('rekening_ke_id, nominal').in('rekening_ke_id', rekeningIds),
-            supabase.from('pemindahbukuan').select('rekening_dari_id, nominal').in('rekening_dari_id', rekeningIds),
-            supabase.from('dana_titipan').select('rekening_id, nominal').in('rekening_id', rekeningIds)
+            loadDataInChunks('pemasukan', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+            loadDataInChunks('pengeluaran', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+            loadDataInChunks('pemindahbukuan', { select: 'rekening_ke_id, nominal', orderBy: 'id', filters: { rekening_ke_id: rekeningIds } }),
+            loadDataInChunks('pemindahbukuan', { select: 'rekening_dari_id, nominal', orderBy: 'id', filters: { rekening_dari_id: rekeningIds } }),
+            loadDataInChunks('dana_titipan', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } })
         ]);
 
         // Group data by rekening_id for efficient lookup

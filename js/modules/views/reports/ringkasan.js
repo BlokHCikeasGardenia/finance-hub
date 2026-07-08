@@ -116,6 +116,7 @@ async function loadViewRingkasan(selectedYear = null) {
                 const { data: pemasukanData, error: pemasukanError } = await supabase
                     .from('pemasukan')
                     .select('nominal')
+                    .range(0, 999999)
                     .eq('kategori_id', kategori.id);
 
                 if (pemasukanError) {
@@ -128,6 +129,7 @@ async function loadViewRingkasan(selectedYear = null) {
                 const { data: pengeluaranData, error: pengeluaranError } = await supabase
                     .from('pengeluaran')
                     .select('nominal')
+                    .range(0, 999999)
                     .eq('kategori_id', kategori.id);
 
                 if (pengeluaranError) {
@@ -172,6 +174,7 @@ async function loadViewRingkasan(selectedYear = null) {
                     const { data: pemasukanUntilPrevious, error: pemasukanPrevError } = await supabase
                         .from('pemasukan')
                         .select('nominal')
+                        .range(0, 999999)
                         .eq('kategori_id', kategori.id)
                         .gte('tanggal', earliestDate)
                         .lte('tanggal', latestDate);
@@ -186,6 +189,7 @@ async function loadViewRingkasan(selectedYear = null) {
                     const { data: pengeluaranUntilPrevious, error: pengeluaranPrevError } = await supabase
                         .from('pengeluaran')
                         .select('nominal')
+                        .range(0, 999999)
                         .eq('kategori_id', kategori.id)
                         .gte('tanggal', earliestDate)
                         .lte('tanggal', latestDate);
@@ -212,9 +216,10 @@ async function loadViewRingkasan(selectedYear = null) {
                     const yearStartDate = sortedPeriods[0].tanggal_awal;
                     const yearEndDate = sortedPeriods[sortedPeriods.length - 1].tanggal_akhir;
 
-                    const { data: pemasukanYearData, error: pemasukanYearError } = await supabase
+                     const { data: pemasukanYearData, error: pemasukanYearError } = await supabase
                         .from('pemasukan')
                         .select('nominal')
+                        .range(0, 999999)
                         .eq('kategori_id', kategori.id)
                         .gte('tanggal', yearStartDate)
                         .lte('tanggal', yearEndDate);
@@ -226,9 +231,10 @@ async function loadViewRingkasan(selectedYear = null) {
 
                     totalPemasukan = pemasukanYearData.reduce((sum, item) => sum + (item.nominal || 0), 0);
 
-                    const { data: pengeluaranYearData, error: pengeluaranYearError } = await supabase
+                     const { data: pengeluaranYearData, error: pengeluaranYearError } = await supabase
                         .from('pengeluaran')
                         .select('nominal')
+                        .range(0, 999999)
                         .eq('kategori_id', kategori.id)
                         .gte('tanggal', yearStartDate)
                         .lte('tanggal', yearEndDate);

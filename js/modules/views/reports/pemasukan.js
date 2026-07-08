@@ -2,7 +2,7 @@
 // All income transaction reports across categories with search, sort, pagination
 
 import { supabase } from '../../config.js';
-import { showToast, formatCurrency, renderPagination, debounce, globalPeriodeCache } from '../../utils.js';
+import { showToast, formatCurrency, renderPagination, debounce, globalPeriodeCache, loadDataInChunks } from '../../utils.js';
 
 // Global states for Pemasukan view
 let pemasukanViewDataGlobal = [];
@@ -222,20 +222,6 @@ async function loadViewPemasukan(selectedYear = null) {
         let transactions = [];
 
         // Get all pemasukan transactions within the selected periods
-        let pemasukanQuery = supabase
-            .from('pemasukan')
-            .select(`
-                id,
-                id_transaksi,
-                tanggal,
-                nominal,
-                penghuni:penghuni_id (nama_kepala_keluarga),
-                rekening:rekening_id (jenis_rekening),
-                kategori:kategori_id (nama_kategori),
-                keterangan
-            `).range(0, 999999);
-
-        // If specific periods are selected, filter by date range
         if (defaultYear !== 'all' && periods.length > 0) {
             // Create date ranges from selected periods
             const dateRanges = periods.map(p => ({
@@ -243,13 +229,21 @@ async function loadViewPemasukan(selectedYear = null) {
                 end: p.tanggal_akhir
             }));
 
-            // For multiple periods, we need to use OR logic
-            // Supabase doesn't support complex OR in single query easily, so we'll filter client-side for now
-            const { data: allPemasukanData, error: allPemasukanError } = await pemasukanQuery;
+            const allPemasukanData = await loadDataInChunks('pemasukan', {
+                select: `
+                    id,
+                    id_transaksi,
+                    tanggal,
+                    nominal,
+                    penghuni:penghuni_id (nama_kepala_keluarga),
+                    rekening:rekening_id (jenis_rekening),
+                    kategori:kategori_id (nama_kategori),
+                    keterangan
+                `,
+                orderBy: 'tanggal',
+                ascending: false
+            });
 
-            if (allPemasukanError) throw allPemasukanError;
-
-            // Filter transactions that fall within any of the selected period ranges
             const filteredTransactions = (allPemasukanData || []).filter(transaction => {
                 const transactionDate = new Date(transaction.tanggal);
                 return dateRanges.some(range => {
@@ -261,10 +255,20 @@ async function loadViewPemasukan(selectedYear = null) {
 
             transactions = filteredTransactions.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
         } else {
-            // Get all transactions if "all" is selected
-            const { data: pemasukanData, error: pemasukanError } = await pemasukanQuery.order('tanggal', { ascending: false });
-            if (pemasukanError) throw pemasukanError;
-            transactions = pemasukanData || [];
+            transactions = await loadDataInChunks('pemasukan', {
+                select: `
+                    id,
+                    id_transaksi,
+                    tanggal,
+                    nominal,
+                    penghuni:penghuni_id (nama_kepala_keluarga),
+                    rekening:rekening_id (jenis_rekening),
+                    kategori:kategori_id (nama_kategori),
+                    keterangan
+                `,
+                orderBy: 'tanggal',
+                ascending: false
+            });
         }
 
         // Store data globally for search/filter operations

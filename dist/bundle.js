@@ -7315,17 +7315,17 @@
 
             const rekeningIds = rekeningData.map(r => r.id);
 
-            // Fetch all data in parallel using batch queries (WHERE IN clause)
+            // Fetch all data in parallel using chunked loading to bypass 1000-record limit
             const [
-                { data: pemasukanData },
-                { data: pengeluaranData },
-                { data: transferMasukData },
-                { data: transferKeluarData }
+                pemasukanData,
+                pengeluaranData,
+                transferMasukData,
+                transferKeluarData
             ] = await Promise.all([
-                supabase$1.from('pemasukan').select('rekening_id, nominal').in('rekening_id', rekeningIds),
-                supabase$1.from('pengeluaran').select('rekening_id, nominal').in('rekening_id', rekeningIds),
-                supabase$1.from('pemindahbukuan').select('rekening_ke_id, nominal').in('rekening_ke_id', rekeningIds),
-                supabase$1.from('pemindahbukuan').select('rekening_dari_id, nominal').in('rekening_dari_id', rekeningIds)
+                loadDataInChunks('pemasukan', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+                loadDataInChunks('pengeluaran', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+                loadDataInChunks('pemindahbukuan', { select: 'rekening_ke_id, nominal', orderBy: 'id', filters: { rekening_ke_id: rekeningIds } }),
+                loadDataInChunks('pemindahbukuan', { select: 'rekening_dari_id, nominal', orderBy: 'id', filters: { rekening_dari_id: rekeningIds } })
             ]);
 
             // Group data by rekening_id for efficient lookup
@@ -7398,13 +7398,13 @@
 
             const kategoriIds = kategoriData.map(k => k.id);
 
-            // Fetch all data in parallel using batch queries (WHERE IN clause)
+            // Fetch all data in parallel using chunked loading to bypass 1000-record limit
             const [
-                { data: pemasukanData },
-                { data: pengeluaranData }
+                pemasukanData,
+                pengeluaranData
             ] = await Promise.all([
-                supabase$1.from('pemasukan').select('kategori_id, nominal').in('kategori_id', kategoriIds),
-                supabase$1.from('pengeluaran').select('kategori_id, nominal').in('kategori_id', kategoriIds)
+                loadDataInChunks('pemasukan', { select: 'kategori_id, nominal', orderBy: 'id', filters: { kategori_id: kategoriIds } }),
+                loadDataInChunks('pengeluaran', { select: 'kategori_id, nominal', orderBy: 'id', filters: { kategori_id: kategoriIds } })
             ]);
 
             // Group data by kategori_id for efficient lookup
@@ -7461,19 +7461,19 @@
 
             const rekeningIds = rekeningData.map(r => r.id);
 
-            // Fetch all data in parallel using batch queries (WHERE IN clause)
+            // Fetch all data in parallel using chunked loading to bypass 1000-record limit
             const [
-                { data: pemasukanData },
-                { data: pengeluaranData },
-                { data: transferMasukData },
-                { data: transferKeluarData },
-                { data: danaTitipanData }
+                pemasukanData,
+                pengeluaranData,
+                transferMasukData,
+                transferKeluarData,
+                danaTitipanData
             ] = await Promise.all([
-                supabase$1.from('pemasukan').select('rekening_id, nominal').in('rekening_id', rekeningIds),
-                supabase$1.from('pengeluaran').select('rekening_id, nominal').in('rekening_id', rekeningIds),
-                supabase$1.from('pemindahbukuan').select('rekening_ke_id, nominal').in('rekening_ke_id', rekeningIds),
-                supabase$1.from('pemindahbukuan').select('rekening_dari_id, nominal').in('rekening_dari_id', rekeningIds),
-                supabase$1.from('dana_titipan').select('rekening_id, nominal').in('rekening_id', rekeningIds)
+                loadDataInChunks('pemasukan', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+                loadDataInChunks('pengeluaran', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+                loadDataInChunks('pemindahbukuan', { select: 'rekening_ke_id, nominal', orderBy: 'id', filters: { rekening_ke_id: rekeningIds } }),
+                loadDataInChunks('pemindahbukuan', { select: 'rekening_dari_id, nominal', orderBy: 'id', filters: { rekening_dari_id: rekeningIds } }),
+                loadDataInChunks('dana_titipan', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } })
             ]);
 
             // Group data by rekening_id for efficient lookup
@@ -19654,20 +19654,6 @@
             let transactions = [];
 
             // Get all pemasukan transactions within the selected periods
-            let pemasukanQuery = supabase$1
-                .from('pemasukan')
-                .select(`
-                id,
-                id_transaksi,
-                tanggal,
-                nominal,
-                penghuni:penghuni_id (nama_kepala_keluarga),
-                rekening:rekening_id (jenis_rekening),
-                kategori:kategori_id (nama_kategori),
-                keterangan
-            `).range(0, 999999);
-
-            // If specific periods are selected, filter by date range
             if (defaultYear !== 'all' && periods.length > 0) {
                 // Create date ranges from selected periods
                 const dateRanges = periods.map(p => ({
@@ -19675,13 +19661,21 @@
                     end: p.tanggal_akhir
                 }));
 
-                // For multiple periods, we need to use OR logic
-                // Supabase doesn't support complex OR in single query easily, so we'll filter client-side for now
-                const { data: allPemasukanData, error: allPemasukanError } = await pemasukanQuery;
+                const allPemasukanData = await loadDataInChunks('pemasukan', {
+                    select: `
+                    id,
+                    id_transaksi,
+                    tanggal,
+                    nominal,
+                    penghuni:penghuni_id (nama_kepala_keluarga),
+                    rekening:rekening_id (jenis_rekening),
+                    kategori:kategori_id (nama_kategori),
+                    keterangan
+                `,
+                    orderBy: 'tanggal',
+                    ascending: false
+                });
 
-                if (allPemasukanError) throw allPemasukanError;
-
-                // Filter transactions that fall within any of the selected period ranges
                 const filteredTransactions = (allPemasukanData || []).filter(transaction => {
                     const transactionDate = new Date(transaction.tanggal);
                     return dateRanges.some(range => {
@@ -19693,10 +19687,20 @@
 
                 transactions = filteredTransactions.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
             } else {
-                // Get all transactions if "all" is selected
-                const { data: pemasukanData, error: pemasukanError } = await pemasukanQuery.order('tanggal', { ascending: false });
-                if (pemasukanError) throw pemasukanError;
-                transactions = pemasukanData || [];
+                transactions = await loadDataInChunks('pemasukan', {
+                    select: `
+                    id,
+                    id_transaksi,
+                    tanggal,
+                    nominal,
+                    penghuni:penghuni_id (nama_kepala_keluarga),
+                    rekening:rekening_id (jenis_rekening),
+                    kategori:kategori_id (nama_kategori),
+                    keterangan
+                `,
+                    orderBy: 'tanggal',
+                    ascending: false
+                });
             }
 
             // Store data globally for search/filter operations
@@ -20302,19 +20306,6 @@
             let transactions = [];
 
             // Get all pengeluaran transactions within the selected periods
-            let pengeluaranQuery = supabase$1
-                .from('pengeluaran')
-                .select(`
-                tanggal,
-                nominal,
-                keterangan,
-                kategori:kategori_id (nama_kategori),
-                subkategori:subkategori_id (nama_subkategori),
-                penerima,
-                link_url
-            `).range(0, 999999);
-
-            // If specific periods are selected, filter by date range
             if (defaultYear !== 'all' && periods.length > 0) {
                 // Create date ranges from selected periods
                 const dateRanges = periods.map(p => ({
@@ -20322,13 +20313,20 @@
                     end: p.tanggal_akhir
                 }));
 
-                // For multiple periods, we need to use OR logic
-                // Supabase doesn't support complex OR in single query easily, so we'll filter client-side for now
-                const { data: allPengeluaranData, error: allPengeluaranError } = await pengeluaranQuery;
+                const allPengeluaranData = await loadDataInChunks('pengeluaran', {
+                    select: `
+                    tanggal,
+                    nominal,
+                    keterangan,
+                    kategori:kategori_id (nama_kategori),
+                    subkategori:subkategori_id (nama_subkategori),
+                    penerima,
+                    link_url
+                `,
+                    orderBy: 'tanggal',
+                    ascending: false
+                });
 
-                if (allPengeluaranError) throw allPengeluaranError;
-
-                // Filter transactions that fall within any of the selected period ranges
                 const filteredTransactions = (allPengeluaranData || []).filter(transaction => {
                     const transactionDate = new Date(transaction.tanggal);
                     return dateRanges.some(range => {
@@ -20340,10 +20338,19 @@
 
                 transactions = filteredTransactions.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
             } else {
-                // Get all transactions if "all" is selected
-                const { data: pengeluaranData, error: pengeluaranError } = await pengeluaranQuery.order('tanggal', { ascending: false });
-                if (pengeluaranError) throw pengeluaranError;
-                transactions = pengeluaranData || [];
+                transactions = await loadDataInChunks('pengeluaran', {
+                    select: `
+                    tanggal,
+                    nominal,
+                    keterangan,
+                    kategori:kategori_id (nama_kategori),
+                    subkategori:subkategori_id (nama_subkategori),
+                    penerima,
+                    link_url
+                `,
+                    orderBy: 'tanggal',
+                    ascending: false
+                });
             }
 
             // Store data globally for search/filter operations
@@ -20513,11 +20520,21 @@
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
-                    ${Array.from({length: totalPages}, (_, i) => i + 1).map(page => `
-                        <li class="page-item ${page === pengeluaranCurrentPage ? 'active' : ''}">
-                            <a class="page-link" href="#" onclick="changePengeluaranViewPage(${page}); return false;">${page}</a>
-                        </li>
-                    `).join('')}
+                    <li class="page-item ${1 === pengeluaranCurrentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="event.preventDefault(); changePengeluaranViewPage(1)">1</a>
+                    </li>
+                    ${pengeluaranCurrentPage > 3 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+                    ${Array.from({length: Math.min(totalPages, pengeluaranCurrentPage + 2) - Math.max(2, pengeluaranCurrentPage - 2) + 1}, (_, i) => {
+                        const page = Math.max(2, pengeluaranCurrentPage - 2) + i;
+                        return page > 1 && page < totalPages ?
+                            `<li class="page-item ${page === pengeluaranCurrentPage ? 'active' : ''}">
+                                <a class="page-link" href="#" onclick="event.preventDefault(); changePengeluaranViewPage(${page})">${page}</a>
+                            </li>` : '';
+                    }).join('')}
+                    ${pengeluaranCurrentPage < totalPages - 2 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+                    ${totalPages > 1 ? `<li class="page-item ${totalPages === pengeluaranCurrentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="event.preventDefault(); changePengeluaranViewPage(${totalPages})">${totalPages}</a>
+                    </li>` : ''}
                     <li class="page-item ${pengeluaranCurrentPage === totalPages ? 'disabled' : ''}">
                         <a class="page-link" href="#" onclick="changePengeluaranViewPage(${pengeluaranCurrentPage + 1}); return false;" aria-label="Next">
                             <span aria-hidden="true">&raquo;</span>
@@ -20901,6 +20918,7 @@
                     const { data: pemasukanData, error: pemasukanError } = await supabase$1
                         .from('pemasukan')
                         .select('nominal')
+                        .range(0, 999999)
                         .eq('kategori_id', kategori.id);
 
                     if (pemasukanError) {
@@ -20913,6 +20931,7 @@
                     const { data: pengeluaranData, error: pengeluaranError } = await supabase$1
                         .from('pengeluaran')
                         .select('nominal')
+                        .range(0, 999999)
                         .eq('kategori_id', kategori.id);
 
                     if (pengeluaranError) {
@@ -20957,6 +20976,7 @@
                         const { data: pemasukanUntilPrevious, error: pemasukanPrevError } = await supabase$1
                             .from('pemasukan')
                             .select('nominal')
+                            .range(0, 999999)
                             .eq('kategori_id', kategori.id)
                             .gte('tanggal', earliestDate)
                             .lte('tanggal', latestDate);
@@ -20971,6 +20991,7 @@
                         const { data: pengeluaranUntilPrevious, error: pengeluaranPrevError } = await supabase$1
                             .from('pengeluaran')
                             .select('nominal')
+                            .range(0, 999999)
                             .eq('kategori_id', kategori.id)
                             .gte('tanggal', earliestDate)
                             .lte('tanggal', latestDate);
@@ -20997,9 +21018,10 @@
                         const yearStartDate = sortedPeriods[0].tanggal_awal;
                         const yearEndDate = sortedPeriods[sortedPeriods.length - 1].tanggal_akhir;
 
-                        const { data: pemasukanYearData, error: pemasukanYearError } = await supabase$1
+                         const { data: pemasukanYearData, error: pemasukanYearError } = await supabase$1
                             .from('pemasukan')
                             .select('nominal')
+                            .range(0, 999999)
                             .eq('kategori_id', kategori.id)
                             .gte('tanggal', yearStartDate)
                             .lte('tanggal', yearEndDate);
@@ -21011,9 +21033,10 @@
 
                         totalPemasukan = pemasukanYearData.reduce((sum, item) => sum + (item.nominal || 0), 0);
 
-                        const { data: pengeluaranYearData, error: pengeluaranYearError } = await supabase$1
+                         const { data: pengeluaranYearData, error: pengeluaranYearError } = await supabase$1
                             .from('pengeluaran')
                             .select('nominal')
+                            .range(0, 999999)
                             .eq('kategori_id', kategori.id)
                             .gte('tanggal', yearStartDate)
                             .lte('tanggal', yearEndDate);

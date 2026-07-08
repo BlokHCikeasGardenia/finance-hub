@@ -2,7 +2,7 @@
 // All expense transaction reports across categories with search, sort, pagination
 
 import { supabase } from '../../config.js';
-import { showToast, formatCurrency, renderPagination, debounce } from '../../utils.js';
+import { showToast, formatCurrency, renderPagination, debounce, loadDataInChunks } from '../../utils.js';
 
 // Global states for Pengeluaran view
 let pengeluaranViewDataGlobal = [];
@@ -84,19 +84,6 @@ async function loadViewPengeluaran(selectedYear = null) {
         let transactions = [];
 
         // Get all pengeluaran transactions within the selected periods
-        let pengeluaranQuery = supabase
-            .from('pengeluaran')
-            .select(`
-                tanggal,
-                nominal,
-                keterangan,
-                kategori:kategori_id (nama_kategori),
-                subkategori:subkategori_id (nama_subkategori),
-                penerima,
-                link_url
-            `).range(0, 999999);
-
-        // If specific periods are selected, filter by date range
         if (defaultYear !== 'all' && periods.length > 0) {
             // Create date ranges from selected periods
             const dateRanges = periods.map(p => ({
@@ -104,13 +91,20 @@ async function loadViewPengeluaran(selectedYear = null) {
                 end: p.tanggal_akhir
             }));
 
-            // For multiple periods, we need to use OR logic
-            // Supabase doesn't support complex OR in single query easily, so we'll filter client-side for now
-            const { data: allPengeluaranData, error: allPengeluaranError } = await pengeluaranQuery;
+            const allPengeluaranData = await loadDataInChunks('pengeluaran', {
+                select: `
+                    tanggal,
+                    nominal,
+                    keterangan,
+                    kategori:kategori_id (nama_kategori),
+                    subkategori:subkategori_id (nama_subkategori),
+                    penerima,
+                    link_url
+                `,
+                orderBy: 'tanggal',
+                ascending: false
+            });
 
-            if (allPengeluaranError) throw allPengeluaranError;
-
-            // Filter transactions that fall within any of the selected period ranges
             const filteredTransactions = (allPengeluaranData || []).filter(transaction => {
                 const transactionDate = new Date(transaction.tanggal);
                 return dateRanges.some(range => {
@@ -122,10 +116,19 @@ async function loadViewPengeluaran(selectedYear = null) {
 
             transactions = filteredTransactions.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
         } else {
-            // Get all transactions if "all" is selected
-            const { data: pengeluaranData, error: pengeluaranError } = await pengeluaranQuery.order('tanggal', { ascending: false });
-            if (pengeluaranError) throw pengeluaranError;
-            transactions = pengeluaranData || [];
+            transactions = await loadDataInChunks('pengeluaran', {
+                select: `
+                    tanggal,
+                    nominal,
+                    keterangan,
+                    kategori:kategori_id (nama_kategori),
+                    subkategori:subkategori_id (nama_subkategori),
+                    penerima,
+                    link_url
+                `,
+                orderBy: 'tanggal',
+                ascending: false
+            });
         }
 
         // Store data globally for search/filter operations
@@ -295,11 +298,21 @@ function renderPengeluaranTable(data) {
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
-                    ${Array.from({length: totalPages}, (_, i) => i + 1).map(page => `
-                        <li class="page-item ${page === pengeluaranCurrentPage ? 'active' : ''}">
-                            <a class="page-link" href="#" onclick="changePengeluaranViewPage(${page}); return false;">${page}</a>
-                        </li>
-                    `).join('')}
+                    <li class="page-item ${1 === pengeluaranCurrentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="event.preventDefault(); changePengeluaranViewPage(1)">1</a>
+                    </li>
+                    ${pengeluaranCurrentPage > 3 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+                    ${Array.from({length: Math.min(totalPages, pengeluaranCurrentPage + 2) - Math.max(2, pengeluaranCurrentPage - 2) + 1}, (_, i) => {
+                        const page = Math.max(2, pengeluaranCurrentPage - 2) + i;
+                        return page > 1 && page < totalPages ?
+                            `<li class="page-item ${page === pengeluaranCurrentPage ? 'active' : ''}">
+                                <a class="page-link" href="#" onclick="event.preventDefault(); changePengeluaranViewPage(${page})">${page}</a>
+                            </li>` : '';
+                    }).join('')}
+                    ${pengeluaranCurrentPage < totalPages - 2 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+                    ${totalPages > 1 ? `<li class="page-item ${totalPages === pengeluaranCurrentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="event.preventDefault(); changePengeluaranViewPage(${totalPages})">${totalPages}</a>
+                    </li>` : ''}
                     <li class="page-item ${pengeluaranCurrentPage === totalPages ? 'disabled' : ''}">
                         <a class="page-link" href="#" onclick="changePengeluaranViewPage(${pengeluaranCurrentPage + 1}); return false;" aria-label="Next">
                             <span aria-hidden="true">&raquo;</span>

@@ -2,46 +2,44 @@
 // Balance consistency checks and admin functions
 
 import { supabase } from './config.js';
-import { showToast, formatCurrency } from './utils.js';
+import { showToast, formatCurrency, loadDataInChunks } from './utils.js';
 
 // Balance calculation functions (extracted from app_old.js)
 
 // Function to calculate total balance from categories
 export async function calculateTotalKategoriSaldo() {
     try {
-        // Get all categories with their transactions
         const { data: kategoriData, error: kategoriError } = await supabase
             .from('kategori_saldo')
             .select('id, saldo_awal');
 
         if (kategoriError) throw kategoriError;
 
-        let totalSaldoKategori = 0;
+        const kategoriIds = kategoriData.map(k => k.id);
 
+        const [pemasukanData, pengeluaranData] = await Promise.all([
+            loadDataInChunks('pemasukan', { select: 'kategori_id, nominal', orderBy: 'id', filters: { kategori_id: kategoriIds } }),
+            loadDataInChunks('pengeluaran', { select: 'kategori_id, nominal', orderBy: 'id', filters: { kategori_id: kategoriIds } })
+        ]);
+
+        const pemasukanByKategori = {};
+        const pengeluaranByKategori = {};
+
+        (pemasukanData || []).forEach(item => {
+            if (!pemasukanByKategori[item.kategori_id]) pemasukanByKategori[item.kategori_id] = [];
+            pemasukanByKategori[item.kategori_id].push(item.nominal || 0);
+        });
+
+        (pengeluaranData || []).forEach(item => {
+            if (!pengeluaranByKategori[item.kategori_id]) pengeluaranByKategori[item.kategori_id] = [];
+            pengeluaranByKategori[item.kategori_id].push(item.nominal || 0);
+        });
+
+        let totalSaldoKategori = 0;
         for (const kategori of kategoriData) {
             const saldoAwal = kategori.saldo_awal || 0;
-
-            // Calculate total pemasukan for this category
-            const { data: pemasukanData, error: pemasukanError } = await supabase
-                .from('pemasukan')
-                .select('nominal')
-                .eq('kategori_id', kategori.id);
-
-            if (pemasukanError) throw pemasukanError;
-
-            const totalPemasukan = pemasukanData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            // Calculate total pengeluaran for this category
-            const { data: pengeluaranData, error: pengeluaranError } = await supabase
-                .from('pengeluaran')
-                .select('nominal')
-                .eq('kategori_id', kategori.id);
-
-            if (pengeluaranError) throw pengeluaranError;
-
-            const totalPengeluaran = pengeluaranData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            // Calculate saldo akhir for this category
+            const totalPemasukan = (pemasukanByKategori[kategori.id] || []).reduce((a, b) => a + b, 0);
+            const totalPengeluaran = (pengeluaranByKategori[kategori.id] || []).reduce((a, b) => a + b, 0);
             const saldoAkhir = saldoAwal + totalPemasukan - totalPengeluaran;
             totalSaldoKategori += saldoAkhir;
         }
@@ -56,58 +54,53 @@ export async function calculateTotalKategoriSaldo() {
 // Function to calculate total balance from accounts
 export async function calculateTotalRekeningSaldo() {
     try {
-        // Get all accounts with their transactions
         const { data: rekeningData, error: rekeningError } = await supabase
             .from('rekening')
             .select('id, saldo_awal');
 
         if (rekeningError) throw rekeningError;
 
-        let totalSaldoRekening = 0;
+        const rekeningIds = rekeningData.map(r => r.id);
 
+        const [pemasukanData, pengeluaranData, transferMasukData, transferKeluarData] = await Promise.all([
+            loadDataInChunks('pemasukan', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+            loadDataInChunks('pengeluaran', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+            loadDataInChunks('pemindahbukuan', { select: 'rekening_ke_id, nominal', orderBy: 'id', filters: { rekening_ke_id: rekeningIds } }),
+            loadDataInChunks('pemindahbukuan', { select: 'rekening_dari_id, nominal', orderBy: 'id', filters: { rekening_dari_id: rekeningIds } })
+        ]);
+
+        const pemasukanByRekening = {};
+        const pengeluaranByRekening = {};
+        const transferMasukByRekening = {};
+        const transferKeluarByRekening = {};
+
+        (pemasukanData || []).forEach(item => {
+            if (!pemasukanByRekening[item.rekening_id]) pemasukanByRekening[item.rekening_id] = [];
+            pemasukanByRekening[item.rekening_id].push(item.nominal || 0);
+        });
+
+        (pengeluaranData || []).forEach(item => {
+            if (!pengeluaranByRekening[item.rekening_id]) pengeluaranByRekening[item.rekening_id] = [];
+            pengeluaranByRekening[item.rekening_id].push(item.nominal || 0);
+        });
+
+        (transferMasukData || []).forEach(item => {
+            if (!transferMasukByRekening[item.rekening_ke_id]) transferMasukByRekening[item.rekening_ke_id] = [];
+            transferMasukByRekening[item.rekening_ke_id].push(item.nominal || 0);
+        });
+
+        (transferKeluarData || []).forEach(item => {
+            if (!transferKeluarByRekening[item.rekening_dari_id]) transferKeluarByRekening[item.rekening_dari_id] = [];
+            transferKeluarByRekening[item.rekening_dari_id].push(item.nominal || 0);
+        });
+
+        let totalSaldoRekening = 0;
         for (const rekening of rekeningData) {
             const saldoAwal = rekening.saldo_awal || 0;
-
-            // Calculate total pemasukan credited to this account
-            const { data: pemasukanData, error: pemasukanError } = await supabase
-                .from('pemasukan')
-                .select('nominal')
-                .eq('rekening_id', rekening.id);
-
-            if (pemasukanError) throw pemasukanError;
-
-            const totalPemasukan = pemasukanData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            // Calculate total pengeluaran debited from this account
-            const { data: pengeluaranData, error: pengeluaranError } = await supabase
-                .from('pengeluaran')
-                .select('nominal')
-                .eq('rekening_id', rekening.id);
-
-            if (pengeluaranError) throw pengeluaranError;
-
-            const totalPengeluaran = pengeluaranData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            // Calculate total pemindahbukuan (transfers)
-            const { data: transferMasukData, error: transferMasukError } = await supabase
-                .from('pemindahbukuan')
-                .select('nominal')
-                .eq('rekening_ke_id', rekening.id);
-
-            if (transferMasukError) throw transferMasukError;
-
-            const totalTransferMasuk = transferMasukData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            const { data: transferKeluarData, error: transferKeluarError } = await supabase
-                .from('pemindahbukuan')
-                .select('nominal')
-                .eq('rekening_dari_id', rekening.id);
-
-            if (transferKeluarError) throw transferKeluarError;
-
-            const totalTransferKeluar = transferKeluarData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            // Calculate saldo akhir for this account
+            const totalPemasukan = (pemasukanByRekening[rekening.id] || []).reduce((a, b) => a + b, 0);
+            const totalPengeluaran = (pengeluaranByRekening[rekening.id] || []).reduce((a, b) => a + b, 0);
+            const totalTransferMasuk = (transferMasukByRekening[rekening.id] || []).reduce((a, b) => a + b, 0);
+            const totalTransferKeluar = (transferKeluarByRekening[rekening.id] || []).reduce((a, b) => a + b, 0);
             const saldoAkhir = saldoAwal + totalPemasukan - totalPengeluaran + totalTransferMasuk - totalTransferKeluar;
             totalSaldoRekening += saldoAkhir;
         }
@@ -122,39 +115,37 @@ export async function calculateTotalRekeningSaldo() {
 // Function to calculate detailed balance for each category
 export async function calculateDetailedKategoriSaldo() {
     try {
-        // Get all categories with their transactions
         const { data: kategoriData, error: kategoriError } = await supabase
             .from('kategori_saldo')
             .select('id, nama_kategori, saldo_awal, keterangan');
 
         if (kategoriError) throw kategoriError;
 
-        const detailedResults = [];
+        const kategoriIds = kategoriData.map(k => k.id);
 
+        const [pemasukanData, pengeluaranData] = await Promise.all([
+            loadDataInChunks('pemasukan', { select: 'kategori_id, nominal', orderBy: 'id', filters: { kategori_id: kategoriIds } }),
+            loadDataInChunks('pengeluaran', { select: 'kategori_id, nominal', orderBy: 'id', filters: { kategori_id: kategoriIds } })
+        ]);
+
+        const pemasukanByKategori = {};
+        const pengeluaranByKategori = {};
+
+        (pemasukanData || []).forEach(item => {
+            if (!pemasukanByKategori[item.kategori_id]) pemasukanByKategori[item.kategori_id] = [];
+            pemasukanByKategori[item.kategori_id].push(item.nominal || 0);
+        });
+
+        (pengeluaranData || []).forEach(item => {
+            if (!pengeluaranByKategori[item.kategori_id]) pengeluaranByKategori[item.kategori_id] = [];
+            pengeluaranByKategori[item.kategori_id].push(item.nominal || 0);
+        });
+
+        const detailedResults = [];
         for (const kategori of kategoriData) {
             const saldoAwal = kategori.saldo_awal || 0;
-
-            // Calculate total pemasukan for this category
-            const { data: pemasukanData, error: pemasukanError } = await supabase
-                .from('pemasukan')
-                .select('nominal')
-                .eq('kategori_id', kategori.id);
-
-            if (pemasukanError) throw pemasukanError;
-
-            const totalPemasukan = pemasukanData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            // Calculate total pengeluaran for this category
-            const { data: pengeluaranData, error: pengeluaranError } = await supabase
-                .from('pengeluaran')
-                .select('nominal')
-                .eq('kategori_id', kategori.id);
-
-            if (pengeluaranError) throw pengeluaranError;
-
-            const totalPengeluaran = pengeluaranData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            // Calculate saldo akhir for this category
+            const totalPemasukan = (pemasukanByKategori[kategori.id] || []).reduce((a, b) => a + b, 0);
+            const totalPengeluaran = (pengeluaranByKategori[kategori.id] || []).reduce((a, b) => a + b, 0);
             const saldoAkhir = saldoAwal + totalPemasukan - totalPengeluaran;
 
             detailedResults.push({
@@ -177,58 +168,53 @@ export async function calculateDetailedKategoriSaldo() {
 // Function to calculate detailed balance for each account
 export async function calculateDetailedRekeningSaldo() {
     try {
-        // Get all accounts with their transactions
         const { data: rekeningData, error: rekeningError } = await supabase
             .from('rekening')
             .select('id, jenis_rekening, saldo_awal');
 
         if (rekeningError) throw rekeningError;
 
-        const detailedResults = [];
+        const rekeningIds = rekeningData.map(r => r.id);
 
+        const [pemasukanData, pengeluaranData, transferMasukData, transferKeluarData] = await Promise.all([
+            loadDataInChunks('pemasukan', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+            loadDataInChunks('pengeluaran', { select: 'rekening_id, nominal', orderBy: 'id', filters: { rekening_id: rekeningIds } }),
+            loadDataInChunks('pemindahbukuan', { select: 'rekening_ke_id, nominal', orderBy: 'id', filters: { rekening_ke_id: rekeningIds } }),
+            loadDataInChunks('pemindahbukuan', { select: 'rekening_dari_id, nominal', orderBy: 'id', filters: { rekening_dari_id: rekeningIds } })
+        ]);
+
+        const pemasukanByRekening = {};
+        const pengeluaranByRekening = {};
+        const transferMasukByRekening = {};
+        const transferKeluarByRekening = {};
+
+        (pemasukanData || []).forEach(item => {
+            if (!pemasukanByRekening[item.rekening_id]) pemasukanByRekening[item.rekening_id] = [];
+            pemasukanByRekening[item.rekening_id].push(item.nominal || 0);
+        });
+
+        (pengeluaranData || []).forEach(item => {
+            if (!pengeluaranByRekening[item.rekening_id]) pengeluaranByRekening[item.rekening_id] = [];
+            pengeluaranByRekening[item.rekening_id].push(item.nominal || 0);
+        });
+
+        (transferMasukData || []).forEach(item => {
+            if (!transferMasukByRekening[item.rekening_ke_id]) transferMasukByRekening[item.rekening_ke_id] = [];
+            transferMasukByRekening[item.rekening_ke_id].push(item.nominal || 0);
+        });
+
+        (transferKeluarData || []).forEach(item => {
+            if (!transferKeluarByRekening[item.rekening_dari_id]) transferKeluarByRekening[item.rekening_dari_id] = [];
+            transferKeluarByRekening[item.rekening_dari_id].push(item.nominal || 0);
+        });
+
+        const detailedResults = [];
         for (const rekening of rekeningData) {
             const saldoAwal = rekening.saldo_awal || 0;
-
-            // Calculate total pemasukan credited to this account
-            const { data: pemasukanData, error: pemasukanError } = await supabase
-                .from('pemasukan')
-                .select('nominal')
-                .eq('rekening_id', rekening.id);
-
-            if (pemasukanError) throw pemasukanError;
-
-            const totalPemasukan = pemasukanData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            // Calculate total pengeluaran debited from this account
-            const { data: pengeluaranData, error: pengeluaranError } = await supabase
-                .from('pengeluaran')
-                .select('nominal')
-                .eq('rekening_id', rekening.id);
-
-            if (pengeluaranError) throw pengeluaranError;
-
-            const totalPengeluaran = pengeluaranData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            // Calculate total pemindahbukuan (transfers)
-            const { data: transferMasukData, error: transferMasukError } = await supabase
-                .from('pemindahbukuan')
-                .select('nominal')
-                .eq('rekening_ke_id', rekening.id);
-
-            if (transferMasukError) throw transferMasukError;
-
-            const totalTransferMasuk = transferMasukData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            const { data: transferKeluarData, error: transferKeluarError } = await supabase
-                .from('pemindahbukuan')
-                .select('nominal')
-                .eq('rekening_dari_id', rekening.id);
-
-            if (transferKeluarError) throw transferKeluarError;
-
-            const totalTransferKeluar = transferKeluarData.reduce((sum, item) => sum + (item.nominal || 0), 0);
-
-            // Calculate saldo akhir for this account
+            const totalPemasukan = (pemasukanByRekening[rekening.id] || []).reduce((a, b) => a + b, 0);
+            const totalPengeluaran = (pengeluaranByRekening[rekening.id] || []).reduce((a, b) => a + b, 0);
+            const totalTransferMasuk = (transferMasukByRekening[rekening.id] || []).reduce((a, b) => a + b, 0);
+            const totalTransferKeluar = (transferKeluarByRekening[rekening.id] || []).reduce((a, b) => a + b, 0);
             const saldoAkhir = saldoAwal + totalPemasukan - totalPengeluaran + totalTransferMasuk - totalTransferKeluar;
 
             detailedResults.push({

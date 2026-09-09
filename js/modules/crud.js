@@ -223,9 +223,10 @@ function getNestedValue(obj, path) {
 // Generic pagination helper
 function paginateData(data, currentPage, itemsPerPage) {
     const totalItems = data.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    const effectiveItemsPerPage = itemsPerPage === Infinity ? totalItems : itemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(totalItems / effectiveItemsPerPage));
+    const startIndex = (currentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, totalItems);
     const paginatedData = data.slice(startIndex, endIndex);
 
     return {

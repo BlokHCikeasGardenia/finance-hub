@@ -11,7 +11,7 @@ import {
 } from './dana_titipan-data.js';
 import { displayDanaTitipanTable } from './dana_titipan-table.js';
 import { applySearchFilter, applySorting, paginateData } from '../../crud.js';
-import { debounce, formatCurrency } from '../../utils.js';
+import { debounce, formatCurrency, resolveItemsPerPage } from '../../utils.js';
 
 // Filter and display dana_titipan data
 function filterAndDisplayDanaTitipan(isFilterChange = true) {
@@ -44,6 +44,13 @@ function filterAndDisplayDanaTitipan(isFilterChange = true) {
     }
     if (state.danaTitipanFilterDateTo) {
         filteredData = filteredData.filter(item => new Date(item.tanggal) <= new Date(state.danaTitipanFilterDateTo));
+    }
+
+    // Apply sorting if specified
+    if (state.danaTitipanSortColumn && state.danaTitipanSortDirection !== 'none') {
+        filteredData = applySorting(filteredData, state.danaTitipanSortColumn, state.danaTitipanSortDirection, [
+            'tanggal', 'created_at'
+        ]);
     }
 
     // Update total count display
@@ -106,7 +113,7 @@ function initializeDanaTitipanSearchAndFilter() {
         const state = getDanaTitipanState();
         itemsPerPageSelect.value = state.danaTitipanItemsPerPage;
         itemsPerPageSelect.addEventListener('change', (e) => {
-            setDanaTitipanState({ danaTitipanItemsPerPage: parseInt(e.target.value), danaTitipanCurrentPage: 1 });
+            setDanaTitipanState({ danaTitipanItemsPerPage: resolveItemsPerPage(e.target.value, 10), danaTitipanCurrentPage: 1 });
             filterAndDisplayDanaTitipan();
         });
     }
@@ -142,54 +149,30 @@ function resetDanaTitipanFilters() {
     if (categoryFilter) categoryFilter.value = '';
     if (accountFilter) accountFilter.value = '';
 
-    setDanaTitipanState({ danaTitipanCurrentPage: 1 });
+    setDanaTitipanState({
+        danaTitipanCurrentPage: 1,
+        danaTitipanSortColumn: '',
+        danaTitipanSortDirection: 'none'
+    });
     filterAndDisplayDanaTitipan();
 }
 
 // Sort dana_titipan data
 function sortDanaTitipanData(column, direction) {
     if (direction === 'none') {
+        setDanaTitipanState({ danaTitipanSortColumn: '', danaTitipanSortDirection: 'none' });
         filterAndDisplayDanaTitipan(false);
         return;
     }
 
-    let filteredData = [...getDanaTitipanData()];
+    // Update sort state
+    setDanaTitipanState({
+        danaTitipanSortColumn: column,
+        danaTitipanSortDirection: direction
+    });
 
-    // Apply current filters first
-    const state = getDanaTitipanState();
-
-    if (state.danaTitipanSearchTerm) {
-        filteredData = applySearchFilter(filteredData, state.danaTitipanSearchTerm, [
-            'id_transaksi',
-            'keterangan',
-            'penghuni.nama_kepala_keluarga',
-            'hunian.nomor_blok_rumah'
-        ]);
-    }
-
-    if (state.danaTitipanFilterCategory) {
-        filteredData = filteredData.filter(item => item.kategori_id === state.danaTitipanFilterCategory);
-    }
-
-    if (state.danaTitipanFilterAccount) {
-        filteredData = filteredData.filter(item => item.rekening_id === state.danaTitipanFilterAccount);
-    }
-
-    if (state.danaTitipanFilterDateFrom) {
-        filteredData = filteredData.filter(item => new Date(item.tanggal) >= new Date(state.danaTitipanFilterDateFrom));
-    }
-    if (state.danaTitipanFilterDateTo) {
-        filteredData = filteredData.filter(item => new Date(item.tanggal) <= new Date(state.danaTitipanFilterDateTo));
-    }
-
-    // Apply sorting
-    filteredData = applySorting(filteredData, column, direction, [
-        // Custom sorting for date columns
-        'tanggal', 'created_at'
-    ]);
-
-    // Display sorted data (let displayDanaTitipanTable handle pagination internally)
-    displayDanaTitipanTable(filteredData);
+    // Re-apply filters and sorting
+    filterAndDisplayDanaTitipan(false);
 }
 
 export {

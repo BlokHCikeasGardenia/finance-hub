@@ -2,12 +2,14 @@
 // All expense transaction reports across categories with search, sort, pagination
 
 import { supabase } from '../../config.js';
-import { showToast, formatCurrency, renderPagination, debounce, loadDataInChunks } from '../../utils.js';
+import { showToast, formatCurrency, renderPagination, debounce, loadDataInChunks , resolveItemsPerPage } from '../../utils.js';
 
 // Global states for Pengeluaran view
 let pengeluaranViewDataGlobal = [];
 let pengeluaranCurrentPage = 1;
 let pengeluaranItemsPerPage = 10;
+let pengeluaranSortColumn = "";
+let pengeluaranSortDirection = "none";
 
 // Helper function to get badge color based on category
 function getCategoryBadgeColor(categoryName) {
@@ -197,6 +199,7 @@ async function loadViewPengeluaran(selectedYear = null) {
                                 <div class="col-md-2">
                                     <label for="pengeluaran-items-per-page" class="form-label">Data per Halaman:</label>
                                     <select class="form-select" id="pengeluaran-items-per-page">
+                                            <option value="all">Semua</option>
                                         <option value="5">5</option>
                                         <option value="10" selected>10</option>
                                         <option value="25">25</option>
@@ -240,15 +243,16 @@ async function loadViewPengeluaran(selectedYear = null) {
 // Render Pengeluaran Table with pagination
 function renderPengeluaranTable(data) {
     // Ensure current page is valid
-    const totalPages = Math.ceil(data.length / pengeluaranItemsPerPage);
+    const effectiveItemsPerPage = pengeluaranItemsPerPage === Infinity ? data.length : pengeluaranItemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(data.length / effectiveItemsPerPage));
     if (pengeluaranCurrentPage > totalPages && totalPages > 0) {
         pengeluaranCurrentPage = totalPages;
     } else if (pengeluaranCurrentPage < 1 || totalPages === 0) {
         pengeluaranCurrentPage = 1;
     }
 
-    const startIndex = (pengeluaranCurrentPage - 1) * pengeluaranItemsPerPage;
-    const endIndex = Math.min(startIndex + pengeluaranItemsPerPage, data.length);
+    const startIndex = (pengeluaranCurrentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, data.length);
     const paginatedData = data.slice(startIndex, endIndex);
 
     const tableHtml = `
@@ -347,7 +351,7 @@ function initializePengeluaranSearchAndFilter() {
     // Items per page functionality
     if (itemsPerPageSelect) {
         itemsPerPageSelect.addEventListener('change', (e) => {
-            updatePengeluaranItemsPerPage(parseInt(e.target.value));
+            updatePengeluaranItemsPerPage(resolveItemsPerPage(e.target.value, 10));
         });
     }
 }
@@ -399,7 +403,7 @@ function attachPengeluaranSortListeners() {
     sortableHeaders.forEach(header => {
         header.addEventListener('click', () => {
             const column = header.dataset.column;
-            const currentSort = header.dataset.sort || 'none';
+            const currentSort = pengeluaranSortColumn === column ? pengeluaranSortDirection : 'none';
 
             // Reset all sort indicators
             sortableHeaders.forEach(h => {

@@ -2,9 +2,9 @@
 // Import all submodules
 import {
     loadDanaTitipan,
-    confirmDeleteDanaTitipan,
     deleteDanaTitipan
 } from './dana_titipan-data.js';
+import { confirmDeleteDanaTitipan } from './dana_titipan-form.js';
 
 import {
     showAddDanaTitipanForm,

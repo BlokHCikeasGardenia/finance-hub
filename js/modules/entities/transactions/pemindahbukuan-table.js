@@ -1,6 +1,7 @@
 // Pemindahbukuan table rendering and pagination module
 
 import { renderPagination, formatCurrency } from '../../utils.js';
+import { applySorting } from '../../crud.js';
 import {
     getPemindahbukuanData,
     getPemindahbukuanState,
@@ -41,6 +42,13 @@ function filterAndDisplayPemindahbukuan() {
         filteredData = filteredData.filter(item => new Date(item.tanggal) <= new Date(state.pemindahbukuanFilterDateTo));
     }
 
+    // Apply sorting if specified
+    if (state.pemindahbukuanSortColumn && state.pemindahbukuanSortDirection !== 'none') {
+        filteredData = applySorting(filteredData, state.pemindahbukuanSortColumn, state.pemindahbukuanSortDirection, [
+            'tanggal', 'created_at'
+        ]);
+    }
+
     // Update total count display
     const totalNominal = filteredData.reduce((sum, item) => sum + (item.nominal || 0), 0);
     const totalCountElement = document.getElementById('pemindahbukuan-total-count');
@@ -56,11 +64,12 @@ function filterAndDisplayPemindahbukuan() {
 // Display pemindahbukuan table with pagination
 function displayPemindahbukuanTable(data) {
     const state = getPemindahbukuanState();
-    const startIndex = (state.pemindahbukuanCurrentPage - 1) * state.pemindahbukuanItemsPerPage;
-    const endIndex = startIndex + state.pemindahbukuanItemsPerPage;
+    const effectiveItemsPerPage = state.pemindahbukuanItemsPerPage === Infinity ? data.length : state.pemindahbukuanItemsPerPage;
+    const startIndex = (state.pemindahbukuanCurrentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, data.length);
     const paginatedData = data.slice(startIndex, endIndex);
 
-    const totalPages = Math.ceil(data.length / state.pemindahbukuanItemsPerPage);
+    const totalPages = Math.max(1, Math.ceil(data.length / effectiveItemsPerPage));
 
     const tableHtml = createPemindahbukuanTableHtml(paginatedData);
     const paginationHtml = renderPagination('pemindahbukuan', state.pemindahbukuanCurrentPage, totalPages);
@@ -94,7 +103,7 @@ function createPemindahbukuanTableHtml(data) {
 
     if (data.length > 0) {
         data.forEach((item) => {
-            const globalIndex = ((getPemindahbukuanState()).pemindahbukuanCurrentPage - 1) * (getPemindahbukuanState()).pemindahbukuanItemsPerPage + data.indexOf(item) + 1;
+            const globalIndex = (getPemindahbukuanState()).pemindahbukuanItemsPerPage === Infinity ? data.indexOf(item) + 1 : ((getPemindahbukuanState()).pemindahbukuanCurrentPage - 1) * (getPemindahbukuanState()).pemindahbukuanItemsPerPage + data.indexOf(item) + 1;
             html += `<tr>
                 ${pemindahbukuanTableColumns.map(col => {
                     const value = col.render ? col.render(item) : getNestedValue(item, col.key) || '-';
@@ -127,8 +136,41 @@ function attachPemindahbukuanSortListeners() {
     const tableElement = document.getElementById('pemindahbukuan-table');
     if (!tableElement) return;
 
-    // This would be implemented if sorting is needed
-    // For now, sorting logic can be added later
+    const sortableHeaders = tableElement.querySelectorAll('.sortable');
+
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const column = header.dataset.column;
+            const state = getPemindahbukuanState();
+            const currentSort = state.pemindahbukuanSortColumn === column ? state.pemindahbukuanSortDirection : 'none';
+
+            // Reset all sort indicators
+            sortableHeaders.forEach(h => h.dataset.sort = 'none');
+
+            let newSort = 'asc';
+            if (currentSort === 'asc') newSort = 'desc';
+            else if (currentSort === 'desc') newSort = 'none';
+
+            header.dataset.sort = newSort;
+
+            // Update sort icons
+            const icon = header.querySelector('.sort-icon');
+            if (icon) {
+                if (newSort === 'asc') icon.className = 'bi bi-chevron-up sort-icon';
+                else if (newSort === 'desc') icon.className = 'bi bi-chevron-down sort-icon';
+                else icon.className = 'bi bi-chevron-expand sort-icon';
+            }
+
+            // Apply sorting using dynamic import to avoid circular dependency
+            import('./pemindahbukuan-filters.js').then(({ sortPemindahbukuanData }) => {
+                if (typeof sortPemindahbukuanData === 'function') {
+                    sortPemindahbukuanData(column, newSort);
+                }
+            }).catch(err => {
+                console.error('Error loading sort module:', err);
+            });
+        });
+    });
 }
 
 // Change page function for pagination

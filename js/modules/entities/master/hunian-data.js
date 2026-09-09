@@ -18,6 +18,8 @@ let hunianSearchTerm = '';
 let hunianStatusFilter = '';
 let hunianLorongFilter = '';
 let hunianAirFilter = '';
+let hunianSortColumn = '';
+let hunianSortDirection = 'none';
 
 // Load hunian data
 async function loadHunian(refreshUI = true) {
@@ -141,7 +143,9 @@ function getHunianState() {
         hunianSearchTerm,
         hunianStatusFilter,
         hunianLorongFilter,
-        hunianAirFilter
+        hunianAirFilter,
+        hunianSortColumn,
+        hunianSortDirection
     };
 }
 
@@ -153,6 +157,8 @@ function setHunianState(state) {
     hunianStatusFilter = state.hunianStatusFilter !== undefined ? state.hunianStatusFilter : hunianStatusFilter;
     hunianLorongFilter = state.hunianLorongFilter !== undefined ? state.hunianLorongFilter : hunianLorongFilter;
     hunianAirFilter = state.hunianAirFilter !== undefined ? state.hunianAirFilter : hunianAirFilter;
+    hunianSortColumn = state.hunianSortColumn !== undefined ? state.hunianSortColumn : hunianSortColumn;
+    hunianSortDirection = state.hunianSortDirection !== undefined ? state.hunianSortDirection : hunianSortDirection;
 }
 
 function resetHunianFilters() {

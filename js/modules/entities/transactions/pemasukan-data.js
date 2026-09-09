@@ -5,10 +5,9 @@ import { supabase } from '../../config.js';
 import {
     createRecord,
     updateRecord,
-    deleteRecord,
-    readRecords
+    deleteRecord
 } from '../../crud.js';
-import { showToast } from '../../utils.js';
+import { showToast, loadDataInChunks } from '../../utils.js';
 
 // Global state for pemasukan
 let pemasukanData = [];
@@ -152,14 +151,15 @@ async function loadPemasukan(refreshUI = true) {
             periode:periode_id (nama_periode)
         `;
 
-        const { success, data } = await readRecords('pemasukan', {
+        const allData = await loadDataInChunks('pemasukan', {
             select: selectQuery,
-            orderBy: 'tanggal DESC'
+            orderBy: 'tanggal',
+            ascending: false
         });
 
-        if (!success) throw new Error('Failed to load pemasukan data');
+        if (!allData) throw new Error('Failed to load pemasukan data');
 
-        pemasukanData = data || [];
+        pemasukanData = allData;
         pemasukanFilteredCount = pemasukanData.length;
 
         if (refreshUI) {

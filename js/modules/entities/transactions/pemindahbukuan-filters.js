@@ -7,7 +7,7 @@ import {
     setPemindahbukuanState
 } from './pemindahbukuan-data.js';
 import { filterAndDisplayPemindahbukuan } from './pemindahbukuan-table.js';
-import { formatCurrency, debounce } from '../../utils.js';
+import { formatCurrency, debounce, resolveItemsPerPage } from '../../utils.js';
 
 // Filter and display pemindahbukuan data (wrapper to work with state)
 function filterAndDisplayPemindahbukuanWrapper(isFilterChange = true) {
@@ -37,7 +37,7 @@ function initializePemindahbukuanSearchAndFilter() {
         const state = getPemindahbukuanState();
         itemsPerPageSelect.value = state.pemindahbukuanItemsPerPage;
         itemsPerPageSelect.addEventListener('change', (e) => {
-            setPemindahbukuanState({ pemindahbukuanItemsPerPage: parseInt(e.target.value), pemindahbukuanCurrentPage: 1 });
+            setPemindahbukuanState({ pemindahbukuanItemsPerPage: resolveItemsPerPage(e.target.value, 10), pemindahbukuanCurrentPage: 1 });
             filterAndDisplayPemindahbukuanWrapper();
         });
     }
@@ -49,7 +49,9 @@ function resetPemindahbukuanFilters() {
         pemindahbukuanSearchTerm: '',
         pemindahbukuanFilterDateFrom: '',
         pemindahbukuanFilterDateTo: '',
-        pemindahbukuanCurrentPage: 1
+        pemindahbukuanCurrentPage: 1,
+        pemindahbukuanSortColumn: '',
+        pemindahbukuanSortDirection: 'none'
     });
 
     // Reset UI elements
@@ -65,36 +67,18 @@ function resetPemindahbukuanFilters() {
 // Sort pemindahbukuan data
 function sortPemindahbukuanData(column, direction) {
     if (direction === 'none') {
+        setPemindahbukuanState({ pemindahbukuanSortColumn: '', pemindahbukuanSortDirection: 'none' });
         filterAndDisplayPemindahbukuanWrapper(false);
         return;
     }
 
-    let filteredData = [...getPemindahbukuanData()];
+    // Update sort state
+    setPemindahbukuanState({
+        pemindahbukuanSortColumn: column,
+        pemindahbukuanSortDirection: direction
+    });
 
-    // Apply current filters first
-    const state = getPemindahbukuanState();
-
-    if (state.pemindahbukuanSearchTerm) {
-        filteredData = filteredData.filter(item =>
-            ['id_transaksi', 'catatan'].some(field =>
-                item[field]?.toString().toLowerCase().includes(state.pemindahbukuanSearchTerm.toLowerCase())
-            ) ||
-            (item.rekening_dari?.jenis_rekening || '').toLowerCase().includes(state.pemindahbukuanSearchTerm) ||
-            (item.rekening_ke?.jenis_rekening || '').toLowerCase().includes(state.pemindahbukuanSearchTerm)
-        );
-    }
-
-    if (state.pemindahbukuanFilterDateFrom) {
-        filteredData = filteredData.filter(item => new Date(item.tanggal) >= new Date(state.pemindahbukuanFilterDateFrom));
-    }
-    if (state.pemindahbukuanFilterDateTo) {
-        filteredData = filteredData.filter(item => new Date(item.tanggal) <= new Date(state.pemindahbukuanFilterDateTo));
-    }
-
-    // Apply sorting logic based on column and direction
-    // This would be implemented based on the sorting requirements
-
-    // For now, just redisplay the filtered data
+    // Re-apply filters and sorting
     filterAndDisplayPemindahbukuanWrapper(false);
 }
 

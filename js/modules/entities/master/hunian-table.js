@@ -2,6 +2,7 @@
 // Handles table configuration, rendering, and display logic
 
 import { renderPagination } from '../../utils.js';
+import { applyHunianSorting } from './hunian-filters.js';
 
 // Table columns configuration - matching app_old.js structure
 const hunianTableColumns = [
@@ -70,7 +71,7 @@ function createHunianTableHtml(data, pagination) {
 
     if (data.length > 0) {
         data.forEach((item, index) => {
-            const globalIndex = (pagination.currentPage - 1) * pagination.itemsPerPage + index + 1;
+            const globalIndex = pagination.itemsPerPage === Infinity ? index + 1 : (pagination.currentPage - 1) * pagination.itemsPerPage + index + 1;
             html += `<tr>
                 <td>${globalIndex}</td>
                 ${hunianTableColumns.map(col => {
@@ -110,7 +111,8 @@ function attachHunianSortListeners() {
     sortableHeaders.forEach(header => {
         header.addEventListener('click', (e) => {
             const column = e.currentTarget.dataset.column;
-            const currentSort = e.currentTarget.dataset.sort || 'none';
+            const state = getHunianState();
+            const currentSort = state.hunianSortColumn === column ? state.hunianSortDirection : 'none';
 
             // Reset all sort indicators
             sortableHeaders.forEach(h => h.dataset.sort = 'none');

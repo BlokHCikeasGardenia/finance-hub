@@ -197,6 +197,7 @@ function renderHunianAdministrasiPage() {
                             <div class="col-md-2">
                                 <label for="hunian-admin-items-per-page" class="form-label">Per Halaman:</label>
                                 <select class="form-select" id="hunian-admin-items-per-page">
+                                            <option value="all">Semua</option>
                                     <option value="5">5</option>
                                     <option value="10" selected>10</option>
                                     <option value="25">25</option>
@@ -317,9 +318,10 @@ async function renderHunianAdminCards() {
     }
 
     // Pagination
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+    const effectiveItemsPerPage = itemsPerPage === Infinity ? filteredData.length : itemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / effectiveItemsPerPage));
+    const startIndex = (currentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, filteredData.length);
     const paginatedData = filteredData.slice(startIndex, endIndex);
 
     // Fetch bills for paginated data if not already loaded
@@ -617,7 +619,7 @@ function initializeHunianAdminFilters() {
     });
 
     document.getElementById('hunian-admin-items-per-page').addEventListener('change', () => {
-        itemsPerPage = parseInt(document.getElementById('hunian-admin-items-per-page').value);
+        itemsPerPage = resolveItemsPerPage(document.getElementById('hunian-admin-items-per-page')?.value || '10', 10);
         currentPage = 1;
         renderHunianAdminCards();
     });

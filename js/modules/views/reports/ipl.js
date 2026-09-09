@@ -2,13 +2,15 @@
 // Advanced IPL payment tracking with search, filter, pagination, and sorting
 
 import { supabase } from '../../config.js';
-import { showToast, formatCurrency, renderPagination, debounce } from '../../utils.js';
+import { showToast, formatCurrency, renderPagination, debounce , resolveItemsPerPage } from '../../utils.js';
 import { getOutstandingTagihanIplByHunian } from '../../entities/transactions/tagihan_ipl-data.js';
 
 // Global states for IPL view
 let iplViewDataGlobal = [];
 let iplCurrentPage = 1;
 let iplItemsPerPage = 10;
+let iplSortColumn = "";
+let iplSortDirection = "none";
 
 // Load IPL View - Optimized for performance
 async function loadViewIPL() {
@@ -242,6 +244,7 @@ async function loadViewIPL() {
                                 <div class="col-md-2">
                                     <label for="ipl-items-per-page" class="form-label">Data per Halaman:</label>
                                     <select class="form-select" id="ipl-items-per-page">
+                                            <option value="all">Semua</option>
                                         <option value="5">5</option>
                                         <option value="10" selected>10</option>
                                         <option value="25">25</option>
@@ -281,9 +284,10 @@ async function loadViewIPL() {
 
 // Render IPL Table with pagination
 function renderIPLTable(data) {
-    const totalPages = Math.ceil(data.length / iplItemsPerPage);
-    const startIndex = (iplCurrentPage - 1) * iplItemsPerPage;
-    const endIndex = startIndex + iplItemsPerPage;
+    const effectiveItemsPerPage = iplItemsPerPage === Infinity ? data.length : iplItemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(data.length / effectiveItemsPerPage));
+    const startIndex = (iplCurrentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, data.length);
     const paginatedData = data.slice(startIndex, endIndex);
 
     const tableHtml = `
@@ -382,7 +386,7 @@ function initializeIPLSearchAndFilter() {
     // Items per page functionality
     if (itemsPerPageSelect) {
         itemsPerPageSelect.addEventListener('change', (e) => {
-            updateIPLItemsPerPage(parseInt(e.target.value));
+            updateIPLItemsPerPage(resolveItemsPerPage(e.target.value, 10));
         });
     }
 }
@@ -460,7 +464,7 @@ function attachIPLSortListeners() {
     sortableHeaders.forEach(header => {
         header.addEventListener('click', () => {
             const column = header.dataset.column;
-            const currentSort = header.dataset.sort || 'none';
+            const currentSort = iplSortColumn === column ? iplSortDirection : 'none';
 
             // Reset all sort indicators
             sortableHeaders.forEach(h => {

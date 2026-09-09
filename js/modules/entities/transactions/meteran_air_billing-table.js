@@ -133,8 +133,9 @@ function renderMeteranAirBillingTableRows() {
         `;
     }
 
-    const startIndex = (meteranAirBillingCurrentPage - 1) * meteranAirBillingItemsPerPage;
-    const endIndex = startIndex + meteranAirBillingItemsPerPage;
+    const effectiveItemsPerPage = meteranAirBillingItemsPerPage === Infinity ? meteranAirBillingTableData.length : meteranAirBillingItemsPerPage;
+    const startIndex = (meteranAirBillingCurrentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, meteranAirBillingTableData.length);
     const pageData = meteranAirBillingTableData.slice(startIndex, endIndex);
 
     return pageData.map(item => `
@@ -178,7 +179,8 @@ function renderMeteranAirBillingTableRows() {
 
 // Render pagination
 function renderMeteranAirBillingPagination() {
-    const totalPages = Math.ceil(meteranAirBillingTableData.length / meteranAirBillingItemsPerPage);
+    const effectiveItemsPerPage = meteranAirBillingItemsPerPage === Infinity ? meteranAirBillingTableData.length : meteranAirBillingItemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(meteranAirBillingTableData.length / effectiveItemsPerPage));
     if (totalPages <= 1) return '';
 
     let paginationHtml = '';
@@ -297,8 +299,9 @@ function updateMeteranAirBillingTableDisplay() {
 
 // Get display range text
 function getMeteranAirBillingDisplayRange() {
-    const startIndex = (meteranAirBillingCurrentPage - 1) * meteranAirBillingItemsPerPage + 1;
-    const endIndex = Math.min(startIndex + meteranAirBillingItemsPerPage - 1, meteranAirBillingTableData.length);
+    const effectiveItemsPerPage = meteranAirBillingItemsPerPage === Infinity ? meteranAirBillingTableData.length : meteranAirBillingItemsPerPage;
+    const startIndex = (meteranAirBillingCurrentPage - 1) * effectiveItemsPerPage + 1;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage - 1, meteranAirBillingTableData.length);
     return `${startIndex}-${endIndex}`;
 }
 

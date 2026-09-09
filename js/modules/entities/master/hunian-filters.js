@@ -2,6 +2,7 @@
 // Handles search, filter, sort, and pagination functionality
 
 import { applySearchFilter, applySorting, paginateData } from '../../crud.js';
+import { resolveItemsPerPage } from '../../utils.js';
 import {
     getHunianData,
     getHunianState,
@@ -39,6 +40,11 @@ function filterAndDisplayHunian() {
     if (state.hunianAirFilter) {
         const isPelangganAir = state.hunianAirFilter === 'true';
         filteredData = filteredData.filter(item => item.penghuni_saat_ini?.pelanggan_air === isPelangganAir);
+    }
+
+    // Apply sorting if specified
+    if (state.hunianSortColumn && state.hunianSortDirection !== 'none') {
+        filteredData = applySorting(filteredData, state.hunianSortColumn, state.hunianSortDirection);
     }
 
     // Update total count display
@@ -107,7 +113,7 @@ function initializeHunianSearchAndFilter() {
         const state = getHunianState();
         itemsPerPageSelect.value = state.hunianItemsPerPage;
         itemsPerPageSelect.addEventListener('change', (e) => {
-            setHunianState({ hunianItemsPerPage: parseInt(e.target.value), hunianCurrentPage: 1 });
+            setHunianState({ hunianItemsPerPage: resolveItemsPerPage(e.target.value, 10), hunianCurrentPage: 1 });
             filterAndDisplayHunian();
         });
     }
@@ -132,6 +138,12 @@ async function loadLorongOptionsForFilter() {
 // Reset filters - UI update function
 function resetHunianFilters() {
     resetFilters();
+
+    // Reset sort state
+    setHunianState({
+        hunianSortColumn: '',
+        hunianSortDirection: 'none'
+    });
 
     // Reset UI elements
     const searchInput = document.getElementById('hunian-search');

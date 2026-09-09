@@ -2,12 +2,14 @@
 // All income transaction reports across categories with search, sort, pagination
 
 import { supabase } from '../../config.js';
-import { showToast, formatCurrency, renderPagination, debounce, globalPeriodeCache, loadDataInChunks } from '../../utils.js';
+import { showToast, formatCurrency, renderPagination, debounce, globalPeriodeCache, loadDataInChunks, resolveItemsPerPage } from '../../utils.js';
 
 // Global states for Pemasukan view
 let pemasukanViewDataGlobal = [];
 let pemasukanCurrentPage = 1;
 let pemasukanItemsPerPage = 10;
+let pemasukanSortColumn = "";
+let pemasukanSortDirection = "none";
 // Use global periode cache shared across modules
 const pemasukanPeriodeCache = globalPeriodeCache;
 
@@ -339,6 +341,7 @@ async function loadViewPemasukan(selectedYear = null) {
                                 <div class="col-md-2">
                                     <label for="pemasukan-items-per-page" class="form-label">Data per Halaman:</label>
                                     <select class="form-select" id="pemasukan-items-per-page">
+                                            <option value="all">Semua</option>
                                         <option value="5">5</option>
                                         <option value="10" selected>10</option>
                                         <option value="25">25</option>
@@ -381,9 +384,10 @@ async function loadViewPemasukan(selectedYear = null) {
 
 // Render Pemasukan Table with pagination
 async function renderPemasukanTable(data) {
-    const totalPages = Math.ceil(data.length / pemasukanItemsPerPage);
-    const startIndex = (pemasukanCurrentPage - 1) * pemasukanItemsPerPage;
-    const endIndex = startIndex + pemasukanItemsPerPage;
+    const effectiveItemsPerPage = pemasukanItemsPerPage === Infinity ? data.length : pemasukanItemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(data.length / effectiveItemsPerPage));
+    const startIndex = (pemasukanCurrentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, data.length);
     const paginatedData = data.slice(startIndex, endIndex);
 
     // Pre-load periode data for all items in current page
@@ -478,7 +482,7 @@ function initializePemasukanSearchAndFilter() {
     // Items per page functionality
     if (itemsPerPageSelect) {
         itemsPerPageSelect.addEventListener('change', (e) => {
-            updatePemasukanItemsPerPage(parseInt(e.target.value));
+            updatePemasukanItemsPerPage(resolveItemsPerPage(e.target.value, 10));
         });
     }
 }
@@ -528,7 +532,7 @@ function attachPemasukanSortListeners() {
     sortableHeaders.forEach(header => {
         header.addEventListener('click', () => {
             const column = header.dataset.column;
-            const currentSort = header.dataset.sort || 'none';
+            const currentSort = pemasukanSortColumn === column ? pemasukanSortDirection : 'none';
 
             // Reset all sort indicators
             sortableHeaders.forEach(h => {
@@ -561,9 +565,15 @@ function attachPemasukanSortListeners() {
 // Sort Pemasukan Data
 function sortPemasukanData(column, direction) {
     if (direction === 'none') {
+        pemasukanSortColumn = '';
+        pemasukanSortDirection = 'none';
         renderPemasukanTable(pemasukanViewDataGlobal);
         return;
     }
+
+    // Update sort state
+    pemasukanSortColumn = column;
+    pemasukanSortDirection = direction;
 
     let filteredData = [...pemasukanViewDataGlobal];
 

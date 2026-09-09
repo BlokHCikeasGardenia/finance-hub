@@ -5,10 +5,9 @@ import { supabase } from '../../config.js';
 import {
     createRecord,
     updateRecord,
-    deleteRecord,
-    readRecords
+    deleteRecord
 } from '../../crud.js';
-import { showToast } from '../../utils.js';
+import { showToast, loadDataInChunks } from '../../utils.js';
 
 // Global state for pengeluaran
 let pengeluaranData = [];
@@ -20,6 +19,8 @@ let pengeluaranFilterSubcategory = '';
 let pengeluaranFilterAccount = '';
 let pengeluaranFilterDateFrom = '';
 let pengeluaranFilterDateTo = '';
+let pengeluaranSortColumn = '';
+let pengeluaranSortDirection = 'none';
 
 // Categories and subcategories loaded from database
 let pengeluaranCategories = [];
@@ -120,14 +121,15 @@ async function loadPengeluaran(refreshUI = true) {
             rekening:rekening_id (jenis_rekening)
         `;
 
-        const { success, data } = await readRecords('pengeluaran', {
+        const allData = await loadDataInChunks('pengeluaran', {
             select: selectQuery,
-            orderBy: 'tanggal DESC'
+            orderBy: 'tanggal',
+            ascending: false
         });
 
-        if (!success) throw new Error('Failed to load pengeluaran data');
+        if (!allData) throw new Error('Failed to load pengeluaran data');
 
-        pengeluaranData = data || [];
+        pengeluaranData = allData;
 
         if (refreshUI) {
             // This will be imported and called from the table module
@@ -204,7 +206,9 @@ function getPengeluaranState() {
         pengeluaranFilterSubcategory,
         pengeluaranFilterAccount,
         pengeluaranFilterDateFrom,
-        pengeluaranFilterDateTo
+        pengeluaranFilterDateTo,
+        pengeluaranSortColumn,
+        pengeluaranSortDirection
     };
 }
 
@@ -218,6 +222,8 @@ function setPengeluaranState(state) {
     pengeluaranFilterAccount = state.pengeluaranFilterAccount !== undefined ? state.pengeluaranFilterAccount : pengeluaranFilterAccount;
     pengeluaranFilterDateFrom = state.pengeluaranFilterDateFrom !== undefined ? state.pengeluaranFilterDateFrom : pengeluaranFilterDateFrom;
     pengeluaranFilterDateTo = state.pengeluaranFilterDateTo !== undefined ? state.pengeluaranFilterDateTo : pengeluaranFilterDateTo;
+    pengeluaranSortColumn = state.pengeluaranSortColumn !== undefined ? state.pengeluaranSortColumn : pengeluaranSortColumn;
+    pengeluaranSortDirection = state.pengeluaranSortDirection !== undefined ? state.pengeluaranSortDirection : pengeluaranSortDirection;
 }
 
 export {

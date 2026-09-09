@@ -1,6 +1,7 @@
 // Pengeluaran table rendering and pagination module
 
 import { renderPagination, formatCurrency, debounce } from '../../utils.js';
+import { applySorting } from '../../crud.js';
 import {
     getPengeluaranData,
     getPengeluaranCategories,
@@ -106,11 +107,12 @@ function filterAndDisplayPengeluaran() {
 // Display pengeluaran table with pagination
 function displayPengeluaranTable(data) {
     const state = getPengeluaranState();
-    const startIndex = (state.pengeluaranCurrentPage - 1) * state.pengeluaranItemsPerPage;
-    const endIndex = startIndex + state.pengeluaranItemsPerPage;
+    const effectiveItemsPerPage = state.pengeluaranItemsPerPage === Infinity ? data.length : state.pengeluaranItemsPerPage;
+    const startIndex = (state.pengeluaranCurrentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, data.length);
     const paginatedData = data.slice(startIndex, endIndex);
 
-    const totalPages = Math.ceil(data.length / state.pengeluaranItemsPerPage);
+    const totalPages = Math.max(1, Math.ceil(data.length / effectiveItemsPerPage));
 
     const tableHtml = createPengeluaranTableHtml(paginatedData);
     const paginationHtml = renderPagination('pengeluaran', state.pengeluaranCurrentPage, totalPages);
@@ -148,7 +150,7 @@ function createPengeluaranTableHtml(data) {
             const state = getPengeluaranState();
             let displayIndex = index + 1;
             if (state && state.pengeluaranCurrentPage) {
-                displayIndex = (state.pengeluaranCurrentPage - 1) * state.pengeluaranItemsPerPage + index + 1;
+                displayIndex = state.pengeluaranItemsPerPage === Infinity ? index + 1 : (state.pengeluaranCurrentPage - 1) * state.pengeluaranItemsPerPage + index + 1;
             }
 
             html += `<tr>

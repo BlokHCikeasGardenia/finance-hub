@@ -5,10 +5,9 @@ import { supabase } from '../../config.js';
 import {
     createRecord,
     updateRecord,
-    deleteRecord,
-    readRecords
+    deleteRecord
 } from '../../crud.js';
-import { showToast } from '../../utils.js';
+import { showToast, loadDataInChunks } from '../../utils.js';
 
 // Global state for dana_titipan
 let danaTitipanData = [];
@@ -19,6 +18,8 @@ let danaTitipanFilterCategory = '';
 let danaTitipanFilterAccount = '';
 let danaTitipanFilterDateFrom = '';
 let danaTitipanFilterDateTo = '';
+let danaTitipanSortColumn = '';
+let danaTitipanSortDirection = 'none';
 
 // Categories loaded from kategori_saldo table
 let danaTitipanCategories = [];
@@ -95,14 +96,15 @@ async function loadDanaTitipan(refreshUI = true) {
             periode:periode_id (nama_periode)
         `;
 
-        const { success, data } = await readRecords('dana_titipan', {
+        const allData = await loadDataInChunks('dana_titipan', {
             select: selectQuery,
-            orderBy: 'tanggal DESC'
+            orderBy: 'tanggal',
+            ascending: false
         });
 
-        if (!success) throw new Error('Failed to load dana_titipan data');
+        if (!allData) throw new Error('Failed to load dana_titipan data');
 
-        danaTitipanData = data || [];
+        danaTitipanData = allData;
 
         return { success: true, data: danaTitipanData };
     } catch (error) {
@@ -134,7 +136,6 @@ async function deleteDanaTitipan(id) {
 }
 
 async function confirmDeleteDanaTitipan(id) {
-    // This will be implemented in the form module with UI confirmation
     if (typeof showConfirm === 'function') {
         const confirmed = await showConfirm('Apakah Anda yakin ingin menghapus dana titipan ini?');
         if (confirmed) {
@@ -232,7 +233,9 @@ function getDanaTitipanState() {
         danaTitipanFilterCategory,
         danaTitipanFilterAccount,
         danaTitipanFilterDateFrom,
-        danaTitipanFilterDateTo
+        danaTitipanFilterDateTo,
+        danaTitipanSortColumn,
+        danaTitipanSortDirection
     };
 }
 
@@ -245,6 +248,8 @@ function setDanaTitipanState(state) {
     danaTitipanFilterAccount = state.danaTitipanFilterAccount !== undefined ? state.danaTitipanFilterAccount : danaTitipanFilterAccount;
     danaTitipanFilterDateFrom = state.danaTitipanFilterDateFrom !== undefined ? state.danaTitipanFilterDateFrom : danaTitipanFilterDateFrom;
     danaTitipanFilterDateTo = state.danaTitipanFilterDateTo !== undefined ? state.danaTitipanFilterDateTo : danaTitipanFilterDateTo;
+    danaTitipanSortColumn = state.danaTitipanSortColumn !== undefined ? state.danaTitipanSortColumn : danaTitipanSortColumn;
+    danaTitipanSortDirection = state.danaTitipanSortDirection !== undefined ? state.danaTitipanSortDirection : danaTitipanSortDirection;
 }
 
 function resetDanaTitipanFilters() {

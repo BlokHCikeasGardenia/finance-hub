@@ -3,7 +3,7 @@
 
 import { getPenghuniState, setPenghuniState, getPenghuniData } from './penghuni-data.js';
 import { renderPenghuniTable } from './penghuni-table.js';
-import { debounce } from '../../utils.js';
+import { debounce, resolveItemsPerPage } from '../../utils.js';
 
 // Initialize search and filter functionality
 function initializePenghuniSearchAndFilter() {
@@ -31,7 +31,7 @@ function initializePenghuniSearchAndFilter() {
     // Items per page functionality
     if (itemsPerPageSelect) {
         itemsPerPageSelect.addEventListener('change', (e) => {
-            updatePenghuniItemsPerPage(parseInt(e.target.value));
+            updatePenghuniItemsPerPage(resolveItemsPerPage(e.target.value, 10));
         });
     }
 }

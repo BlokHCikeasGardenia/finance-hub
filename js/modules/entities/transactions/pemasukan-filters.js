@@ -9,7 +9,7 @@ import {
 } from './pemasukan-data.js';
 import { displayPemasukanTable } from './pemasukan-table.js';
 import { applySearchFilter, applySorting, paginateData } from '../../crud.js';
-import { formatCurrency, debounce } from '../../utils.js';
+import { formatCurrency, debounce, resolveItemsPerPage } from '../../utils.js';
 
 // Filter and display pemasukan data
 function filterAndDisplayPemasukan(isFilterChange = true) {
@@ -135,7 +135,7 @@ function initializePemasukanSearchAndFilter() {
         const state = getPemasukanState();
         itemsPerPageSelect.value = state.pemasukanItemsPerPage;
         itemsPerPageSelect.addEventListener('change', (e) => {
-            setPemasukanState({ pemasukanItemsPerPage: parseInt(e.target.value), pemasukanCurrentPage: 1 });
+            setPemasukanState({ pemasukanItemsPerPage: resolveItemsPerPage(e.target.value, 10), pemasukanCurrentPage: 1 });
             filterAndDisplayPemasukan();
         });
     }

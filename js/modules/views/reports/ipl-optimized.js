@@ -2,7 +2,7 @@
 // Advanced IPL payment tracking with server-side pagination, search, filter, and sorting
 
 import { supabase } from '../../config.js';
-import { showToast, formatCurrency, renderPagination, debounce } from '../../utils.js';
+import { showToast, formatCurrency, renderPagination, debounce , resolveItemsPerPage } from '../../utils.js';
 
 // Global states for IPL view
 let iplViewDataGlobal = [];
@@ -56,6 +56,7 @@ async function loadViewIPL() {
                                 <div class="col-md-2">
                                     <label for="ipl-items-per-page" class="form-label">Data per Halaman:</label>
                                     <select class="form-select" id="ipl-items-per-page">
+                                            <option value="all">Semua</option>
                                         <option value="5">5</option>
                                         <option value="10" selected>10</option>
                                         <option value="25">25</option>

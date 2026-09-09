@@ -5,10 +5,9 @@ import { supabase } from '../../config.js';
 import {
     createRecord,
     updateRecord,
-    deleteRecord,
-    readRecords
+    deleteRecord
 } from '../../crud.js';
-import { showToast } from '../../utils.js';
+import { showToast, loadDataInChunks } from '../../utils.js';
 
 // Global state for pemindahbukuan
 let pemindahbukuanData = [];
@@ -17,6 +16,8 @@ let pemindahbukuanItemsPerPage = 10;
 let pemindahbukuanSearchTerm = '';
 let pemindahbukuanFilterDateFrom = '';
 let pemindahbukuanFilterDateTo = '';
+let pemindahbukuanSortColumn = '';
+let pemindahbukuanSortDirection = 'none';
 
 // Generate unique transaction ID
 async function generateTransactionId() {
@@ -55,14 +56,15 @@ async function loadPemindahbukuan(refreshUI = true) {
             rekening_ke:rekening_ke_id (jenis_rekening)
         `;
 
-        const { success, data } = await readRecords('pemindahbukuan', {
+        const allData = await loadDataInChunks('pemindahbukuan', {
             select: selectQuery,
-            orderBy: 'tanggal DESC'
+            orderBy: 'tanggal',
+            ascending: false
         });
 
-        if (!success) throw new Error('Failed to load pemindahbukuan data');
+        if (!allData) throw new Error('Failed to load pemindahbukuan data');
 
-        pemindahbukuanData = data || [];
+        pemindahbukuanData = allData;
 
         if (refreshUI) {
             // This will be imported and called from the table module
@@ -128,7 +130,9 @@ function getPemindahbukuanState() {
         pemindahbukuanItemsPerPage,
         pemindahbukuanSearchTerm,
         pemindahbukuanFilterDateFrom,
-        pemindahbukuanFilterDateTo
+        pemindahbukuanFilterDateTo,
+        pemindahbukuanSortColumn,
+        pemindahbukuanSortDirection
     };
 }
 
@@ -139,6 +143,8 @@ function setPemindahbukuanState(state) {
     pemindahbukuanSearchTerm = state.pemindahbukuanSearchTerm !== undefined ? state.pemindahbukuanSearchTerm : pemindahbukuanSearchTerm;
     pemindahbukuanFilterDateFrom = state.pemindahbukuanFilterDateFrom !== undefined ? state.pemindahbukuanFilterDateFrom : pemindahbukuanFilterDateFrom;
     pemindahbukuanFilterDateTo = state.pemindahbukuanFilterDateTo !== undefined ? state.pemindahbukuanFilterDateTo : pemindahbukuanFilterDateTo;
+    pemindahbukuanSortColumn = state.pemindahbukuanSortColumn !== undefined ? state.pemindahbukuanSortColumn : pemindahbukuanSortColumn;
+    pemindahbukuanSortDirection = state.pemindahbukuanSortDirection !== undefined ? state.pemindahbukuanSortDirection : pemindahbukuanSortDirection;
 }
 
 export {

@@ -3,7 +3,7 @@
 
 import { supabase } from '../../config.js';
 import { showModal, closeModal, showConfirm } from '../../ui.js';
-import { showToast, formatCurrency, parseFormattedNumber } from '../../utils.js';
+import { showToast, formatCurrency, parseFormattedNumber, resolveItemsPerPage } from '../../utils.js';
 import { paginateData } from '../../crud.js';
 import { setupIplSmartAutofill } from './tagihan_ipl-form.js';
 
@@ -129,7 +129,7 @@ function displayIplBillsTable() {
 
     const tableHtml = createIplBillsTableHtml(paginatedData);
     const paginationHtml = renderIplBillsPagination(iplBillsCurrentPage,
-        Math.ceil(dataToDisplay.length / iplBillsItemsPerPage), dataToDisplay.length);
+        Math.ceil(dataToDisplay.length / (iplBillsItemsPerPage === Infinity ? dataToDisplay.length : iplBillsItemsPerPage)), dataToDisplay.length, iplBillsItemsPerPage);
 
     const tableContainer = document.getElementById('ipl-bills-table-container');
     if (tableContainer) {
@@ -159,7 +159,8 @@ function createIplBillsTableHtml(data) {
     `;
 
     if (data.length > 0) {
-        const startIndex = (iplBillsCurrentPage - 1) * iplBillsItemsPerPage;
+        const effectiveItemsPerPage = iplBillsItemsPerPage === Infinity ? data.length : iplBillsItemsPerPage;
+        const startIndex = (iplBillsCurrentPage - 1) * effectiveItemsPerPage;
         data.forEach((bill, index) => {
             const globalIndex = startIndex + index + 1;
             const statusBadge = getStatusBadge(bill.status);
@@ -210,11 +211,12 @@ function getStatusBadge(status) {
 }
 
 // Render pagination
-function renderIplBillsPagination(currentPage, totalPages, totalItems) {
+function renderIplBillsPagination(currentPage, totalPages, totalItems, itemsPerPage) {
     if (totalPages <= 1) return '';
 
-    const startItem = ((currentPage - 1) * iplBillsItemsPerPage) + 1;
-    const endItem = Math.min(currentPage * iplBillsItemsPerPage, totalItems);
+    const effectiveItemsPerPage = itemsPerPage === Infinity ? totalItems : itemsPerPage;
+    const startItem = ((currentPage - 1) * effectiveItemsPerPage) + 1;
+    const endItem = Math.min(currentPage * effectiveItemsPerPage, totalItems);
 
     let paginationHtml = `
         <div class="d-flex justify-content-between align-items-center mt-3">
@@ -295,7 +297,7 @@ function initializeIplBillsControls() {
     // Items per page
     if (itemsPerPageSelect) {
         itemsPerPageSelect.addEventListener('change', () => {
-            iplBillsItemsPerPage = parseInt(itemsPerPageSelect.value);
+            iplBillsItemsPerPage = resolveItemsPerPage(itemsPerPageSelect.value, 10);
             iplBillsCurrentPage = 1;
             displayIplBillsTable();
         });
@@ -459,7 +461,8 @@ function updateSortIcons(headers) {
 // Change page
 function changeIplBillsPage(page) {
     const dataToPaginate = iplBillsFilteredData || iplBillsData;
-    const totalPages = Math.ceil(dataToPaginate.length / iplBillsItemsPerPage);
+    const effectiveItemsPerPage = iplBillsItemsPerPage === Infinity ? dataToPaginate.length : iplBillsItemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(dataToPaginate.length / effectiveItemsPerPage));
 
     if (page < 1 || page > totalPages) return;
 

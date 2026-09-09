@@ -240,7 +240,8 @@ async function loadPemasukanPeriodeData(items) {
 async function displayPemasukanTable(data) {
     const state = getPemasukanState();
     // Calculate pagination info
-    const totalPages = Math.ceil(data.length / state.pemasukanItemsPerPage);
+    const effectiveItemsPerPage = state.pemasukanItemsPerPage === Infinity ? data.length : state.pemasukanItemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(data.length / effectiveItemsPerPage));
 
     // Handle case where current page is beyond available pages (e.g., after filtering)
     let currentPage = state.pemasukanCurrentPage;
@@ -251,8 +252,8 @@ async function displayPemasukanTable(data) {
         currentPage = 1;
     }
 
-    const startIndex = (currentPage - 1) * state.pemasukanItemsPerPage;
-    const endIndex = startIndex + state.pemasukanItemsPerPage;
+    const startIndex = (currentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, data.length);
     const paginatedData = data.slice(startIndex, endIndex);
 
     // Pre-load periode data for current page items
@@ -295,7 +296,7 @@ function createPemasukanTableHtml(data, pagination) {
 
     if (data.length > 0) {
         data.forEach((item, index) => {
-            const globalIndex = (pagination.currentPage - 1) * pagination.itemsPerPage + index + 1;
+            const globalIndex = pagination.itemsPerPage === Infinity ? index + 1 : (pagination.currentPage - 1) * pagination.itemsPerPage + index + 1;
 
             html += `<tr>
                 <td>${globalIndex}</td>
@@ -320,7 +321,7 @@ function createPemasukanTableHtml(data, pagination) {
     html += `</tbody></table>`;
 
     // Add pagination controls
-    const paginationHtml = renderPemasukanPagination(pagination.currentPage, pagination.totalPages, pagination.totalItems);
+    const paginationHtml = renderPemasukanPagination(pagination.currentPage, pagination.totalPages, pagination.totalItems, pagination.itemsPerPage);
     html += paginationHtml;
 
     return html;
@@ -406,7 +407,7 @@ function showPemasukanPeriodeDetail(pemasukanId) {
 }
 
 // Render pagination for pemasukan table
-function renderPemasukanPagination(currentPage, totalPages, totalItems) {
+function renderPemasukanPagination(currentPage, totalPages, totalItems, itemsPerPage) {
     if (totalPages <= 1) return '';
 
     let paginationHtml = '<nav><ul class="pagination pagination-sm mb-0 justify-content-center mt-3">';
@@ -448,8 +449,9 @@ function renderPemasukanPagination(currentPage, totalPages, totalItems) {
     paginationHtml += '</ul>';
 
     // Add info text
-    const startItem = (currentPage - 1) * 10 + 1;
-    const endItem = Math.min(currentPage * 10, totalItems);
+    const effectiveItemsPerPage = itemsPerPage === Infinity ? totalItems : itemsPerPage;
+    const startItem = (currentPage - 1) * effectiveItemsPerPage + 1;
+    const endItem = Math.min(currentPage * effectiveItemsPerPage, totalItems);
     paginationHtml += `<div class="text-muted text-center mt-2">Menampilkan ${startItem}-${endItem} dari ${totalItems} data</div>`;
 
     paginationHtml += '</nav>';
@@ -495,7 +497,8 @@ function attachPemasukanSortListeners() {
     sortableHeaders.forEach(header => {
         header.addEventListener('click', () => {
             const column = header.dataset.column;
-            const currentSort = header.dataset.sort || 'none';
+            const state = getPemasukanState();
+            const currentSort = state.pemasukanSortColumn === column ? state.pemasukanSortDirection : 'none';
 
             // Reset all sort indicators
             sortableHeaders.forEach(h => {

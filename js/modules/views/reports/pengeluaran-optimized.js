@@ -2,7 +2,7 @@
 // All expense transaction reports with server-side pagination, search, sort, and filtering
 
 import { supabase } from '../../config.js';
-import { showToast, formatCurrency, renderPagination, debounce } from '../../utils.js';
+import { showToast, formatCurrency, renderPagination, debounce , resolveItemsPerPage } from '../../utils.js';
 
 // Global states for Pengeluaran view
 let pengeluaranViewDataGlobal = [];
@@ -101,6 +101,7 @@ async function loadViewPengeluaran(selectedYear = null) {
                                 <div class="col-md-2">
                                     <label for="pengeluaran-items-per-page" class="form-label">Data per Halaman:</label>
                                     <select class="form-select" id="pengeluaran-items-per-page">
+                                            <option value="all">Semua</option>
                                         <option value="5">5</option>
                                         <option value="10" selected>10</option>
                                         <option value="25">25</option>

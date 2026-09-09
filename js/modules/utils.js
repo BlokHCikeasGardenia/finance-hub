@@ -283,6 +283,13 @@ async function loadDataInChunks(tableName, options = {}) {
     return allData;
 }
 
+// Resolve items-per-page from select value, supporting "all"
+function resolveItemsPerPage(value, fallback = 10) {
+    if (value === 'all') return Infinity;
+    const parsed = parseInt(value, 10);
+    return Number.isNaN(parsed) || parsed <= 0 ? fallback : parsed;
+}
+
 // Object utilities
 function deepClone(obj) {
     if (obj === null || typeof obj !== 'object') return obj;
@@ -320,5 +327,6 @@ export {
     deepClone,
     generateUniqueId,
     globalPeriodeCache,
-    loadDataInChunks
+    loadDataInChunks,
+    resolveItemsPerPage
 };

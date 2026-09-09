@@ -88,6 +88,7 @@ async function loadSectionContent(sectionId) {
                                     <div class="col-md-2">
                                         <label for="hunian-items-per-page" class="form-label">Per Halaman:</label>
                                         <select class="form-select" id="hunian-items-per-page">
+                                            <option value="all">Semua</option>
                                             <option value="5">5</option>
                                             <option value="10" selected>10</option>
                                             <option value="25">25</option>
@@ -412,6 +413,7 @@ async function loadSectionContent(sectionId) {
                                     <div class="col-md-1">
                                         <label for="dana_titipan-items-per-page" class="form-label">Per Halaman:</label>
                                         <select class="form-select" id="dana_titipan-items-per-page">
+                                            <option value="all">Semua</option>
                                             <option value="5">5</option>
                                             <option value="10" selected>10</option>
                                             <option value="25">25</option>
@@ -483,6 +485,7 @@ async function loadSectionContent(sectionId) {
                                     <div class="col-md-1">
                                         <label for="pengeluaran-items-per-page" class="form-label">Per Halaman:</label>
                                         <select class="form-select" id="pengeluaran-items-per-page">
+                                            <option value="all">Semua</option>
                                             <option value="5">5</option>
                                             <option value="10" selected>10</option>
                                             <option value="25">25</option>
@@ -547,6 +550,7 @@ async function loadSectionContent(sectionId) {
                                     <div class="col-md-1">
                                         <label for="pemasukan-items-per-page" class="form-label">Per Halaman:</label>
                                         <select class="form-select" id="pemasukan-items-per-page">
+                                            <option value="all">Semua</option>
                                             <option value="5">5</option>
                                             <option value="10" selected>10</option>
                                             <option value="25">25</option>
@@ -682,6 +686,7 @@ async function loadSectionContent(sectionId) {
                                         <div class="col-md-2">
                                             <label for="ipl-bills-items-per-page" class="form-label">Per Halaman:</label>
                                             <select class="form-select" id="ipl-bills-items-per-page">
+                                            <option value="all">Semua</option>
                                                 <option value="5">5</option>
                                                 <option value="10" selected>10</option>
                                                 <option value="25">25</option>

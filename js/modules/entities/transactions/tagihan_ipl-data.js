@@ -2,7 +2,7 @@
 // Handles CRUD operations, bill generation, payment allocation, and reporting for IPL
 
 import { supabase } from '../../config.js';
-import { showToast } from '../../utils.js';
+import { showToast, loadDataInChunks } from '../../utils.js';
 import {
     createRecord,
     updateRecord,
@@ -19,29 +19,27 @@ let tagihanIplItemsPerPage = 10;
 // Load tagihan IPL data with filters
 async function loadTagihanIpl(filters = {}) {
     try {
-        let query = supabase
-            .from('tagihan_ipl')
-            .select(`
-                *,
-                periode:periode_id (nama_periode, tanggal_awal, tanggal_akhir),
-                hunian:hunian_id (nomor_blok_rumah),
-                penghuni:penghuni_id (nama_kepala_keluarga)
-            `)
-            .order('tanggal_tagihan', { ascending: false });
+        const selectQuery = `
+            *,
+            periode:periode_id (nama_periode, tanggal_awal, tanggal_akhir),
+            hunian:hunian_id (nomor_blok_rumah),
+            penghuni:penghuni_id (nama_kepala_keluarga)
+        `;
 
-        // Apply filters
-        if (filters.status) query = query.eq('status', filters.status);
-        if (filters.hunian_id) query = query.eq('hunian_id', filters.hunian_id);
-        if (filters.periode_id) query = query.eq('periode_id', filters.periode_id);
-        if (filters.status_outstanding) {
-            query = query.in('status', ['belum_bayar', 'sebagian']);
+        const chunkFilters = { ...filters };
+        if (chunkFilters.status_outstanding) {
+            chunkFilters.status = ['belum_bayar', 'sebagian'];
+            delete chunkFilters.status_outstanding;
         }
 
-        const { data, error } = await query;
+        const allData = await loadDataInChunks('tagihan_ipl', {
+            select: selectQuery,
+            orderBy: 'tanggal_tagihan',
+            ascending: false,
+            filters: chunkFilters
+        });
 
-        if (error) throw error;
-
-        tagihanIplData = data || [];
+        tagihanIplData = allData || [];
         return { success: true, data: tagihanIplData };
     } catch (error) {
         console.error('Error loading tagihan IPL:', error);

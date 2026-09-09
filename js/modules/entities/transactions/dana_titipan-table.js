@@ -3,7 +3,7 @@
 
 import { getDanaTitipanState, setDanaTitipanState } from './dana_titipan-data.js';
 import { renderPagination } from '../../utils.js';
-import { filterAndDisplayDanaTitipan } from './dana_titipan-filters.js';
+import { filterAndDisplayDanaTitipan, sortDanaTitipanData } from './dana_titipan-filters.js';
 
 // Table columns configuration - matching app_old.js structure
 const danaTitipanTableColumns = [
@@ -48,7 +48,8 @@ function renderDanaTitipanCategory(item) {
 function displayDanaTitipanTable(data) {
     const state = getDanaTitipanState();
     // Calculate pagination info
-    const totalPages = Math.ceil(data.length / state.danaTitipanItemsPerPage);
+    const effectiveItemsPerPage = state.danaTitipanItemsPerPage === Infinity ? data.length : state.danaTitipanItemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(data.length / effectiveItemsPerPage));
 
     // Handle case where current page is beyond available pages (e.g., after filtering)
     let currentPage = state.danaTitipanCurrentPage;
@@ -59,8 +60,8 @@ function displayDanaTitipanTable(data) {
         currentPage = 1;
     }
 
-    const startIndex = (currentPage - 1) * state.danaTitipanItemsPerPage;
-    const endIndex = startIndex + state.danaTitipanItemsPerPage;
+    const startIndex = (currentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, data.length);
     const paginatedData = data.slice(startIndex, endIndex);
 
     const tableHtml = createDanaTitipanTableHtml(paginatedData, {
@@ -97,7 +98,7 @@ function createDanaTitipanTableHtml(data, pagination) {
 
     if (data.length > 0) {
         data.forEach((item, index) => {
-            const globalIndex = (pagination.currentPage - 1) * pagination.itemsPerPage + index + 1;
+            const globalIndex = pagination.itemsPerPage === Infinity ? index + 1 : (pagination.currentPage - 1) * pagination.itemsPerPage + index + 1;
             html += `<tr>
                 ${danaTitipanTableColumns.map(col => {
                     const value = col.render ? col.render(item, col.key) : getNestedValue(item, col.key) || '-';
@@ -147,7 +148,8 @@ function attachDanaTitipanSortListeners() {
     sortableHeaders.forEach(header => {
         header.addEventListener('click', () => {
             const column = header.dataset.column;
-            const currentSort = header.dataset.sort || 'none';
+            const state = getDanaTitipanState();
+            const currentSort = state.danaTitipanSortColumn === column ? state.danaTitipanSortDirection : 'none';
 
             // Reset all sort indicators
             sortableHeaders.forEach(h => {

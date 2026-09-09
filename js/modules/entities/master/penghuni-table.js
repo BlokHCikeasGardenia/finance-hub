@@ -6,9 +6,10 @@ import { getPenghuniState, setPenghuniState } from './penghuni-data.js';
 // Render penghuni table with pagination
 function renderPenghuniTable(data) {
     const state = getPenghuniState();
-    const totalPages = Math.ceil(data.length / state.penghuniItemsPerPage);
-    const startIndex = (state.penghuniCurrentPage - 1) * state.penghuniItemsPerPage;
-    const endIndex = startIndex + state.penghuniItemsPerPage;
+    const effectiveItemsPerPage = state.penghuniItemsPerPage === Infinity ? data.length : state.penghuniItemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(data.length / effectiveItemsPerPage));
+    const startIndex = (state.penghuniCurrentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, data.length);
     const paginatedData = data.slice(startIndex, endIndex);
 
     const tableHtml = `
@@ -27,7 +28,7 @@ function renderPenghuniTable(data) {
                 <tbody>
                     ${paginatedData.map((item, index) => `
                         <tr>
-                            <td>${startIndex + index + 1}</td>
+                            <td>${state.penghuniItemsPerPage === Infinity ? index + 1 : startIndex + index + 1}</td>
                             <td>${item.nama_kepala_keluarga}</td>
                             <td>${item.agama || '-'}</td>
                             <td>${item.status || '-'}</td>
@@ -104,7 +105,8 @@ function renderPenghuniPagination(currentPage, totalPages) {
 // Change page
 function changePenghuniPage(page) {
     const state = getPenghuniState();
-    const totalPages = Math.ceil(state.penghuniData.length / state.penghuniItemsPerPage);
+    const effectiveItemsPerPage = state.penghuniItemsPerPage === Infinity ? state.penghuniData.length : state.penghuniItemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(state.penghuniData.length / effectiveItemsPerPage));
 
     if (page < 1 || page > totalPages) return;
 

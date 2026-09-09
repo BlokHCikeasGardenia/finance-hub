@@ -2,13 +2,14 @@
 // Advanced water consumption and billing reports with search, filter, pagination, and sorting
 
 import { supabase } from '../../config.js';
-import { showToast, formatCurrency, renderPagination, debounce } from '../../utils.js';
+import { showToast, formatCurrency, renderPagination, debounce , resolveItemsPerPage } from '../../utils.js';
 import { getTarifAirForDate } from '../../entities/master/tarif_air-data.js';
 
 // Global states for Air view
 let airViewDataGlobal = [];
 let airCurrentPage = 1;
 let airItemsPerPage = 10;
+let airSortColumn = "";
 
 // Global state for Rekap Air
 let airRekapDataGlobal = [];
@@ -280,6 +281,7 @@ async function loadViewAir() {
                                 <div class="col-md-2">
                                     <label for="air-items-per-page" class="form-label">Data per Halaman:</label>
                                     <select class="form-select" id="air-items-per-page">
+                                            <option value="all">Semua</option>
                                         <option value="5">5</option>
                                         <option value="10" selected>10</option>
                                         <option value="25">25</option>
@@ -319,9 +321,10 @@ async function loadViewAir() {
 
 // Render Air Table with pagination
 function renderAirTable(data) {
-    const totalPages = Math.ceil(data.length / airItemsPerPage);
-    const startIndex = (airCurrentPage - 1) * airItemsPerPage;
-    const endIndex = startIndex + airItemsPerPage;
+    const effectiveItemsPerPage = airItemsPerPage === Infinity ? data.length : airItemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(data.length / effectiveItemsPerPage));
+    const startIndex = (airCurrentPage - 1) * effectiveItemsPerPage;
+    const endIndex = Math.min(startIndex + effectiveItemsPerPage, data.length);
     const paginatedData = data.slice(startIndex, endIndex);
 
     const tableHtml = `
@@ -414,7 +417,7 @@ function initializeAirSearchAndFilter() {
     // Items per page functionality
     if (itemsPerPageSelect) {
         itemsPerPageSelect.addEventListener('change', (e) => {
-            updateAirItemsPerPage(parseInt(e.target.value));
+            updateAirItemsPerPage(resolveItemsPerPage(e.target.value, 10));
         });
     }
 }
@@ -485,7 +488,7 @@ function attachAirSortListeners() {
     sortableHeaders.forEach(header => {
         header.addEventListener('click', () => {
             const column = header.dataset.column;
-            const currentSort = header.dataset.sort || 'none';
+            const currentSort = airSortColumn === column ? airSortDirection : 'none';
 
             // Reset all sort indicators
             sortableHeaders.forEach(h => {

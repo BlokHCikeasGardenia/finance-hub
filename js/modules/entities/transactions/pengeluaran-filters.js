@@ -11,7 +11,7 @@ import {
     getRekeningOptions
 } from './pengeluaran-data.js';
 import { filterAndDisplayPengeluaran, pengeluaranTableColumns } from './pengeluaran-table.js';
-import { formatCurrency, debounce } from '../../utils.js';
+import { formatCurrency, debounce, resolveItemsPerPage } from '../../utils.js';
 import { applySorting } from '../../crud.js';
 
 // Helper function to get nested object value
@@ -93,7 +93,7 @@ function initializePengeluaranSearchAndFilter() {
         const state = getPengeluaranState();
         itemsPerPageSelect.value = state.pengeluaranItemsPerPage;
         itemsPerPageSelect.addEventListener('change', (e) => {
-            setPengeluaranState({ pengeluaranItemsPerPage: parseInt(e.target.value), pengeluaranCurrentPage: 1 });
+            setPengeluaranState({ pengeluaranItemsPerPage: resolveItemsPerPage(e.target.value, 10), pengeluaranCurrentPage: 1 });
             filterAndDisplayPengeluaranWrapper();
         });
     }
@@ -139,7 +139,9 @@ function resetPengeluaranFilters() {
         pengeluaranFilterSubcategory: '',
         pengeluaranFilterAccount: '',
         pengeluaranFilterDateFrom: '',
-        pengeluaranFilterDateTo: ''
+        pengeluaranFilterDateTo: '',
+        pengeluaranSortColumn: '',
+        pengeluaranSortDirection: 'none'
     });
 
     // Reset UI elements
